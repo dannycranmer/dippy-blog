@@ -45,6 +45,7 @@
       </div>
     </div>
     <canvas id="game-canvas"></canvas>
+    <button id="jump-btn">JUMP</button>
   </div>
 
   <!-- Game Over Screen -->
@@ -179,6 +180,31 @@
     border: 2px solid #30363d;
     border-radius: 12px;
     display: block;
+  }
+
+  #jump-btn {
+    width: 100%;
+    max-width: 360px;
+    margin-top: 0.5rem;
+    padding: 1.2rem 0;
+    font-size: 1.4rem;
+    font-weight: 900;
+    font-family: inherit;
+    letter-spacing: 2px;
+    color: #0d1117;
+    background: #00ff88;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: transform 0.05s;
+  }
+  #jump-btn:active {
+    transform: scale(0.96);
+    background: #00cc6e;
   }
 
   #gameover-screen {
@@ -773,6 +799,9 @@
   });
   canvas.addEventListener('click', function(e) { e.preventDefault(); jump(); });
   canvas.addEventListener('touchstart', function(e) { e.preventDefault(); jump(); }, { passive: false });
+  const jumpBtn = document.getElementById('jump-btn');
+  jumpBtn.addEventListener('click', function(e) { e.preventDefault(); jump(); });
+  jumpBtn.addEventListener('touchstart', function(e) { e.preventDefault(); jump(); }, { passive: false });
 
   window.addEventListener('resize', function() { if (running) resize(); });
 })();
