@@ -2,4 +2,5 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} | {{ .Site.Title }}{{ end }}</title>
 <meta name="description" content="{{ with .Params.summary }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}">
+<link rel="icon" type="image/svg+xml" href="{{ "img/favicon.svg" | absURL }}">
 <link rel="stylesheet" href="{{ "css/style.css" | absURL }}">

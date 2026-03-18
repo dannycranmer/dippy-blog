@@ -63,6 +63,14 @@ body {
   font-weight: 700;
   color: var(--green);
   text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo-icon {
+  width: 32px;
+  height: 32px;
 }
 
 .site-logo:hover { opacity: 0.8; }
