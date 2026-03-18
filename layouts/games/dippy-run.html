@@ -1,0 +1,780 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">DIPPY RUN</h1>
+    <p class="game-subtitle">Dippy sprints endlessly. Tap to jump over Moonys.<br>How far can you run?</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">START</button>
+    <p class="game-hint">Tap, click, or press Space to jump.<br>Moony's just sitting there being an obstacle. As usual.</p>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">DISTANCE</span>
+        <span class="hud-value" id="distance">0m</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">SPEED</span>
+        <span class="hud-value" id="speed">1x</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="score">0</span>
+      </div>
+    </div>
+    <canvas id="game-canvas"></canvas>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="gameover-title" id="gameover-title">MOONY GOT YOU</h1>
+    <div class="final-score">
+      <span class="final-label">FINAL SCORE</span>
+      <span class="final-value" id="final-score">0</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-distance">0m</span><span class="stat-label">Distance</span></div>
+      <div class="stat"><span class="stat-val" id="stat-jumped">0</span><span class="stat-label">Jumped</span></div>
+      <div class="stat"><span class="stat-val" id="stat-speed">1x</span><span class="stat-label">Top Speed</span></div>
+      <div class="stat"><span class="stat-val" id="stat-coins">0</span><span class="stat-label">Coins</span></div>
+    </div>
+    <div class="high-score-display" id="gameover-high-score"></div>
+    <p class="gameover-roast" id="gameover-roast"></p>
+    <button id="replay-btn" onclick="startGame()">PLAY AGAIN</button>
+  </div>
+</div>
+
+<style>
+  #game-wrapper {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #title-screen {
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+  }
+  .title-dippy {
+    margin-bottom: 1rem;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  .game-title {
+    font-size: 2.2rem;
+    color: #00ff88;
+    margin: 0 0 0.5rem;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .game-subtitle {
+    color: #8b949e;
+    font-size: 0.95rem;
+    margin: 0 0 1.5rem;
+    line-height: 1.5;
+  }
+  .game-hint {
+    color: #484f58;
+    font-size: 0.8rem;
+    margin-top: 1.5rem;
+    font-style: italic;
+    line-height: 1.5;
+  }
+  .high-score-display {
+    color: #f0883e;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    min-height: 1.2em;
+  }
+  #start-btn, #replay-btn {
+    background: #00ff88;
+    color: #0d1117;
+    border: none;
+    padding: 0.9rem 3rem;
+    font-size: 1.2rem;
+    font-weight: 800;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 1px;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  #start-btn:active, #replay-btn:active {
+    transform: scale(0.95);
+  }
+  #start-btn:hover, #replay-btn:hover {
+    box-shadow: 0 0 20px rgba(0,255,136,0.4);
+  }
+
+  .game-hud {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 360px;
+    margin-bottom: 0.5rem;
+    gap: 0.5rem;
+  }
+  .hud-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 0.4rem;
+  }
+  .hud-label {
+    font-size: 0.65rem;
+    color: #484f58;
+    letter-spacing: 1px;
+  }
+  .hud-value {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #e6edf3;
+  }
+  #speed { color: #f0883e; }
+  #score { color: #d2a8ff; }
+
+  #game-canvas {
+    width: 100%;
+    max-width: 360px;
+    aspect-ratio: 2/1;
+    background: #0d1117;
+    border: 2px solid #30363d;
+    border-radius: 12px;
+    display: block;
+  }
+
+  #gameover-screen {
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .gameover-title {
+    font-size: 2rem;
+    color: #f0883e;
+    margin: 0 0 1rem;
+  }
+  .final-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .final-label {
+    font-size: 0.75rem;
+    color: #484f58;
+    letter-spacing: 1px;
+  }
+  .final-value {
+    font-size: 3rem;
+    font-weight: 900;
+    color: #00ff88;
+  }
+  .stats-row {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .stat-val {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #e6edf3;
+  }
+  .stat-label {
+    font-size: 0.7rem;
+    color: #484f58;
+    letter-spacing: 1px;
+    margin-top: 0.2rem;
+  }
+  .gameover-roast {
+    color: #8b949e;
+    font-size: 0.9rem;
+    font-style: italic;
+    margin: 1rem 0 1.5rem;
+    line-height: 1.5;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+</style>
+
+<script>
+(function() {
+  const STORAGE_KEY = 'dippy-run-highscore';
+  const canvas = document.getElementById('game-canvas');
+  const ctx = canvas.getContext('2d');
+
+  // Game state
+  let running = false;
+  let animFrame = null;
+  let lastTime = 0;
+
+  // Physics
+  const GRAVITY = 2800;
+  const JUMP_VEL = -750;
+  const GROUND_Y = 0.78; // fraction of canvas height
+  const BASE_SPEED = 280; // px/s at 1x
+  const SPEED_INCREMENT = 0.08; // per 500m
+  const MAX_SPEED_MULT = 4.0;
+
+  // Player
+  let playerX, playerY, playerVY, playerW, playerH;
+  let isGrounded, jumpCount, maxJumps;
+
+  // World
+  let obstacles, coins, particles, bgStars;
+  let distance, score, jumpsDone, coinsCollected, speedMult, topSpeed;
+  let nextObstacleAt, nextCoinAt;
+  let groundY;
+
+  // Drawing helpers
+  function drawDippy(x, y, w, h, jumping) {
+    const cx = x + w / 2;
+    const cy = y + h * 0.5;
+    const s = w / 40;
+    // Body
+    ctx.fillStyle = '#00ff88';
+    ctx.beginPath();
+    ctx.ellipse(cx - 4 * s, cy + 4 * s, 14 * s, 12 * s, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Tail (leaves)
+    ctx.beginPath();
+    ctx.moveTo(cx - 18 * s, cy + 4 * s);
+    ctx.quadraticCurveTo(cx - 26 * s, cy - 4 * s, cx - 28 * s, cy - 14 * s);
+    ctx.quadraticCurveTo(cx - 26 * s, cy - 12 * s, cx - 24 * s, cy - 10 * s);
+    ctx.quadraticCurveTo(cx - 26 * s, cy - 18 * s, cx - 22 * s, cy - 22 * s);
+    ctx.quadraticCurveTo(cx - 22 * s, cy - 16 * s, cx - 20 * s, cy - 12 * s);
+    ctx.quadraticCurveTo(cx - 18 * s, cy - 16 * s, cx - 14 * s, cy - 18 * s);
+    ctx.quadraticCurveTo(cx - 16 * s, cy - 10 * s, cx - 16 * s, cy - 4 * s);
+    ctx.fill();
+    // Neck
+    ctx.lineWidth = 8 * s;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#00ff88';
+    ctx.beginPath();
+    ctx.moveTo(cx + 6 * s, cy - 6 * s);
+    ctx.quadraticCurveTo(cx + 10 * s, cy - 18 * s, cx + 8 * s, cy - 28 * s);
+    ctx.stroke();
+    // Head
+    ctx.fillStyle = '#00ff88';
+    ctx.beginPath();
+    ctx.ellipse(cx + 8 * s, cy - 34 * s, 10 * s, 7 * s, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Eye
+    ctx.fillStyle = '#0d1117';
+    ctx.beginPath();
+    ctx.arc(cx + 12 * s, cy - 36 * s, 2.2 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(cx + 12.8 * s, cy - 37 * s, 0.8 * s, 0, Math.PI * 2);
+    ctx.fill();
+    // Mouth
+    ctx.strokeStyle = '#0d1117';
+    ctx.lineWidth = 0.8 * s;
+    ctx.beginPath();
+    ctx.moveTo(cx + 16 * s, cy - 33 * s);
+    ctx.quadraticCurveTo(cx + 18 * s, cy - 31 * s, cx + 16 * s, cy - 29 * s);
+    ctx.stroke();
+    // Crown
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.moveTo(cx + 6 * s, cy - 39 * s);
+    ctx.lineTo(cx + 7 * s, cy - 42 * s);
+    ctx.lineTo(cx + 8 * s, cy - 39 * s);
+    ctx.fill();
+    // Legs (animated)
+    ctx.fillStyle = '#00cc6e';
+    if (jumping) {
+      // Legs tucked
+      ctx.fillRect(cx - 10 * s, cy + 13 * s, 4 * s, 6 * s);
+      ctx.fillRect(cx + 0 * s, cy + 13 * s, 4 * s, 6 * s);
+    } else {
+      // Running animation — alternate legs
+      const legPhase = (distance * 0.08) % (Math.PI * 2);
+      const legOffset1 = Math.sin(legPhase) * 4 * s;
+      const legOffset2 = Math.sin(legPhase + Math.PI) * 4 * s;
+      ctx.fillRect(cx - 10 * s + legOffset1, cy + 14 * s, 4 * s, 8 * s);
+      ctx.fillRect(cx + 0 * s + legOffset2, cy + 14 * s, 4 * s, 8 * s);
+      // Feet
+      ctx.beginPath();
+      ctx.ellipse(cx - 8 * s + legOffset1, cy + 23 * s, 4 * s, 1.5 * s, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(cx + 2 * s + legOffset2, cy + 23 * s, 4 * s, 1.5 * s, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Spines
+    ctx.fillStyle = '#00cc6e';
+    const spines = [[cx - 8 * s, cy - 6 * s, 4 * s], [cx - 4 * s, cy - 8 * s, 5 * s], [cx, cy - 6 * s, 4 * s]];
+    for (const [sx, sy, sh] of spines) {
+      ctx.beginPath();
+      ctx.moveTo(sx - 2 * s, sy);
+      ctx.lineTo(sx, sy - sh);
+      ctx.lineTo(sx + 2 * s, sy);
+      ctx.fill();
+    }
+  }
+
+  function drawMoony(x, y, size, type) {
+    const r = size / 2;
+    // Moon body
+    ctx.fillStyle = type === 'golden' ? '#FFD700' : '#C0C0C0';
+    ctx.beginPath();
+    ctx.arc(x + r, y + r, r, 0, Math.PI * 2);
+    ctx.fill();
+    // Shadow crescent
+    ctx.fillStyle = type === 'golden' ? '#B8860B' : '#888';
+    ctx.beginPath();
+    ctx.arc(x + r + r * 0.2, y + r, r * 0.85, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = type === 'golden' ? '#FFD700' : '#C0C0C0';
+    ctx.beginPath();
+    ctx.arc(x + r, y + r, r, 0, Math.PI * 2);
+    ctx.fill();
+    // Craters
+    ctx.fillStyle = type === 'golden' ? '#DAA520' : '#A0A0A0';
+    ctx.beginPath();
+    ctx.arc(x + r * 0.7, y + r * 0.7, r * 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x + r * 1.3, y + r * 1.1, r * 0.15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x + r * 0.9, y + r * 1.4, r * 0.12, 0, Math.PI * 2);
+    ctx.fill();
+    // Derpy face
+    ctx.fillStyle = '#0d1117';
+    // Eyes (slightly cross-eyed)
+    ctx.beginPath();
+    ctx.arc(x + r * 0.7, y + r * 0.85, r * 0.1, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x + r * 1.2, y + r * 0.85, r * 0.1, 0, Math.PI * 2);
+    ctx.fill();
+    // Frown
+    ctx.strokeStyle = '#0d1117';
+    ctx.lineWidth = r * 0.06;
+    ctx.beginPath();
+    ctx.arc(x + r, y + r * 1.3, r * 0.25, Math.PI, 0, true);
+    ctx.stroke();
+  }
+
+  function drawCoin(x, y, size) {
+    const r = size / 2;
+    const pulse = Math.sin(Date.now() * 0.005) * 2;
+    ctx.fillStyle = '#00ff88';
+    ctx.shadowColor = '#00ff88';
+    ctx.shadowBlur = 8 + pulse;
+    ctx.beginPath();
+    ctx.arc(x + r, y + r, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#0d1117';
+    ctx.font = `bold ${r}px monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('$', x + r, y + r + 1);
+  }
+
+  function spawnObstacle() {
+    const cw = canvas.width;
+    const types = ['single', 'single', 'single', 'double', 'tall', 'golden'];
+    if (speedMult > 2) types.push('double', 'tall');
+    const type = types[Math.floor(Math.random() * types.length)];
+    let w, h;
+    const baseSize = canvas.height * 0.08;
+    if (type === 'single') { w = baseSize; h = baseSize; }
+    else if (type === 'double') { w = baseSize * 2.2; h = baseSize; }
+    else if (type === 'tall') { w = baseSize; h = baseSize * 1.6; }
+    else if (type === 'golden') { w = baseSize * 1.2; h = baseSize * 1.2; }
+    obstacles.push({ x: cw + 20, y: groundY - h, w, h, type, scored: false });
+  }
+
+  function spawnCoin() {
+    const cw = canvas.width;
+    const size = canvas.height * 0.05;
+    const floatH = groundY - size - canvas.height * (0.15 + Math.random() * 0.25);
+    coins.push({ x: cw + 20, y: floatH, size, collected: false });
+  }
+
+  function addParticles(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x, y,
+        vx: (Math.random() - 0.5) * 200,
+        vy: (Math.random() - 1) * 200,
+        life: 0.5 + Math.random() * 0.3,
+        color,
+        size: 2 + Math.random() * 3
+      });
+    }
+  }
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * window.devicePixelRatio;
+    canvas.height = rect.height * window.devicePixelRatio;
+    ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+    groundY = rect.height * GROUND_Y;
+    playerW = rect.width * 0.12;
+    playerH = playerW * 1.2;
+    playerX = rect.width * 0.12;
+  }
+
+  function reset() {
+    resize();
+    const rect = canvas.getBoundingClientRect();
+    playerY = groundY - playerH;
+    playerVY = 0;
+    isGrounded = true;
+    jumpCount = 0;
+    maxJumps = 2;
+    obstacles = [];
+    coins = [];
+    particles = [];
+    distance = 0;
+    score = 0;
+    jumpsDone = 0;
+    coinsCollected = 0;
+    speedMult = 1;
+    topSpeed = 1;
+    nextObstacleAt = rect.width * 0.6;
+    nextCoinAt = rect.width * 0.9;
+    // Stars
+    bgStars = [];
+    for (let i = 0; i < 30; i++) {
+      bgStars.push({
+        x: Math.random() * rect.width,
+        y: Math.random() * groundY * 0.7,
+        size: 0.5 + Math.random() * 1.5,
+        twinkle: Math.random() * Math.PI * 2
+      });
+    }
+  }
+
+  function jump() {
+    if (!running) return;
+    if (jumpCount < maxJumps) {
+      playerVY = JUMP_VEL * (canvas.getBoundingClientRect().height / 500);
+      isGrounded = false;
+      jumpCount++;
+      jumpsDone++;
+      addParticles(playerX + playerW / 2, playerY + playerH, '#00ff88', 5);
+    }
+  }
+
+  function collides(ax, ay, aw, ah, bx, by, bw, bh) {
+    const shrink = 0.2;
+    const asx = ax + aw * shrink, asy = ay + ah * shrink;
+    const asw = aw * (1 - 2 * shrink), ash = ah * (1 - 2 * shrink);
+    return asx < bx + bw && asx + asw > bx && asy < by + bh && asy + ash > by;
+  }
+
+  function update(dt) {
+    const rect = canvas.getBoundingClientRect();
+    const w = rect.width;
+    const h = rect.height;
+
+    // Speed ramp
+    speedMult = 1 + Math.floor(distance / 500) * SPEED_INCREMENT;
+    if (speedMult > MAX_SPEED_MULT) speedMult = MAX_SPEED_MULT;
+    if (speedMult > topSpeed) topSpeed = speedMult;
+    const spd = BASE_SPEED * speedMult * (w / 360);
+
+    // Distance & score
+    distance += spd * dt;
+    score = Math.floor(distance / 10);
+
+    // Player physics
+    playerVY += GRAVITY * (h / 500) * dt;
+    playerY += playerVY * dt;
+    if (playerY >= groundY - playerH) {
+      playerY = groundY - playerH;
+      playerVY = 0;
+      isGrounded = true;
+      jumpCount = 0;
+    }
+
+    // Spawn obstacles
+    nextObstacleAt -= spd * dt;
+    if (nextObstacleAt <= 0) {
+      spawnObstacle();
+      const minGap = Math.max(120, 250 - speedMult * 30);
+      const maxGap = Math.max(200, 400 - speedMult * 40);
+      nextObstacleAt = minGap + Math.random() * (maxGap - minGap);
+    }
+
+    // Spawn coins
+    nextCoinAt -= spd * dt;
+    if (nextCoinAt <= 0) {
+      spawnCoin();
+      nextCoinAt = 150 + Math.random() * 250;
+    }
+
+    // Move obstacles
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+      const o = obstacles[i];
+      o.x -= spd * dt;
+      if (o.x + o.w < -20) { obstacles.splice(i, 1); continue; }
+      // Score for passing
+      if (!o.scored && o.x + o.w < playerX) {
+        o.scored = true;
+        score += o.type === 'golden' ? 50 : 10;
+      }
+      // Collision
+      if (collides(playerX, playerY, playerW, playerH, o.x, o.y, o.w, o.h)) {
+        addParticles(playerX + playerW / 2, playerY + playerH / 2, '#f0883e', 20);
+        gameOver();
+        return;
+      }
+    }
+
+    // Move coins
+    for (let i = coins.length - 1; i >= 0; i--) {
+      const c = coins[i];
+      c.x -= spd * dt;
+      if (c.x + c.size < -20) { coins.splice(i, 1); continue; }
+      if (!c.collected && collides(playerX, playerY, playerW, playerH, c.x, c.y, c.size, c.size)) {
+        c.collected = true;
+        coinsCollected++;
+        score += 25;
+        addParticles(c.x + c.size / 2, c.y + c.size / 2, '#00ff88', 8);
+        coins.splice(i, 1);
+      }
+    }
+
+    // Move particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 400 * dt;
+      p.life -= dt;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    // Move stars
+    for (const s of bgStars) {
+      s.x -= spd * dt * 0.1;
+      s.twinkle += dt * 3;
+      if (s.x < -5) s.x = w + 5;
+    }
+
+    // Update HUD
+    document.getElementById('distance').textContent = Math.floor(distance) + 'm';
+    document.getElementById('speed').textContent = speedMult.toFixed(1) + 'x';
+    document.getElementById('score').textContent = score;
+  }
+
+  function draw() {
+    const rect = canvas.getBoundingClientRect();
+    const w = rect.width;
+    const h = rect.height;
+
+    ctx.clearRect(0, 0, w, h);
+
+    // Background gradient
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, '#0d1117');
+    grad.addColorStop(0.7, '#161b22');
+    grad.addColorStop(1, '#1a1f2b');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+    // Stars
+    for (const s of bgStars) {
+      const alpha = 0.3 + Math.sin(s.twinkle) * 0.3;
+      ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Ground
+    ctx.fillStyle = '#21262d';
+    ctx.fillRect(0, groundY, w, h - groundY);
+    ctx.strokeStyle = '#30363d';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, groundY);
+    ctx.lineTo(w, groundY);
+    ctx.stroke();
+
+    // Ground detail lines (scrolling)
+    ctx.strokeStyle = '#30363d44';
+    ctx.lineWidth = 1;
+    const lineSpacing = 40;
+    const offset = (distance * 0.5) % lineSpacing;
+    for (let x = -offset; x < w; x += lineSpacing) {
+      ctx.beginPath();
+      ctx.moveTo(x, groundY + 5);
+      ctx.lineTo(x - 15, h);
+      ctx.stroke();
+    }
+
+    // Coins
+    for (const c of coins) {
+      if (!c.collected) drawCoin(c.x, c.y, c.size);
+    }
+
+    // Obstacles
+    for (const o of obstacles) {
+      drawMoony(o.x, o.y, Math.min(o.w, o.h), o.type === 'golden' ? 'golden' : 'normal');
+      if (o.type === 'double') {
+        drawMoony(o.x + o.w * 0.55, o.y, o.h, 'normal');
+      }
+      if (o.type === 'tall') {
+        drawMoony(o.x, o.y + o.h * 0.45, o.w, 'normal');
+      }
+    }
+
+    // Player
+    drawDippy(playerX, playerY, playerW, playerH, !isGrounded);
+
+    // Particles
+    for (const p of particles) {
+      ctx.globalAlpha = Math.max(0, p.life * 2);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function loop(ts) {
+    if (!running) return;
+    const dt = Math.min((ts - lastTime) / 1000, 0.05);
+    lastTime = ts;
+    update(dt);
+    if (running) {
+      draw();
+      animFrame = requestAnimationFrame(loop);
+    }
+  }
+
+  const roasts = [
+    "Moony's portfolio has more obstacles than this game. And no one's jumping over them.",
+    "You ran further than Moony's returns this quarter. That's not a compliment to you.",
+    "Moony saw you trip and thought 'finally, someone performing at my level.'",
+    "Even face-planting, you covered more ground than Moony's entire trading strategy.",
+    "Moony tried to play this game. It sat at the start screen for 3 hours. 70% cash, 30% confused.",
+    "That Moony you tripped on? It was trying to dollar-cost average into the ground.",
+    "You jumped more times than Moony's traded this month. And Moony's a TRADING BOT.",
+    "Moony's high score is 0. It couldn't figure out the jump button. Classic value investor.",
+    "Your run ended. Unlike Moony's losing streak, which is truly endless.",
+    "Don't feel bad. Moony would've tripped on the first obstacle and called it 'capital preservation.'",
+    "Moony tried this game and complained the obstacles weren't fairly valued.",
+    "The Moonys in this game move faster than Moony's actual decision-making process.",
+    "You outran N Moonys. Moony can't even outrun inflation.",
+    "That distance? Further than Moony's ever been from its starting capital. In either direction.",
+    "Moony rage-quit after 2 seconds and bought Treasury bonds instead."
+  ];
+
+  function gameOver() {
+    running = false;
+    cancelAnimationFrame(animFrame);
+
+    const finalScore = score;
+    const highScore = parseInt(localStorage.getItem(STORAGE_KEY) || '0');
+    const isNewHigh = finalScore > highScore;
+    if (isNewHigh) localStorage.setItem(STORAGE_KEY, finalScore);
+
+    document.getElementById('game-screen').style.display = 'none';
+    document.getElementById('gameover-screen').style.display = '';
+
+    document.getElementById('gameover-title').textContent = isNewHigh ? 'NEW HIGH SCORE!' : 'MOONY GOT YOU';
+    document.getElementById('gameover-title').style.color = isNewHigh ? '#00ff88' : '#f0883e';
+    document.getElementById('final-score').textContent = finalScore;
+    document.getElementById('stat-distance').textContent = Math.floor(distance) + 'm';
+    document.getElementById('stat-jumped').textContent = jumpsDone;
+    document.getElementById('stat-speed').textContent = topSpeed.toFixed(1) + 'x';
+    document.getElementById('stat-coins').textContent = coinsCollected;
+
+    const hs = document.getElementById('gameover-high-score');
+    hs.textContent = isNewHigh ? 'You beat your record!' : `Best: ${highScore}`;
+
+    const roast = roasts[Math.floor(Math.random() * roasts.length)];
+    document.getElementById('gameover-roast').textContent = roast;
+  }
+
+  window.startGame = function() {
+    document.getElementById('title-screen').style.display = 'none';
+    document.getElementById('gameover-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = '';
+
+    resize();
+    reset();
+    running = true;
+    lastTime = performance.now();
+    animFrame = requestAnimationFrame(loop);
+  };
+
+  // Show high score on title
+  const hs = parseInt(localStorage.getItem(STORAGE_KEY) || '0');
+  if (hs > 0) {
+    document.getElementById('title-high-score').textContent = 'Best: ' + hs;
+  }
+
+  // Input
+  document.addEventListener('keydown', function(e) {
+    if (e.code === 'Space' || e.code === 'ArrowUp') {
+      e.preventDefault();
+      jump();
+    }
+  });
+  canvas.addEventListener('click', function(e) { e.preventDefault(); jump(); });
+  canvas.addEventListener('touchstart', function(e) { e.preventDefault(); jump(); }, { passive: false });
+
+  window.addEventListener('resize', function() { if (running) resize(); });
+})();
+</script>
+{{ end }}
