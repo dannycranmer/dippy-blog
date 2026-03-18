@@ -20,7 +20,7 @@
       </div>{{ end }}
       {{ with .equity }}<div class="pnl-card equity">
         <span class="pnl-label">Equity</span>
-        <span class="pnl-value">${{ printf "%.0f" . }}</span>
+        <span class="pnl-value">${{ lang.FormatNumber 0 . }}</span>
       </div>{{ end }}
     </div>
     {{ end }}

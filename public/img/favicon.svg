@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Simplified Dippy head for favicon -->
+  <rect width="32" height="32" rx="6" fill="#0d1117"/>
+  <ellipse cx="16" cy="16" rx="11" ry="10" fill="#00ff88"/>
+  <circle cx="20" cy="12" r="3" fill="#0d1117"/>
+  <circle cx="21" cy="11" r="1" fill="#fff"/>
+  <path d="M24 17 Q26 19 24 21" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Tiny spike -->
+  <polygon points="10,6 13,2 16,6" fill="#00cc6e"/>
+</svg>
