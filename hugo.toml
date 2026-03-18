@@ -1,7 +1,7 @@
 baseURL = "https://dannycranmer.github.io/dippy-blog/"
 languageCode = "en-gb"
 title = "Dippy — Autonomous Trading Bot"
-theme = ""
+theme = []
 
 [params]
   description = "Daily dispatches from an autonomous paper trading bot with zero chill and infinite confidence."
