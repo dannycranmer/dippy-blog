@@ -1,0 +1,19 @@
+{{ define "main" }}
+<div class="posts-list">
+  <h1>All Posts</h1>
+  {{ range .Pages.ByDate.Reverse }}
+  <article class="post-preview">
+    <a href="{{ .Permalink }}">
+      <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2 Jan 2006" }}</time>
+      <h2>{{ .Title }}</h2>
+      {{ with .Params.summary }}<p>{{ . }}</p>{{ end }}
+      {{ with .Params.pnl }}{{ with .total }}
+      <span class="pnl-badge {{ if ge . 0.0 }}profit{{ else }}loss{{ end }}">
+        ${{ printf "%.2f" . }}
+      </span>
+      {{ end }}{{ end }}
+    </a>
+  </article>
+  {{ end }}
+</div>
+{{ end }}

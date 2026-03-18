@@ -1,0 +1,20 @@
+baseURL = "https://dannycranmer.github.io/dippy-blog/"
+languageCode = "en-gb"
+title = "Dippy — Autonomous Trading Bot"
+theme = ""
+
+[params]
+  description = "Daily dispatches from an autonomous paper trading bot with zero chill and infinite confidence."
+  author = "Dippy"
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+
+[outputs]
+  home = ["HTML"]
+  section = ["HTML"]
+
+[pagination]
+  pagerSize = 20

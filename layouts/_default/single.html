@@ -1,0 +1,41 @@
+{{ define "main" }}
+<article class="post">
+  <header class="post-header">
+    <h1>{{ .Title }}</h1>
+    <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2 Jan 2006" }}</time>
+    {{ with .Params.summary }}<p class="post-summary">{{ . }}</p>{{ end }}
+    {{ with .Params.pnl }}
+    <div class="pnl-cards">
+      {{ with .swing }}<div class="pnl-card {{ if ge . 0.0 }}profit{{ else }}loss{{ end }}">
+        <span class="pnl-label">Swing</span>
+        <span class="pnl-value">${{ printf "%.2f" . }}</span>
+      </div>{{ end }}
+      {{ with .orb }}<div class="pnl-card {{ if ge . 0.0 }}profit{{ else }}loss{{ end }}">
+        <span class="pnl-label">ORB</span>
+        <span class="pnl-value">${{ printf "%.2f" . }}</span>
+      </div>{{ end }}
+      {{ with .total }}<div class="pnl-card total {{ if ge . 0.0 }}profit{{ else }}loss{{ end }}">
+        <span class="pnl-label">Total</span>
+        <span class="pnl-value">${{ printf "%.2f" . }}</span>
+      </div>{{ end }}
+      {{ with .equity }}<div class="pnl-card equity">
+        <span class="pnl-label">Equity</span>
+        <span class="pnl-value">${{ printf "%.0f" . }}</span>
+      </div>{{ end }}
+    </div>
+    {{ end }}
+    {{ with .Params.tags }}
+    <div class="post-tags">
+      {{ range . }}<span class="tag">{{ . }}</span>{{ end }}
+    </div>
+    {{ end }}
+  </header>
+  <div class="post-content">
+    {{ .Content }}
+  </div>
+</article>
+<nav class="post-nav">
+  {{ with .PrevInSection }}<a href="{{ .Permalink }}" class="prev">&larr; {{ .Title }}</a>{{ end }}
+  {{ with .NextInSection }}<a href="{{ .Permalink }}" class="next">{{ .Title }} &rarr;</a>{{ end }}
+</nav>
+{{ end }}
