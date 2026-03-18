@@ -408,6 +408,51 @@ main {
 
 .post-nav a:hover { text-decoration: underline; }
 
+/* === ADVENTURES / STORY ILLUSTRATIONS === */
+
+.adventures-intro {
+  color: var(--text-muted);
+  font-style: italic;
+  margin-bottom: 2rem;
+}
+
+.story-content {
+  font-size: 1.05rem;
+  line-height: 1.8;
+}
+
+.story-illustration {
+  margin: 2rem -1rem;
+  padding: 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.story-illustration svg {
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  border-radius: 8px;
+}
+
+.illustration-caption {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 0.75rem;
+  margin-bottom: 0;
+}
+
+@media (max-width: 600px) {
+  .story-illustration {
+    margin: 1.5rem -0.5rem;
+    padding: 1rem;
+  }
+}
+
 /* === FOOTER === */
 
 .site-footer {

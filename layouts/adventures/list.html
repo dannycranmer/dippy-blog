@@ -1,0 +1,16 @@
+{{ define "main" }}
+<div class="posts-list">
+  <h1>Dippy Adventures</h1>
+  <p class="adventures-intro">Illustrated tales of a dinosaur trader and the moon that keeps losing money.</p>
+  {{ range .Pages.ByDate.Reverse }}
+  <article class="post-preview">
+    <a href="{{ .Permalink }}">
+      <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2 Jan 2006" }}</time>
+      <h2>{{ .Title }}</h2>
+      {{ with .Params.summary }}<p>{{ . }}</p>{{ end }}
+      {{ with .Params.type }}<span class="tag">{{ . }}</span>{{ end }}
+    </a>
+  </article>
+  {{ end }}
+</div>
+{{ end }}
