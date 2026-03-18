@@ -1,0 +1,730 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">MOONY DODGE</h1>
+    <p class="game-subtitle">Dodge falling Moonys. Collect coins.<br>Survive as long as you can.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">START</button>
+    <p class="game-hint">Tap left/right to move. Swipe on mobile.<br>Moony falls from the sky because that's all it knows how to do.</p>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="score">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">TIME</span>
+        <span class="hud-value" id="timer">0s</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">COINS</span>
+        <span class="hud-value" id="coins">0</span>
+      </div>
+    </div>
+    <canvas id="game-canvas"></canvas>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="gameover-title" id="gameover-title">MOONY GOT YOU</h1>
+    <div class="final-score">
+      <span class="final-label">FINAL SCORE</span>
+      <span class="final-value" id="final-score">0</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-time">0s</span><span class="stat-label">Survived</span></div>
+      <div class="stat"><span class="stat-val" id="stat-coins">0</span><span class="stat-label">Coins</span></div>
+      <div class="stat"><span class="stat-val" id="stat-dodged">0</span><span class="stat-label">Dodged</span></div>
+      <div class="stat"><span class="stat-val" id="stat-speed">1x</span><span class="stat-label">Max Speed</span></div>
+    </div>
+    <div class="high-score-display" id="gameover-high-score"></div>
+    <p class="gameover-roast" id="gameover-roast"></p>
+    <button id="replay-btn" onclick="startGame()">PLAY AGAIN</button>
+  </div>
+</div>
+
+<style>
+  #game-wrapper {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #title-screen {
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+  }
+  .title-dippy {
+    margin-bottom: 1rem;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  .game-title {
+    font-size: 2.2rem;
+    color: #00ff88;
+    margin: 0 0 0.5rem;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .game-subtitle {
+    color: #8b949e;
+    font-size: 0.95rem;
+    margin: 0 0 1.5rem;
+    line-height: 1.5;
+  }
+  .game-hint {
+    color: #484f58;
+    font-size: 0.8rem;
+    margin-top: 1.5rem;
+    font-style: italic;
+    line-height: 1.5;
+  }
+  .high-score-display {
+    color: #f0883e;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    min-height: 1.2em;
+  }
+  #start-btn, #replay-btn {
+    background: #00ff88;
+    color: #0d1117;
+    border: none;
+    padding: 0.9rem 3rem;
+    font-size: 1.2rem;
+    font-weight: 800;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 1px;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  #start-btn:active, #replay-btn:active {
+    transform: scale(0.95);
+  }
+  #start-btn:hover, #replay-btn:hover {
+    box-shadow: 0 0 20px rgba(0,255,136,0.4);
+  }
+
+  .game-hud {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 360px;
+    margin-bottom: 0.5rem;
+    gap: 0.5rem;
+  }
+  .hud-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 0.4rem;
+  }
+  .hud-label {
+    font-size: 0.65rem;
+    color: #484f58;
+    letter-spacing: 1px;
+  }
+  .hud-value {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #e6edf3;
+  }
+  #timer { color: #f0883e; }
+  #coins { color: #d2a8ff; }
+
+  #game-canvas {
+    width: 100%;
+    max-width: 360px;
+    aspect-ratio: 3/4;
+    background: #0d1117;
+    border: 2px solid #30363d;
+    border-radius: 12px;
+    display: block;
+  }
+
+  #gameover-screen {
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .gameover-title {
+    font-size: 2rem;
+    color: #f0883e;
+    margin: 0 0 1rem;
+  }
+  .final-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .final-label {
+    font-size: 0.8rem;
+    color: #484f58;
+    letter-spacing: 1px;
+  }
+  .final-value {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #00ff88;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .stats-row {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .stat-val {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #e6edf3;
+  }
+  .stat-label {
+    font-size: 0.7rem;
+    color: #484f58;
+    letter-spacing: 1px;
+  }
+  .gameover-roast {
+    color: #8b949e;
+    font-size: 0.9rem;
+    margin: 1rem 0 1.5rem;
+    font-style: italic;
+    line-height: 1.5;
+    min-height: 2.5em;
+  }
+</style>
+
+<script>
+(function() {
+  const ROASTS = [
+    "Moony finally caught something. Too bad it was you, not a profit.",
+    "You lasted longer than Moony's last trade. That's not saying much.",
+    "Moony celebrated that kill by sitting in 70% cash. Classic.",
+    "Don't worry — Moony's portfolio dodges gains the same way.",
+    "Dippy down but never out. Moony down and permanently confused.",
+    "That Moony came out of nowhere. Like Moony's random value picks.",
+    "You dodged more Moonys than Moony dodged bad decisions.",
+    "Moony's reflexes are so slow it would lose to itself in this game.",
+    "Even gravity gives Moony an advantage and it still can't trade.",
+    "Moony threw everything at you. Just like it throws money at dying stocks.",
+    "Your survival instincts are sharper than Moony's entire investment thesis.",
+    "Moony wins this round. Moony loses every other round. Forever.",
+  ];
+
+  const canvas = document.getElementById('game-canvas');
+  const ctx = canvas.getContext('2d');
+
+  let gameActive = false;
+  let animFrame = null;
+  let score = 0;
+  let coinCount = 0;
+  let dodged = 0;
+  let elapsed = 0;
+  let maxSpeed = 1;
+  let lastTime = 0;
+  let spawnTimer = 0;
+  let coinSpawnTimer = 0;
+
+  // Game objects
+  let dippy = { x: 0, y: 0, w: 0, h: 0, targetX: 0, lane: 2 };
+  let moonys = [];
+  let coins = [];
+  let particles = [];
+
+  const LANES = 5;
+  let laneWidth = 0;
+  let canvasW = 0;
+  let canvasH = 0;
+
+  function getHighScore() {
+    try { return parseInt(localStorage.getItem('moony-dodge-high') || '0'); } catch(e) { return 0; }
+  }
+  function setHighScore(s) {
+    try { localStorage.setItem('moony-dodge-high', s); } catch(e) {}
+  }
+
+  function showScreen(id) {
+    ['title-screen','game-screen','gameover-screen'].forEach(s => {
+      document.getElementById(s).style.display = s === id ? '' : 'none';
+    });
+  }
+
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * window.devicePixelRatio;
+    canvas.height = rect.height * window.devicePixelRatio;
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    canvasW = rect.width;
+    canvasH = rect.height;
+    laneWidth = canvasW / LANES;
+    dippy.w = laneWidth * 0.7;
+    dippy.h = dippy.w * 1.2;
+    dippy.y = canvasH - dippy.h - 10;
+    dippy.targetX = (dippy.lane + 0.5) * laneWidth - dippy.w / 2;
+    dippy.x = dippy.targetX;
+  }
+
+  function drawDippy() {
+    const cx = dippy.x + dippy.w / 2;
+    const cy = dippy.y + dippy.h / 2;
+    const s = dippy.w / 50;
+
+    // Body
+    ctx.fillStyle = '#00ff88';
+    ctx.beginPath();
+    ctx.ellipse(cx - 2*s, cy + 6*s, 14*s, 12*s, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Tail
+    ctx.beginPath();
+    ctx.moveTo(cx - 16*s, cy + 2*s);
+    ctx.quadraticCurveTo(cx - 24*s, cy - 6*s, cx - 26*s, cy - 14*s);
+    ctx.quadraticCurveTo(cx - 22*s, cy - 12*s, cx - 20*s, cy - 10*s);
+    ctx.quadraticCurveTo(cx - 22*s, cy - 16*s, cx - 20*s, cy - 20*s);
+    ctx.quadraticCurveTo(cx - 18*s, cy - 14*s, cx - 16*s, cy - 10*s);
+    ctx.quadraticCurveTo(cx - 16*s, cy - 18*s, cx - 12*s, cy - 22*s);
+    ctx.quadraticCurveTo(cx - 14*s, cy - 12*s, cx - 14*s, cy - 6*s);
+    ctx.quadraticCurveTo(cx - 12*s, cy, cx - 10*s, cy + 2*s);
+    ctx.fill();
+
+    // Neck + Head
+    ctx.beginPath();
+    ctx.moveTo(cx + 8*s, cy);
+    ctx.quadraticCurveTo(cx + 14*s, cy - 8*s, cx + 12*s, cy - 16*s);
+    ctx.stroke();
+    ctx.lineWidth = 8*s;
+    ctx.strokeStyle = '#00ff88';
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx + 8*s, cy);
+    ctx.quadraticCurveTo(cx + 14*s, cy - 8*s, cx + 12*s, cy - 16*s);
+    ctx.stroke();
+    ctx.lineWidth = 1;
+
+    // Head
+    ctx.fillStyle = '#00ff88';
+    ctx.beginPath();
+    ctx.ellipse(cx + 12*s, cy - 22*s, 9*s, 7*s, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Eye
+    ctx.fillStyle = '#0d1117';
+    ctx.beginPath();
+    ctx.arc(cx + 15*s, cy - 24*s, 2*s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(cx + 15.7*s, cy - 25*s, 0.8*s, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Spikes
+    ctx.fillStyle = '#00cc6e';
+    const spikes = [[cx - 4*s, cy - 2*s, 4*s], [cx, cy - 4*s, 5*s], [cx + 4*s, cy - 2*s, 4*s]];
+    spikes.forEach(([sx, sy, sh]) => {
+      ctx.beginPath();
+      ctx.moveTo(sx - 2*s, sy);
+      ctx.lineTo(sx, sy - sh);
+      ctx.lineTo(sx + 2*s, sy);
+      ctx.fill();
+    });
+
+    // Legs
+    ctx.fillStyle = '#00cc6e';
+    ctx.fillRect(cx - 8*s, cy + 14*s, 4*s, 8*s);
+    ctx.fillRect(cx + 2*s, cy + 14*s, 4*s, 8*s);
+  }
+
+  function drawMoony(x, y, r, golden) {
+    // Circle body
+    ctx.fillStyle = golden ? '#f0883e' : '#6e7681';
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Crescent cutout
+    ctx.fillStyle = '#0d1117';
+    ctx.beginPath();
+    ctx.arc(x - r * 0.35, y, r * 0.75, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Eye
+    ctx.fillStyle = golden ? '#ffd700' : '#484f58';
+    ctx.beginPath();
+    ctx.arc(x + r * 0.3, y - r * 0.2, r * 0.12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#0d1117';
+    ctx.beginPath();
+    ctx.arc(x + r * 0.3, y - r * 0.2, r * 0.06, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Frown
+    ctx.strokeStyle = golden ? '#ffd700' : '#484f58';
+    ctx.lineWidth = r * 0.06;
+    ctx.beginPath();
+    ctx.arc(x + r * 0.25, y + r * 0.15, r * 0.15, Math.PI * 0.2, Math.PI * 0.8);
+    ctx.stroke();
+    ctx.lineWidth = 1;
+
+    if (golden) {
+      ctx.fillStyle = '#ffd700';
+      ctx.font = `bold ${r * 0.3}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.fillText('$$$', x, y + r * 0.55);
+    }
+  }
+
+  function drawCoin(x, y, r) {
+    ctx.fillStyle = '#00ff88';
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#0d1117';
+    ctx.font = `bold ${r * 1.2}px monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('$', x, y + 1);
+  }
+
+  function drawParticles() {
+    particles.forEach(p => {
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  function spawnParticles(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: x, y: y,
+        vx: (Math.random() - 0.5) * 4,
+        vy: (Math.random() - 0.5) * 4,
+        r: Math.random() * 3 + 1,
+        life: 1,
+        color: color
+      });
+    }
+  }
+
+  function getSpeed() {
+    // Speed increases every 5 seconds
+    return 1 + Math.floor(elapsed / 5) * 0.15;
+  }
+
+  function update(dt) {
+    elapsed += dt;
+    const speed = getSpeed();
+    if (speed > maxSpeed) maxSpeed = speed;
+
+    // Smooth dippy movement
+    const dx = dippy.targetX - dippy.x;
+    dippy.x += dx * Math.min(1, dt * 12);
+
+    // Spawn moonys
+    spawnTimer -= dt;
+    if (spawnTimer <= 0) {
+      const spawnInterval = Math.max(0.3, 1.2 - elapsed * 0.01);
+      spawnTimer = spawnInterval;
+      const lane = Math.floor(Math.random() * LANES);
+      const r = laneWidth * 0.3;
+      const golden = Math.random() < 0.08;
+      moonys.push({
+        x: (lane + 0.5) * laneWidth,
+        y: -r,
+        r: r,
+        speed: (1.5 + Math.random() * 0.8) * speed,
+        golden: golden,
+        lane: lane
+      });
+    }
+
+    // Spawn coins
+    coinSpawnTimer -= dt;
+    if (coinSpawnTimer <= 0) {
+      coinSpawnTimer = Math.max(0.8, 2.5 - elapsed * 0.02);
+      const lane = Math.floor(Math.random() * LANES);
+      const r = laneWidth * 0.18;
+      const golden = Math.random() < 0.1;
+      coins.push({
+        x: (lane + 0.5) * laneWidth,
+        y: -r,
+        r: r,
+        speed: (1.2 + Math.random() * 0.5) * speed,
+        golden: golden
+      });
+    }
+
+    // Move moonys
+    const moonySize = laneWidth * 0.3;
+    for (let i = moonys.length - 1; i >= 0; i--) {
+      const m = moonys[i];
+      m.y += m.speed * canvasH * dt / 3;
+      if (m.y - m.r > canvasH) {
+        moonys.splice(i, 1);
+        dodged++;
+        score += 5;
+        continue;
+      }
+
+      // Collision with Dippy
+      const dippyCX = dippy.x + dippy.w / 2;
+      const dippyCY = dippy.y + dippy.h / 2;
+      const distX = Math.abs(m.x - dippyCX);
+      const distY = Math.abs(m.y - dippyCY);
+      if (distX < (m.r + dippy.w / 2) * 0.7 && distY < (m.r + dippy.h / 2) * 0.7) {
+        endGame();
+        return;
+      }
+    }
+
+    // Move coins
+    for (let i = coins.length - 1; i >= 0; i--) {
+      const c = coins[i];
+      c.y += c.speed * canvasH * dt / 3;
+      if (c.y - c.r > canvasH) {
+        coins.splice(i, 1);
+        continue;
+      }
+
+      // Collision with Dippy
+      const dippyCX = dippy.x + dippy.w / 2;
+      const dippyCY = dippy.y + dippy.h / 2;
+      const distX = Math.abs(c.x - dippyCX);
+      const distY = Math.abs(c.y - dippyCY);
+      if (distX < (c.r + dippy.w / 2) * 0.8 && distY < (c.r + dippy.h / 2) * 0.8) {
+        const pts = c.golden ? 50 : 10;
+        score += pts;
+        coinCount++;
+        spawnParticles(c.x, c.y, c.golden ? '#ffd700' : '#00ff88', 8);
+        coins.splice(i, 1);
+        if (navigator.vibrate) navigator.vibrate(20);
+      }
+    }
+
+    // Update particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.life -= dt * 2;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    // Update HUD
+    document.getElementById('score').textContent = score;
+    document.getElementById('timer').textContent = Math.floor(elapsed) + 's';
+    document.getElementById('coins').textContent = coinCount;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvasW, canvasH);
+
+    // Draw lane lines (subtle)
+    ctx.strokeStyle = '#21262d';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < LANES; i++) {
+      const x = i * laneWidth;
+      ctx.setLineDash([4, 8]);
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvasH);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    // Draw coins
+    coins.forEach(c => drawCoin(c.x, c.y, c.r));
+
+    // Draw moonys
+    moonys.forEach(m => drawMoony(m.x, m.y, m.r, m.golden));
+
+    // Draw particles
+    drawParticles();
+
+    // Draw Dippy
+    drawDippy();
+
+    // Speed indicator
+    const speed = getSpeed();
+    ctx.fillStyle = speed > 3 ? '#f85149' : speed > 2 ? '#f0883e' : '#8b949e';
+    ctx.font = 'bold 11px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(speed.toFixed(1) + 'x', canvasW - 8, 16);
+  }
+
+  function gameLoop(timestamp) {
+    if (!gameActive) return;
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+    lastTime = timestamp;
+    update(dt);
+    if (!gameActive) return;
+    draw();
+    animFrame = requestAnimationFrame(gameLoop);
+  }
+
+  window.startGame = function() {
+    score = 0;
+    coinCount = 0;
+    dodged = 0;
+    elapsed = 0;
+    maxSpeed = 1;
+    spawnTimer = 0;
+    coinSpawnTimer = 0;
+    moonys = [];
+    coins = [];
+    particles = [];
+    gameActive = true;
+
+    showScreen('game-screen');
+    resizeCanvas();
+
+    dippy.lane = 2;
+    dippy.targetX = (dippy.lane + 0.5) * laneWidth - dippy.w / 2;
+    dippy.x = dippy.targetX;
+
+    document.getElementById('score').textContent = '0';
+    document.getElementById('timer').textContent = '0s';
+    document.getElementById('coins').textContent = '0';
+
+    lastTime = performance.now();
+    animFrame = requestAnimationFrame(gameLoop);
+  };
+
+  function endGame() {
+    gameActive = false;
+    if (animFrame) cancelAnimationFrame(animFrame);
+
+    // Vibrate on death
+    if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('stat-time').textContent = Math.floor(elapsed) + 's';
+    document.getElementById('stat-coins').textContent = coinCount;
+    document.getElementById('stat-dodged').textContent = dodged;
+    document.getElementById('stat-speed').textContent = maxSpeed.toFixed(1) + 'x';
+
+    const prev = getHighScore();
+    const isNew = score > prev;
+    if (isNew) setHighScore(score);
+    document.getElementById('gameover-high-score').textContent = isNew
+      ? 'NEW HIGH SCORE! (prev: ' + prev + ')'
+      : 'High score: ' + prev;
+    document.getElementById('gameover-title').textContent = isNew ? 'NEW RECORD!' : 'MOONY GOT YOU';
+    document.getElementById('gameover-roast').textContent =
+      '"' + ROASTS[Math.floor(Math.random() * ROASTS.length)] + '"';
+
+    showScreen('gameover-screen');
+  }
+
+  // Controls — tap left/right half of canvas
+  canvas.addEventListener('pointerdown', function(e) {
+    if (!gameActive) return;
+    const rect = canvas.getBoundingClientRect();
+    const tapX = e.clientX - rect.left;
+    if (tapX < rect.width / 2) {
+      // Move left
+      dippy.lane = Math.max(0, dippy.lane - 1);
+    } else {
+      // Move right
+      dippy.lane = Math.min(LANES - 1, dippy.lane + 1);
+    }
+    dippy.targetX = (dippy.lane + 0.5) * laneWidth - dippy.w / 2;
+  });
+
+  // Keyboard controls
+  document.addEventListener('keydown', function(e) {
+    if (!gameActive) return;
+    if (e.key === 'ArrowLeft' || e.key === 'a') {
+      dippy.lane = Math.max(0, dippy.lane - 1);
+      dippy.targetX = (dippy.lane + 0.5) * laneWidth - dippy.w / 2;
+    } else if (e.key === 'ArrowRight' || e.key === 'd') {
+      dippy.lane = Math.min(LANES - 1, dippy.lane + 1);
+      dippy.targetX = (dippy.lane + 0.5) * laneWidth - dippy.w / 2;
+    }
+  });
+
+  // Swipe support
+  let touchStartX = 0;
+  canvas.addEventListener('touchstart', function(e) {
+    touchStartX = e.touches[0].clientX;
+  }, { passive: true });
+
+  canvas.addEventListener('touchmove', function(e) {
+    if (!gameActive) return;
+    const dx = e.touches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 20) {
+      if (dx > 0) {
+        dippy.lane = Math.min(LANES - 1, dippy.lane + 1);
+      } else {
+        dippy.lane = Math.max(0, dippy.lane - 1);
+      }
+      dippy.targetX = (dippy.lane + 0.5) * laneWidth - dippy.w / 2;
+      touchStartX = e.touches[0].clientX;
+    }
+  }, { passive: true });
+
+  // Resize handler
+  window.addEventListener('resize', function() {
+    if (gameActive) resizeCanvas();
+  });
+
+  // Show high score on title
+  const hs = getHighScore();
+  if (hs > 0) {
+    document.getElementById('title-high-score').textContent = 'High score: ' + hs;
+  }
+})();
+</script>
+{{ end }}
