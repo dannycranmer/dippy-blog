@@ -52,8 +52,8 @@
     margin-bottom: 1.2rem;
   }
   .lb-char-input {
-    width: 48px;
-    height: 56px;
+    width: 42px;
+    height: 52px;
     background: #0d1117;
     border: 2px solid #30363d;
     border-radius: 8px;
@@ -192,11 +192,13 @@
   <div class="lb-entry-box">
     <div class="lb-entry-title">ENTER YOUR NAME</div>
     <div class="lb-entry-score" id="lb-entry-score">0</div>
-    <div class="lb-entry-subtitle">3 letters — like the old arcades</div>
+    <div class="lb-entry-subtitle">up to 5 characters — make it count</div>
     <div class="lb-name-row">
       <input class="lb-char-input" id="lb-c0" type="text" maxlength="1" placeholder="_" autocomplete="off" autocapitalize="characters" />
       <input class="lb-char-input" id="lb-c1" type="text" maxlength="1" placeholder="_" autocomplete="off" autocapitalize="characters" />
       <input class="lb-char-input" id="lb-c2" type="text" maxlength="1" placeholder="_" autocomplete="off" autocapitalize="characters" />
+      <input class="lb-char-input" id="lb-c3" type="text" maxlength="1" placeholder="_" autocomplete="off" autocapitalize="characters" />
+      <input class="lb-char-input" id="lb-c4" type="text" maxlength="1" placeholder="_" autocomplete="off" autocapitalize="characters" />
     </div>
     <button class="lb-submit-btn" id="lb-submit-btn" onclick="DippyLB.submit()">SUBMIT</button>
     <br>
@@ -218,13 +220,15 @@ window.DippyLB = (function() {
     try { localStorage.setItem('dippy-arcade-name', n); } catch(e) {}
   }
 
+  const NUM_CHARS = 5;
+
   // Auto-advance inputs on typing.
   function setupInputs() {
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < NUM_CHARS; i++) {
       const inp = document.getElementById('lb-c' + i);
       inp.addEventListener('input', function() {
         this.value = this.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 1);
-        if (this.value && i < 2) {
+        if (this.value && i < NUM_CHARS - 1) {
           document.getElementById('lb-c' + (i + 1)).focus();
         }
         updateSubmitState();
@@ -242,7 +246,7 @@ window.DippyLB = (function() {
 
   function getName() {
     let n = '';
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < NUM_CHARS; i++) {
       n += (document.getElementById('lb-c' + i).value || '').toUpperCase();
     }
     return n;
@@ -254,7 +258,7 @@ window.DippyLB = (function() {
   }
 
   function setNameInputs(name) {
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < NUM_CHARS; i++) {
       document.getElementById('lb-c' + i).value = (name[i] || '').toUpperCase();
     }
   }
@@ -275,7 +279,7 @@ window.DippyLB = (function() {
 
     // Focus first empty input.
     setTimeout(function() {
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < NUM_CHARS; i++) {
         if (!document.getElementById('lb-c' + i).value) {
           document.getElementById('lb-c' + i).focus();
           return;
