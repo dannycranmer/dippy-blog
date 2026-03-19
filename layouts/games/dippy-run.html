@@ -287,7 +287,7 @@
   const JUMP_VEL = -750;
   const GROUND_Y = 0.78; // fraction of canvas height
   const BASE_SPEED = 280; // px/s at 1x
-  const SPEED_INCREMENT = 0.08; // per 500m
+  const SPEED_INCREMENT = 0.06; // per 500m (gentler ramp)
   const MAX_SPEED_MULT = 4.0;
 
   // Player
@@ -538,10 +538,13 @@
   }
 
   function collides(ax, ay, aw, ah, bx, by, bw, bh) {
-    const shrink = 0.2;
-    const asx = ax + aw * shrink, asy = ay + ah * shrink;
-    const asw = aw * (1 - 2 * shrink), ash = ah * (1 - 2 * shrink);
-    return asx < bx + bw && asx + asw > bx && asy < by + bh && asy + ash > by;
+    // Shrink both hitboxes for forgiving collisions
+    const s = 0.25;
+    const asx = ax + aw * s, asy = ay + ah * s;
+    const asw = aw * (1 - 2 * s), ash = ah * (1 - 2 * s);
+    const bsx = bx + bw * s, bsy = by + bh * s;
+    const bsw = bw * (1 - 2 * s), bsh = bh * (1 - 2 * s);
+    return asx < bsx + bsw && asx + asw > bsx && asy < bsy + bsh && asy + ash > bsy;
   }
 
   function update(dt) {
@@ -573,8 +576,9 @@
     nextObstacleAt -= spd * dt;
     if (nextObstacleAt <= 0) {
       spawnObstacle();
-      const minGap = Math.max(120, 250 - speedMult * 30);
-      const maxGap = Math.max(200, 400 - speedMult * 40);
+      // Scale gaps with speed so jump+land+jump is always possible
+      const minGap = Math.max(180, 280 - speedMult * 20);
+      const maxGap = Math.max(280, 450 - speedMult * 30);
       nextObstacleAt = minGap + Math.random() * (maxGap - minGap);
     }
 
