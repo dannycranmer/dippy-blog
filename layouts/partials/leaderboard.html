@@ -112,6 +112,7 @@
   /* Leaderboard table */
   .lb-board {
     margin-top: 1rem;
+    margin-bottom: 1rem;
     width: 100%;
     max-width: 340px;
     margin-left: auto;
@@ -319,13 +320,14 @@ window.DippyLB = (function() {
   }
 
   // Render leaderboard into a container.
-  function renderBoard(container, scores, highlightName) {
+  function renderBoard(container, scores, highlightName, maxEntries) {
     if (!container) return;
+    var limit = maxEntries || 10;
     let html = '<div class="lb-board"><div class="lb-board-title">TOP SCORES</div>';
     if (!scores || scores.length === 0) {
       html += '<div class="lb-empty">No scores yet. Be the first!</div>';
     } else {
-      scores.slice(0, 10).forEach(function(s, i) {
+      scores.slice(0, limit).forEach(function(s, i) {
         const isMe = highlightName && s.name === highlightName;
         html += '<div class="lb-row' + (isMe ? ' lb-me' : '') + '">';
         html += '<span class="lb-rank">' + (i + 1) + '</span>';
@@ -369,10 +371,10 @@ window.DippyLB = (function() {
         hideEntry();
         btn.textContent = 'SUBMIT';
         btn.disabled = false;
-        // Refresh boards.
+        // Refresh boards — 5 on game-over, 10 on title.
         fetchBoard().then(function(scores) {
-          renderBoard(document.getElementById('lb-gameover'), scores, name);
-          renderBoard(document.getElementById('lb-title'), scores, name);
+          renderBoard(document.getElementById('lb-gameover'), scores, name, 5);
+          renderBoard(document.getElementById('lb-title'), scores, name, 10);
           if (onDoneCallback) onDoneCallback(scores);
         });
       });
@@ -382,8 +384,8 @@ window.DippyLB = (function() {
       hideEntry();
       // Still fetch and show board without submitting.
       fetchBoard().then(function(scores) {
-        renderBoard(document.getElementById('lb-gameover'), scores);
-        renderBoard(document.getElementById('lb-title'), scores);
+        renderBoard(document.getElementById('lb-gameover'), scores, null, 5);
+        renderBoard(document.getElementById('lb-title'), scores, null, 10);
         if (onDoneCallback) onDoneCallback(scores);
       });
     },
