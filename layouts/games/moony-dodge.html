@@ -26,6 +26,7 @@
     <div class="high-score-display" id="title-high-score"></div>
     <button id="start-btn" onclick="startGame()">START</button>
     <p class="game-hint">Tap left/right to move. Swipe on mobile.<br>Moony falls from the sky because that's all it knows how to do.</p>
+    <div id="lb-title" class="lb-title-section"></div>
   </div>
 
   <!-- Game Screen -->
@@ -62,9 +63,11 @@
     </div>
     <div class="high-score-display" id="gameover-high-score"></div>
     <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
     <button id="replay-btn" onclick="startGame()">PLAY AGAIN</button>
   </div>
 </div>
+{{ partial "leaderboard" . }}
 
 <style>
   #game-wrapper {
@@ -666,6 +669,7 @@
       '"' + ROASTS[Math.floor(Math.random() * ROASTS.length)] + '"';
 
     showScreen('gameover-screen');
+    if (typeof DippyLB !== 'undefined') DippyLB.onGameOver(score);
   }
 
   // Controls — tap left/right half of canvas
@@ -725,6 +729,7 @@
   if (hs > 0) {
     document.getElementById('title-high-score').textContent = 'High score: ' + hs;
   }
+  if (typeof DippyLB !== 'undefined') DippyLB.init('moony-dodge');
 })();
 </script>
 {{ end }}

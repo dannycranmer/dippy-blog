@@ -26,6 +26,7 @@
     <div class="high-score-display" id="title-high-score"></div>
     <button id="start-btn" onclick="startGame()">START TRADING</button>
     <p class="game-hint">Moony's trading strategy: stare at charts, do nothing, lose money to inflation.</p>
+    <div id="lb-title" class="lb-title-section"></div>
   </div>
 
   <!-- Game Screen -->
@@ -95,10 +96,12 @@
     </div>
     <div class="gameover-roast" id="gameover-roast"></div>
     <div class="high-score-display" id="gameover-high-score"></div>
+    <div id="lb-gameover"></div>
     <button id="restart-btn" onclick="startGame()">TRADE AGAIN</button>
     <a href="/games/" class="back-link">Back to Arcade</a>
   </div>
 </div>
+{{ partial "leaderboard" . }}
 
 <style>
   #game-wrapper {
@@ -607,6 +610,8 @@
     else roasts = evenRoasts;
     document.getElementById('gameover-roast').textContent = roasts[Math.floor(Math.random() * roasts.length)];
 
+    DippyLB.onGameOver(Math.max(0, Math.round(finalValue)));
+
     // High score
     var prev = parseFloat(localStorage.getItem(LS_KEY)) || -Infinity;
     if (returnPct > prev) {
@@ -661,6 +666,7 @@
 
   // Init
   showHighScore('title-high-score');
+  DippyLB.init('candle-trader');
 })();
 </script>
 {{ end }}

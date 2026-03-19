@@ -26,6 +26,7 @@
     <div class="high-score-display" id="title-high-score"></div>
     <button id="start-btn" onclick="startGame()">START</button>
     <p class="game-hint">Tap, click, or press Space to jump.<br>Moony's just sitting there being an obstacle. As usual.</p>
+    <div id="lb-title" class="lb-title-section"></div>
   </div>
 
   <!-- Game Screen -->
@@ -63,9 +64,11 @@
     </div>
     <div class="high-score-display" id="gameover-high-score"></div>
     <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
     <button id="replay-btn" onclick="startGame()">PLAY AGAIN</button>
   </div>
 </div>
+{{ partial "leaderboard" . }}
 
 <style>
   #game-wrapper {
@@ -774,6 +777,8 @@
 
     const roast = roasts[Math.floor(Math.random() * roasts.length)];
     document.getElementById('gameover-roast').textContent = roast;
+
+    if (typeof DippyLB !== 'undefined') DippyLB.onGameOver(finalScore);
   }
 
   window.startGame = function() {
@@ -808,6 +813,8 @@
   jumpBtn.addEventListener('touchstart', function(e) { e.preventDefault(); jump(); }, { passive: false });
 
   window.addEventListener('resize', function() { if (running) resize(); });
+
+  if (typeof DippyLB !== 'undefined') DippyLB.init('dippy-run');
 })();
 </script>
 {{ end }}

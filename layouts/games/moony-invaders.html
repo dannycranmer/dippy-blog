@@ -26,6 +26,7 @@
     <div class="high-score-display" id="title-high-score"></div>
     <button id="start-btn" onclick="startGame()">START</button>
     <p class="game-hint">Moony's army is invading from the top of the screen.<br>Dippy's the last line of defence. Don't let them land.</p>
+    <div id="lb-title" class="lb-title-section"></div>
   </div>
 
   <!-- Game Screen -->
@@ -66,9 +67,11 @@
     </div>
     <div class="high-score-display" id="gameover-high-score"></div>
     <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
     <button id="replay-btn" onclick="startGame()">PLAY AGAIN</button>
   </div>
 </div>
+{{ partial "leaderboard" . }}
 
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -538,6 +541,8 @@
     document.getElementById('gameover-screen').style.alignItems = 'center';
     document.getElementById('gameover-screen').style.justifyContent = 'center';
     document.getElementById('gameover-screen').style.minHeight = '60vh';
+
+    if (typeof DippyLB !== 'undefined') DippyLB.onGameOver(score);
   }
 
   // Keyboard
@@ -562,6 +567,8 @@
 
   // Expose startGame globally
   window.startGame = startGame;
+
+  if (typeof DippyLB !== 'undefined') DippyLB.init('moony-invaders');
 })();
 </script>
 {{ end }}

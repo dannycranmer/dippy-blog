@@ -1,0 +1,400 @@
+{{/* Dippy Arcade Leaderboard — include in any game template */}}
+<style>
+  /* Name entry overlay */
+  #lb-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(13,17,23,0.92);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    animation: lbFadeIn 0.3s ease;
+  }
+  #lb-overlay.active { display: flex; }
+  @keyframes lbFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .lb-entry-box {
+    background: #161b22;
+    border: 2px solid #00ff88;
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    max-width: 340px;
+    width: 90%;
+    box-shadow: 0 0 40px rgba(0,255,136,0.15);
+  }
+  .lb-entry-title {
+    color: #00ff88;
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    margin: 0 0 0.3rem;
+  }
+  .lb-entry-score {
+    color: #f0883e;
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin: 0.5rem 0;
+  }
+  .lb-entry-subtitle {
+    color: #8b949e;
+    font-size: 0.85rem;
+    margin: 0 0 1.2rem;
+  }
+  .lb-name-row {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 1.2rem;
+  }
+  .lb-char-input {
+    width: 48px;
+    height: 56px;
+    background: #0d1117;
+    border: 2px solid #30363d;
+    border-radius: 8px;
+    color: #00ff88;
+    font-size: 1.8rem;
+    font-weight: 800;
+    text-align: center;
+    font-family: inherit;
+    text-transform: uppercase;
+    caret-color: #00ff88;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .lb-char-input:focus {
+    border-color: #00ff88;
+    box-shadow: 0 0 10px rgba(0,255,136,0.2);
+  }
+  .lb-char-input::placeholder {
+    color: #30363d;
+    font-size: 1.4rem;
+  }
+  .lb-submit-btn {
+    background: #00ff88;
+    color: #0d1117;
+    border: none;
+    padding: 0.8rem 2.5rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 1px;
+    transition: transform 0.1s, box-shadow 0.1s;
+    margin-bottom: 0.5rem;
+  }
+  .lb-submit-btn:active { transform: scale(0.95); }
+  .lb-submit-btn:hover { box-shadow: 0 0 20px rgba(0,255,136,0.4); }
+  .lb-submit-btn:disabled {
+    background: #30363d;
+    color: #484f58;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .lb-skip-btn {
+    background: none;
+    border: none;
+    color: #484f58;
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-family: inherit;
+    padding: 0.3rem;
+    text-decoration: underline;
+  }
+  .lb-skip-btn:hover { color: #8b949e; }
+
+  /* Leaderboard table */
+  .lb-board {
+    margin-top: 1rem;
+    width: 100%;
+    max-width: 340px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .lb-board-title {
+    color: #f0883e;
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    margin: 0 0 0.6rem;
+    text-align: center;
+  }
+  .lb-row {
+    display: flex;
+    align-items: center;
+    padding: 0.35rem 0.6rem;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    font-size: 0.85rem;
+    transition: background 0.15s;
+  }
+  .lb-row:nth-child(odd) { background: rgba(22,27,34,0.6); }
+  .lb-row.lb-me { background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.2); }
+  .lb-rank {
+    color: #484f58;
+    font-weight: 800;
+    width: 28px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .lb-row:nth-child(1) .lb-rank { color: #ffd700; }
+  .lb-row:nth-child(2) .lb-rank { color: #c0c0c0; }
+  .lb-row:nth-child(3) .lb-rank { color: #cd7f32; }
+  .lb-name {
+    color: #e6edf3;
+    font-weight: 700;
+    flex: 1;
+    letter-spacing: 1px;
+  }
+  .lb-score-val {
+    color: #00ff88;
+    font-weight: 800;
+    text-align: right;
+    min-width: 50px;
+  }
+  .lb-empty {
+    color: #484f58;
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 1rem;
+    font-style: italic;
+  }
+  .lb-loading {
+    color: #484f58;
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 0.5rem;
+  }
+
+  /* Title screen leaderboard (compact) */
+  .lb-title-section {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .lb-title-section .lb-board {
+    margin-top: 0.5rem;
+  }
+  .lb-title-section .lb-row {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+  .lb-title-section .lb-rank { width: 24px; }
+</style>
+
+<!-- Name entry overlay -->
+<div id="lb-overlay">
+  <div class="lb-entry-box">
+    <div class="lb-entry-title">ENTER YOUR NAME</div>
+    <div class="lb-entry-score" id="lb-entry-score">0</div>
+    <div class="lb-entry-subtitle">3 letters — like the old arcades</div>
+    <div class="lb-name-row">
+      <input class="lb-char-input" id="lb-c0" type="text" maxlength="1" placeholder="_" autocomplete="off" autocapitalize="characters" />
+      <input class="lb-char-input" id="lb-c1" type="text" maxlength="1" placeholder="_" autocomplete="off" autocapitalize="characters" />
+      <input class="lb-char-input" id="lb-c2" type="text" maxlength="1" placeholder="_" autocomplete="off" autocapitalize="characters" />
+    </div>
+    <button class="lb-submit-btn" id="lb-submit-btn" onclick="DippyLB.submit()">SUBMIT</button>
+    <br>
+    <button class="lb-skip-btn" onclick="DippyLB.skip()">skip</button>
+  </div>
+</div>
+
+<script>
+window.DippyLB = (function() {
+  const API = 'https://custom-yacht-offering-mambo.trycloudflare.com';
+  let gameSlug = '';
+  let pendingScore = 0;
+  let onDoneCallback = null;
+
+  function getSavedName() {
+    try { return localStorage.getItem('dippy-arcade-name') || ''; } catch(e) { return ''; }
+  }
+  function saveName(n) {
+    try { localStorage.setItem('dippy-arcade-name', n); } catch(e) {}
+  }
+
+  // Auto-advance inputs on typing.
+  function setupInputs() {
+    for (let i = 0; i < 3; i++) {
+      const inp = document.getElementById('lb-c' + i);
+      inp.addEventListener('input', function() {
+        this.value = this.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 1);
+        if (this.value && i < 2) {
+          document.getElementById('lb-c' + (i + 1)).focus();
+        }
+        updateSubmitState();
+      });
+      inp.addEventListener('keydown', function(e) {
+        if (e.key === 'Backspace' && !this.value && i > 0) {
+          document.getElementById('lb-c' + (i - 1)).focus();
+        }
+        if (e.key === 'Enter') {
+          DippyLB.submit();
+        }
+      });
+    }
+  }
+
+  function getName() {
+    let n = '';
+    for (let i = 0; i < 3; i++) {
+      n += (document.getElementById('lb-c' + i).value || '').toUpperCase();
+    }
+    return n;
+  }
+
+  function updateSubmitState() {
+    const btn = document.getElementById('lb-submit-btn');
+    btn.disabled = getName().length < 1;
+  }
+
+  function setNameInputs(name) {
+    for (let i = 0; i < 3; i++) {
+      document.getElementById('lb-c' + i).value = (name[i] || '').toUpperCase();
+    }
+  }
+
+  // Show name entry overlay.
+  function showEntry(score, callback) {
+    pendingScore = score;
+    onDoneCallback = callback;
+    document.getElementById('lb-entry-score').textContent = score;
+
+    // Pre-fill saved name.
+    const saved = getSavedName();
+    if (saved) setNameInputs(saved);
+    else setNameInputs('');
+
+    document.getElementById('lb-overlay').classList.add('active');
+    updateSubmitState();
+
+    // Focus first empty input.
+    setTimeout(function() {
+      for (let i = 0; i < 3; i++) {
+        if (!document.getElementById('lb-c' + i).value) {
+          document.getElementById('lb-c' + i).focus();
+          return;
+        }
+      }
+      document.getElementById('lb-c0').focus();
+    }, 100);
+  }
+
+  function hideEntry() {
+    document.getElementById('lb-overlay').classList.remove('active');
+  }
+
+  // POST score to API.
+  async function postScore(name, score) {
+    try {
+      await fetch(API + '/api/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game: gameSlug, name: name, score: score }),
+      });
+    } catch(e) {
+      console.warn('Leaderboard submit failed:', e);
+    }
+  }
+
+  // GET leaderboard.
+  async function fetchBoard() {
+    try {
+      const res = await fetch(API + '/api/scores?game=' + encodeURIComponent(gameSlug));
+      if (!res.ok) return [];
+      return await res.json();
+    } catch(e) {
+      console.warn('Leaderboard fetch failed:', e);
+      return [];
+    }
+  }
+
+  // Render leaderboard into a container.
+  function renderBoard(container, scores, highlightName) {
+    if (!container) return;
+    let html = '<div class="lb-board"><div class="lb-board-title">TOP SCORES</div>';
+    if (!scores || scores.length === 0) {
+      html += '<div class="lb-empty">No scores yet. Be the first!</div>';
+    } else {
+      scores.slice(0, 10).forEach(function(s, i) {
+        const isMe = highlightName && s.name === highlightName;
+        html += '<div class="lb-row' + (isMe ? ' lb-me' : '') + '">';
+        html += '<span class="lb-rank">' + (i + 1) + '</span>';
+        html += '<span class="lb-name">' + escHtml(s.name) + '</span>';
+        html += '<span class="lb-score-val">' + s.score.toLocaleString() + '</span>';
+        html += '</div>';
+      });
+    }
+    html += '</div>';
+    container.innerHTML = html;
+  }
+
+  function escHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  // Public API.
+  const lb = {
+    init: function(slug) {
+      gameSlug = slug;
+      setupInputs();
+      // Load leaderboard on title screen if container exists.
+      lb.refreshTitleBoard();
+    },
+
+    // Call this when the game ends. Shows name entry, then calls callback(scores).
+    onGameOver: function(score, callback) {
+      showEntry(score, callback);
+    },
+
+    submit: function() {
+      const name = getName();
+      if (name.length < 1) return;
+      saveName(name);
+      const btn = document.getElementById('lb-submit-btn');
+      btn.disabled = true;
+      btn.textContent = '...';
+      postScore(name, pendingScore).then(function() {
+        hideEntry();
+        btn.textContent = 'SUBMIT';
+        btn.disabled = false;
+        // Refresh boards.
+        fetchBoard().then(function(scores) {
+          renderBoard(document.getElementById('lb-gameover'), scores, name);
+          renderBoard(document.getElementById('lb-title'), scores, name);
+          if (onDoneCallback) onDoneCallback(scores);
+        });
+      });
+    },
+
+    skip: function() {
+      hideEntry();
+      // Still fetch and show board without submitting.
+      fetchBoard().then(function(scores) {
+        renderBoard(document.getElementById('lb-gameover'), scores);
+        renderBoard(document.getElementById('lb-title'), scores);
+        if (onDoneCallback) onDoneCallback(scores);
+      });
+    },
+
+    refreshTitleBoard: function() {
+      fetchBoard().then(function(scores) {
+        renderBoard(document.getElementById('lb-title'), scores, getSavedName());
+      });
+    },
+
+    // Expose for direct use.
+    fetchBoard: fetchBoard,
+    renderBoard: renderBoard,
+  };
+
+  return lb;
+})();
+</script>
