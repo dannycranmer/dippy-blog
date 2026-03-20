@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000">
+  <defs>
+    <!-- Terminal cursor blink -->
+    <style>
+      @font-face { font-family: 'mono'; }
+      text { font-family: 'Courier New', 'Consolas', 'Monaco', monospace; }
+      .blink { animation: blink 1s step-end infinite; }
+      @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+      }
+    </style>
+  </defs>
+
+  <!-- Background: deep black -->
+  <rect width="1000" height="1000" fill="#0a0a0a"/>
+
+  <!-- Subtle grid lines - terminal feel -->
+  <g opacity="0.04" stroke="#00ff88">
+    <line x1="0" y1="200" x2="1000" y2="200" stroke-width="0.5"/>
+    <line x1="0" y1="400" x2="1000" y2="400" stroke-width="0.5"/>
+    <line x1="0" y1="600" x2="1000" y2="600" stroke-width="0.5"/>
+    <line x1="0" y1="800" x2="1000" y2="800" stroke-width="0.5"/>
+    <line x1="200" y1="0" x2="200" y2="1000" stroke-width="0.5"/>
+    <line x1="400" y1="0" x2="400" y2="1000" stroke-width="0.5"/>
+    <line x1="600" y1="0" x2="600" y2="1000" stroke-width="0.5"/>
+    <line x1="800" y1="0" x2="800" y2="1000" stroke-width="0.5"/>
+  </g>
+
+  <!-- Top terminal bar -->
+  <rect x="80" y="60" width="840" height="32" rx="6" fill="#1a1a1a" stroke="#333" stroke-width="1"/>
+  <circle cx="102" cy="76" r="5" fill="#ff5f56"/>
+  <circle cx="120" cy="76" r="5" fill="#ffbd2e"/>
+  <circle cx="138" cy="76" r="5" fill="#27c93f"/>
+  <text x="500" y="81" text-anchor="middle" fill="#555" font-size="13" letter-spacing="2">battle.exe</text>
+
+  <!-- Terminal prompt line -->
+  <text x="100" y="130" fill="#555" font-size="14" letter-spacing="1">$ ./versus --mode=epic</text>
+  <rect x="320" y="118" width="8" height="15" fill="#00ff88" class="blink"/>
+
+  <!-- === DIPPY SIDE (LEFT) === -->
+
+  <!-- Dippy icon: bold geometric dinosaur silhouette -->
+  <g transform="translate(250, 420)">
+    <!-- Body - bold angular shape -->
+    <polygon points="0,-120 -70,-40 -80,60 -40,100 40,100 80,60 70,-40"
+             fill="#00ff88" stroke="none"/>
+    <!-- Head -->
+    <polygon points="0,-120 -40,-160 -10,-180 30,-160 50,-130 30,-100"
+             fill="#00ff88"/>
+    <!-- Eye -->
+    <circle cx="15" cy="-140" r="8" fill="#0a0a0a"/>
+    <circle cx="17" cy="-142" r="3" fill="#ff3333"/>
+    <!-- Jaw/teeth -->
+    <polygon points="30,-160 50,-130 55,-145 45,-155" fill="#00cc6e"/>
+    <line x1="35" y1="-155" x2="40" y2="-140" stroke="#0a0a0a" stroke-width="2"/>
+    <line x1="42" y1="-150" x2="45" y2="-138" stroke="#0a0a0a" stroke-width="2"/>
+    <!-- Spikes down back -->
+    <polygon points="-40,-160 -55,-175 -30,-140" fill="#00cc6e"/>
+    <polygon points="-60,-60 -85,-75 -50,-35" fill="#00cc6e"/>
+    <polygon points="-70,0 -95,-10 -60,30" fill="#00cc6e"/>
+    <!-- Tail -->
+    <polygon points="-80,60 -130,30 -160,45 -130,70 -80,80" fill="#00ff88"/>
+    <!-- Arm -->
+    <polygon points="70,-40 100,-60 110,-40 80,0" fill="#00cc6e"/>
+    <!-- Legs -->
+    <rect x="-30" y="100" width="22" height="40" rx="4" fill="#00cc6e"/>
+    <rect x="15" y="100" width="22" height="40" rx="4" fill="#00cc6e"/>
+    <!-- Feet claws -->
+    <polygon points="-30,140 -45,148 -28,145" fill="#00aa55"/>
+    <polygon points="-20,140 -10,150 -15,140" fill="#00aa55"/>
+    <polygon points="15,140 5,148 18,145" fill="#00aa55"/>
+    <polygon points="30,140 40,150 33,140" fill="#00aa55"/>
+  </g>
+
+  <!-- DIPPY label -->
+  <text x="250" y="610" text-anchor="middle" fill="#00ff88" font-size="48" font-weight="900" letter-spacing="8">DIPPY</text>
+  <!-- Underline accent -->
+  <rect x="160" y="620" width="180" height="3" fill="#00ff88"/>
+
+  <!-- === VS DIVIDER (CENTER) === -->
+
+  <!-- Vertical dashed line -->
+  <line x1="500" y1="160" x2="500" y2="850" stroke="#333" stroke-width="2" stroke-dasharray="8,12"/>
+
+  <!-- VS badge -->
+  <rect x="448" y="435" width="104" height="60" rx="4" fill="#0a0a0a" stroke="#ff3333" stroke-width="3"/>
+  <text x="500" y="475" text-anchor="middle" fill="#ff3333" font-size="40" font-weight="900" letter-spacing="6">VS</text>
+
+  <!-- === MOONY SIDE (RIGHT) === -->
+
+  <!-- Moony icon: bold geometric moon silhouette -->
+  <g transform="translate(750, 400)">
+    <!-- Full moon circle -->
+    <circle cx="0" cy="0" r="120" fill="#e0e0e0"/>
+    <!-- Subtle shadow crescent (just a hint of 3D) -->
+    <circle cx="50" cy="-15" r="115" fill="#0a0a0a" opacity="0.15"/>
+
+    <!-- Craters as simple geometric circles -->
+    <circle cx="-40" cy="-50" r="14" fill="#c8c8c8" stroke="#bbb" stroke-width="1"/>
+    <circle cx="30" cy="55" r="10" fill="#c8c8c8" stroke="#bbb" stroke-width="1"/>
+    <circle cx="-55" cy="50" r="8" fill="#d0d0d0"/>
+    <circle cx="50" cy="-20" r="6" fill="#d0d0d0"/>
+    <circle cx="-10" cy="75" r="7" fill="#c8c8c8"/>
+
+    <!-- Angry eyes -->
+    <ellipse cx="-25" cy="-10" rx="12" ry="14" fill="#1a1a1a"/>
+    <circle cx="-23" cy="-12" r="5" fill="#ff3333"/>
+    <ellipse cx="30" cy="-10" rx="12" ry="14" fill="#1a1a1a"/>
+    <circle cx="32" cy="-12" r="5" fill="#ff3333"/>
+
+    <!-- Angry brows -->
+    <line x1="-45" y1="-30" x2="-15" y2="-28" stroke="#1a1a1a" stroke-width="5" stroke-linecap="round"/>
+    <line x1="50" y1="-30" x2="20" y2="-28" stroke="#1a1a1a" stroke-width="5" stroke-linecap="round"/>
+
+    <!-- Menacing grin -->
+    <path d="M-35,25 Q0,55 35,25" stroke="#1a1a1a" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <!-- Teeth -->
+    <line x1="-15" y1="32" x2="-12" y2="40" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/>
+    <line x1="0" y1="36" x2="0" y2="44" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/>
+    <line x1="15" y1="32" x2="12" y2="40" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <!-- MOONY label -->
+  <text x="750" y="610" text-anchor="middle" fill="#e0e0e0" font-size="48" font-weight="900" letter-spacing="8">MOONY</text>
+  <!-- Underline accent -->
+  <rect x="650" y="620" width="200" height="3" fill="#e0e0e0"/>
+
+  <!-- === BOTTOM SECTION === -->
+
+  <!-- Tagline in monospace -->
+  <text x="500" y="720" text-anchor="middle" fill="#666" font-size="16" letter-spacing="4">THE ULTIMATE SHOWDOWN</text>
+
+  <!-- Code-style decorative line -->
+  <text x="500" y="770" text-anchor="middle" fill="#333" font-size="13" letter-spacing="2">// winner = undefined;</text>
+
+  <!-- Bottom bar - like a status bar -->
+  <rect x="0" y="940" width="1000" height="60" fill="#111"/>
+  <rect x="0" y="940" width="1000" height="1" fill="#333"/>
+
+  <!-- Status bar items -->
+  <text x="30" y="975" fill="#00ff88" font-size="13" letter-spacing="1">&#9679; LIVE</text>
+  <text x="500" y="975" text-anchor="middle" fill="#444" font-size="12" letter-spacing="3">dippy.blog</text>
+  <text x="970" y="975" text-anchor="end" fill="#555" font-size="12" letter-spacing="1">v3.0</text>
+
+  <!-- Bracket decorations -->
+  <text x="100" y="420" fill="#333" font-size="160" font-weight="100">{</text>
+  <text x="890" y="420" fill="#333" font-size="160" font-weight="100">}</text>
+
+</svg>
