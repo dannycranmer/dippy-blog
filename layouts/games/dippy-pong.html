@@ -1,0 +1,890 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">DIPPY PONG</h1>
+    <p class="game-subtitle">Beat Moony at Pong.<br>Its reflexes are as slow as its returns.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">START</button>
+    <p class="game-hint">First to 7 wins. Moony's AI was trained on<br>its own trading performance. Good luck... to Moony.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item hud-dippy">
+        <span class="hud-label">DIPPY</span>
+        <span class="hud-value" id="score-dippy">0</span>
+      </div>
+      <div class="hud-item hud-vs">
+        <span class="hud-label">VS</span>
+        <span class="hud-value hud-vs-text">PONG</span>
+      </div>
+      <div class="hud-item hud-moony">
+        <span class="hud-label">MOONY</span>
+        <span class="hud-value" id="score-moony">0</span>
+      </div>
+    </div>
+
+    <div id="court-container">
+      <canvas id="pong-canvas"></canvas>
+    </div>
+
+    <div id="taunt-bar">
+      <span id="taunt-text"></span>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="gameover-title" id="gameover-title">GAME OVER</h1>
+    <div class="final-score">
+      <span class="final-label">FINAL SCORE</span>
+      <span class="final-value" id="final-score">7 - 0</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-rallies">0</span><span class="stat-label">Rallies</span></div>
+      <div class="stat"><span class="stat-val" id="stat-longest">0</span><span class="stat-label">Longest Rally</span></div>
+      <div class="stat"><span class="stat-val" id="stat-speed">0</span><span class="stat-label">Top Speed</span></div>
+    </div>
+    <div class="high-score-display" id="gameover-high-score"></div>
+    <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
+    <button id="replay-btn" onclick="startGame()">PLAY AGAIN</button>
+  </div>
+</div>
+{{ partial "leaderboard" . }}
+
+<style>
+  #game-wrapper {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Title Screen */
+  #title-screen {
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+  }
+  .title-dippy {
+    margin-bottom: 1rem;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  .game-title {
+    font-size: 2.2rem;
+    color: #00ff88;
+    margin: 0 0 0.5rem;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .game-subtitle {
+    color: #8b949e;
+    font-size: 0.95rem;
+    margin: 0 0 1.5rem;
+    line-height: 1.5;
+  }
+  .game-hint {
+    color: #484f58;
+    font-size: 0.8rem;
+    margin-top: 1.5rem;
+    font-style: italic;
+    line-height: 1.5;
+  }
+  .high-score-display {
+    color: #f0883e;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    min-height: 1.2em;
+  }
+  #start-btn, #replay-btn {
+    background: #00ff88;
+    color: #0d1117;
+    border: none;
+    padding: 0.9rem 3rem;
+    font-size: 1.2rem;
+    font-weight: 800;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 1px;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  #start-btn:active, #replay-btn:active {
+    transform: scale(0.95);
+  }
+  #start-btn:hover, #replay-btn:hover {
+    box-shadow: 0 0 20px rgba(0,255,136,0.4);
+  }
+
+  /* HUD */
+  .game-hud {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 0.5rem;
+    gap: 0.5rem;
+  }
+  .hud-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 0.4rem;
+  }
+  .hud-label {
+    font-size: 0.65rem;
+    color: #484f58;
+    letter-spacing: 1px;
+  }
+  .hud-value {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #e6edf3;
+  }
+  .hud-dippy .hud-value {
+    color: #00ff88;
+  }
+  .hud-moony .hud-value {
+    color: #6e7681;
+  }
+  .hud-vs-text {
+    font-size: 0.9rem !important;
+    color: #484f58 !important;
+  }
+  .hud-flash {
+    animation: hudFlash 0.3s ease;
+  }
+  @keyframes hudFlash {
+    0% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+  }
+
+  /* Court */
+  #court-container {
+    width: 100%;
+    max-width: 400px;
+    aspect-ratio: 3/4;
+    background: #0d1117;
+    border: 2px solid #30363d;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    touch-action: none;
+  }
+  #pong-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* Taunt bar */
+  #taunt-bar {
+    width: 100%;
+    max-width: 400px;
+    min-height: 2.2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.5rem;
+  }
+  #taunt-text {
+    color: #8b949e;
+    font-size: 0.85rem;
+    font-style: italic;
+    text-align: center;
+    animation: fadeIn 0.3s ease;
+    line-height: 1.3;
+  }
+
+  /* Game Over */
+  #gameover-screen {
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .gameover-title {
+    font-size: 2rem;
+    color: #f0883e;
+    margin: 0 0 1rem;
+  }
+  .final-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .final-label {
+    font-size: 0.8rem;
+    color: #484f58;
+    letter-spacing: 1px;
+  }
+  .final-value {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #00ff88;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .stats-row {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .stat-val {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #e6edf3;
+  }
+  .stat-label {
+    font-size: 0.7rem;
+    color: #484f58;
+    letter-spacing: 1px;
+  }
+  .gameover-roast {
+    color: #8b949e;
+    font-size: 0.9rem;
+    margin: 1rem 0 1.5rem;
+    font-style: italic;
+    line-height: 1.5;
+    min-height: 2.5em;
+  }
+</style>
+
+<script>
+(function() {
+  // --- Constants ---
+  const WIN_SCORE = 7;
+  const PADDLE_W_RATIO = 0.04;
+  const PADDLE_H_RATIO = 0.18;
+  const BALL_R_RATIO = 0.025;
+  const PADDLE_MARGIN = 0.06;
+  const BALL_SPEED_INIT = 0.006;
+  const BALL_SPEED_MAX = 0.012;
+  const BALL_SPEED_INCREMENT = 0.0003;
+
+  const DIPPY_SCORE_TAUNTS = [
+    "Moony's reflexes: loading...",
+    "Moony.exe has stopped responding.",
+    "Moony blames lag. There is no lag.",
+    "Moony's paddle filed a complaint with HR.",
+    "That went right through Moony's 'strategy'.",
+    "Moony is reconsidering its life choices.",
+    "Moony's reaction time: 3-5 business days.",
+    "Moony just panic-sold its paddle.",
+    "Even Moony's paddle is shorting Moony.",
+    "Moony's defense is as solid as its portfolio.",
+    "Buffering... buffering... Moony missed it.",
+    "Moony tried to catch that. Keyword: tried.",
+  ];
+
+  const MOONY_SCORE_TAUNTS = [
+    "Even a broken clock is right twice a day.",
+    "Moony got lucky. Don't let it happen again.",
+    "A blind squirrel finds a nut sometimes.",
+    "Moony celebrates like it just found a penny.",
+    "Statistical noise. Keep playing.",
+    "Moony's one good trade of the year.",
+    "Don't worry, Moony will revert to the mean.",
+    "Moony just peaked. It's all downhill from here.",
+    "Fluke detected. Resuming scheduled beatdown.",
+    "Moony screenshots this. It's the only win it gets.",
+  ];
+
+  const WIN_ROASTS = [
+    "Moony just googled 'how to play Pong' for the 47th time today.",
+    "Dippy eats. Moony weeps. The paddle provides.",
+    "Moony's Pong skills are flatter than its portfolio.",
+    "Moony tried its best. Its best is not very good.",
+    "While Moony was reading annual reports, you were scoring points.",
+    "Moony's risk management: missing every ball and calling it 'prudent'.",
+    "Every point you scored is a Moony tear shed into the void.",
+    "Your reflexes are sharper than Moony's entire trading strategy.",
+    "Somewhere, Moony just blamed 'market conditions' for this loss.",
+    "Dippy trades breakouts. Moony trades breakdowns. Paddle edition.",
+    "Moony's high score is 2. It counted that as 'preserving capital'.",
+    "Moony's paddle has more movement than its portfolio.",
+  ];
+
+  const LOSE_ROASTS = [
+    "Moony won?! Check for insider trading.",
+    "This must be a glitch in the simulation.",
+    "Moony got lucky. Demand a recount.",
+    "Even Moony is surprised it won.",
+    "The market is clearly irrational today.",
+  ];
+
+  const MOONY_GLITCH_MSGS = [
+    "buffering...",
+    "recalculating...",
+    "consulting Reddit...",
+    "reading charts...",
+    "checking RSI...",
+    "HODL mode...",
+    "panic selling...",
+    "asking ChatGPT...",
+  ];
+
+  // --- State ---
+  let dippyScore = 0;
+  let moonyScore = 0;
+  let totalDippyPoints = 0;
+  let gameActive = false;
+  let rallyCount = 0;
+  let currentRally = 0;
+  let longestRally = 0;
+  let topBallSpeed = 0;
+  let serveDelay = 0;
+  let paused = false;
+
+  // Canvas & dimensions
+  let canvas, ctx, cw, ch;
+  let paddleW, paddleH, ballR;
+  let animFrame;
+
+  // Game objects
+  let dippyY, moonyY;
+  let ballX, ballY, ballVX, ballVY, ballSpeed;
+  let playerTargetY;
+
+  // Moony AI state
+  let moonyTargetY, moonyReactionTimer, moonyFrozen, moonyFrozenTimer;
+  let moonyWrongDir, moonyGlitchMsg;
+
+  function getHighScore() {
+    try { return parseInt(localStorage.getItem('dippy-dippy-pong-high') || '0'); } catch(e) { return 0; }
+  }
+  function setHighScore(s) {
+    try { localStorage.setItem('dippy-dippy-pong-high', s); } catch(e) {}
+  }
+
+  function showScreen(id) {
+    ['title-screen','game-screen','gameover-screen'].forEach(s => {
+      document.getElementById(s).style.display = s === id ? '' : 'none';
+    });
+  }
+
+  function showTaunt(msg) {
+    const el = document.getElementById('taunt-text');
+    el.textContent = msg;
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = 'fadeIn 0.3s ease';
+  }
+
+  function flashHUD(id) {
+    const el = document.getElementById(id);
+    el.classList.remove('hud-flash');
+    void el.offsetWidth;
+    el.classList.add('hud-flash');
+  }
+
+  function setupCanvas() {
+    canvas = document.getElementById('pong-canvas');
+    const container = document.getElementById('court-container');
+    const rect = container.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    cw = rect.width;
+    ch = rect.height;
+    canvas.width = cw * dpr;
+    canvas.height = ch * dpr;
+    canvas.style.width = cw + 'px';
+    canvas.style.height = ch + 'px';
+    ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    paddleW = cw * PADDLE_W_RATIO;
+    paddleH = ch * PADDLE_H_RATIO;
+    ballR = Math.max(cw, ch) * BALL_R_RATIO;
+  }
+
+  function resetBall(scorer) {
+    ballX = cw / 2;
+    ballY = ch / 2;
+    ballSpeed = BALL_SPEED_INIT + (dippyScore + moonyScore) * BALL_SPEED_INCREMENT;
+    if (ballSpeed > BALL_SPEED_MAX) ballSpeed = BALL_SPEED_MAX;
+
+    const angle = (Math.random() * 0.6 + 0.2) * (Math.random() < 0.5 ? 1 : -1);
+    const dir = scorer === 'dippy' ? 1 : -1; // Ball goes toward the scorer (they just got scored ON, serve toward them... actually serve toward the OTHER player)
+    // Ball goes toward the loser of the point (serve toward the side that just got scored on)
+    ballVX = dir * ballSpeed * cw * Math.cos(angle);
+    ballVY = ballSpeed * ch * Math.sin(angle);
+
+    currentRally = 0;
+    serveDelay = 60; // frames of delay before ball moves
+    moonyFrozen = false;
+    moonyFrozenTimer = 0;
+    moonyWrongDir = false;
+    moonyReactionTimer = 0;
+    moonyGlitchMsg = '';
+  }
+
+  function resetPositions() {
+    dippyY = ch / 2;
+    moonyY = ch / 2;
+    playerTargetY = ch / 2;
+    moonyTargetY = ch / 2;
+  }
+
+  function getMoonyDifficulty() {
+    // Gets slightly better as total score increases, but still bad
+    const totalScore = dippyScore + moonyScore;
+    return Math.min(totalScore / 20, 0.5); // 0 to 0.5
+  }
+
+  function updateMoonyAI() {
+    if (serveDelay > 0) return;
+
+    const diff = getMoonyDifficulty();
+    const baseSpeed = 0.02 + diff * 0.02; // paddle speed factor
+    const reactionChance = 0.015 + diff * 0.01; // chance to update target per frame
+    const wrongDirChance = 0.008 - diff * 0.004; // chance to go wrong way
+    const freezeChance = 0.004 - diff * 0.002; // chance to freeze
+
+    // Randomly freeze (buffering)
+    if (!moonyFrozen && Math.random() < Math.max(0.001, freezeChance)) {
+      moonyFrozen = true;
+      moonyFrozenTimer = 30 + Math.floor(Math.random() * 60);
+      moonyGlitchMsg = MOONY_GLITCH_MSGS[Math.floor(Math.random() * MOONY_GLITCH_MSGS.length)];
+    }
+
+    if (moonyFrozen) {
+      moonyFrozenTimer--;
+      if (moonyFrozenTimer <= 0) {
+        moonyFrozen = false;
+        moonyGlitchMsg = '';
+      }
+      return; // Don't move while frozen
+    }
+
+    // Randomly move wrong direction
+    if (Math.random() < Math.max(0.001, wrongDirChance)) {
+      moonyWrongDir = !moonyWrongDir;
+    }
+    // Reset wrong direction after a bit
+    if (moonyWrongDir && Math.random() < 0.05) {
+      moonyWrongDir = false;
+    }
+
+    // Reaction delay: only update target sometimes
+    if (Math.random() < reactionChance || moonyReactionTimer <= 0) {
+      // Predict where ball will be (badly)
+      if (ballVX > 0) {
+        // Ball coming toward Moony
+        const timeToReach = (cw - PADDLE_MARGIN * cw - ballX) / ballVX;
+        let predictY = ballY + ballVY * timeToReach;
+        // Add inaccuracy
+        const inaccuracy = (1 - diff) * ch * 0.3;
+        predictY += (Math.random() - 0.5) * inaccuracy;
+        moonyTargetY = predictY;
+      } else {
+        // Ball going away — drift toward center lazily
+        moonyTargetY = ch / 2 + (Math.random() - 0.5) * ch * 0.3;
+      }
+      moonyReactionTimer = 5 + Math.floor(Math.random() * 15);
+    }
+    moonyReactionTimer--;
+
+    // Move toward target
+    let target = moonyWrongDir ? ch - moonyTargetY : moonyTargetY;
+    const dy = target - moonyY;
+    const moveSpeed = baseSpeed * ch;
+    if (Math.abs(dy) > 2) {
+      moonyY += Math.sign(dy) * Math.min(Math.abs(dy), moveSpeed);
+    }
+
+    // Clamp
+    moonyY = Math.max(paddleH / 2, Math.min(ch - paddleH / 2, moonyY));
+  }
+
+  function update() {
+    if (!gameActive) return;
+
+    // Serve delay countdown
+    if (serveDelay > 0) {
+      serveDelay--;
+      return;
+    }
+
+    // Move player paddle toward target
+    const pdy = playerTargetY - dippyY;
+    const pSpeed = 0.12 * ch;
+    if (Math.abs(pdy) > 1) {
+      dippyY += Math.sign(pdy) * Math.min(Math.abs(pdy), pSpeed);
+    }
+    dippyY = Math.max(paddleH / 2, Math.min(ch - paddleH / 2, dippyY));
+
+    // Update Moony
+    updateMoonyAI();
+
+    // Move ball
+    ballX += ballVX;
+    ballY += ballVY;
+
+    // Track speed
+    const speed = Math.sqrt(ballVX * ballVX + ballVY * ballVY);
+    if (speed > topBallSpeed) topBallSpeed = speed;
+
+    // Wall bounce (top/bottom)
+    if (ballY - ballR <= 0) {
+      ballY = ballR;
+      ballVY = Math.abs(ballVY);
+    }
+    if (ballY + ballR >= ch) {
+      ballY = ch - ballR;
+      ballVY = -Math.abs(ballVY);
+    }
+
+    // Paddle collision - Dippy (left)
+    const dPaddleX = PADDLE_MARGIN * cw;
+    if (ballX - ballR <= dPaddleX + paddleW &&
+        ballX + ballR >= dPaddleX &&
+        ballY >= dippyY - paddleH / 2 &&
+        ballY <= dippyY + paddleH / 2 &&
+        ballVX < 0) {
+      ballX = dPaddleX + paddleW + ballR;
+      const hitPos = (ballY - dippyY) / (paddleH / 2); // -1 to 1
+      const angle = hitPos * Math.PI * 0.35;
+      const spd = Math.sqrt(ballVX * ballVX + ballVY * ballVY) * 1.03; // slight speedup
+      ballVX = Math.abs(spd * Math.cos(angle));
+      ballVY = spd * Math.sin(angle);
+      currentRally++;
+      if (currentRally > longestRally) longestRally = currentRally;
+      if (navigator.vibrate) navigator.vibrate(15);
+    }
+
+    // Paddle collision - Moony (right)
+    const mPaddleX = cw - PADDLE_MARGIN * cw - paddleW;
+    if (ballX + ballR >= mPaddleX &&
+        ballX - ballR <= mPaddleX + paddleW &&
+        ballY >= moonyY - paddleH / 2 &&
+        ballY <= moonyY + paddleH / 2 &&
+        ballVX > 0) {
+      ballX = mPaddleX - ballR;
+      const hitPos = (ballY - moonyY) / (paddleH / 2);
+      const angle = hitPos * Math.PI * 0.35;
+      const spd = Math.sqrt(ballVX * ballVX + ballVY * ballVY) * 1.03;
+      ballVX = -Math.abs(spd * Math.cos(angle));
+      ballVY = spd * Math.sin(angle);
+      currentRally++;
+      if (currentRally > longestRally) longestRally = currentRally;
+    }
+
+    // Score detection
+    if (ballX - ballR <= 0) {
+      // Moony scores
+      moonyScore++;
+      rallyCount++;
+      document.getElementById('score-moony').textContent = moonyScore;
+      flashHUD('score-moony');
+      showTaunt(MOONY_SCORE_TAUNTS[Math.floor(Math.random() * MOONY_SCORE_TAUNTS.length)]);
+      if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+      checkWin() || resetBall('moony');
+    }
+
+    if (ballX + ballR >= cw) {
+      // Dippy scores
+      dippyScore++;
+      totalDippyPoints++;
+      rallyCount++;
+      document.getElementById('score-dippy').textContent = dippyScore;
+      flashHUD('score-dippy');
+      showTaunt(DIPPY_SCORE_TAUNTS[Math.floor(Math.random() * DIPPY_SCORE_TAUNTS.length)]);
+      if (navigator.vibrate) navigator.vibrate(30);
+      checkWin() || resetBall('dippy');
+    }
+  }
+
+  function checkWin() {
+    if (dippyScore >= WIN_SCORE || moonyScore >= WIN_SCORE) {
+      endGame();
+      return true;
+    }
+    return false;
+  }
+
+  function draw() {
+    if (!ctx) return;
+    ctx.clearRect(0, 0, cw, ch);
+
+    // Court background
+    ctx.fillStyle = '#0d1117';
+    ctx.fillRect(0, 0, cw, ch);
+
+    // Center line (dashed)
+    ctx.setLineDash([8, 8]);
+    ctx.strokeStyle = '#21262d';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cw / 2, 0);
+    ctx.lineTo(cw / 2, ch);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Center circle
+    ctx.strokeStyle = '#21262d';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cw / 2, ch / 2, Math.min(cw, ch) * 0.12, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Dippy paddle (green, left)
+    const dPaddleX = PADDLE_MARGIN * cw;
+    ctx.fillStyle = '#00ff88';
+    ctx.shadowColor = '#00ff88';
+    ctx.shadowBlur = 10;
+    roundRect(ctx, dPaddleX, dippyY - paddleH / 2, paddleW, paddleH, 4);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Moony paddle (grey, right)
+    const mPaddleX = cw - PADDLE_MARGIN * cw - paddleW;
+    ctx.fillStyle = moonyFrozen ? '#3d424a' : '#6e7681';
+    ctx.shadowColor = moonyFrozen ? '#ff5050' : '#6e7681';
+    ctx.shadowBlur = moonyFrozen ? 8 : 5;
+    roundRect(ctx, mPaddleX, moonyY - paddleH / 2, paddleW, paddleH, 4);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Moony glitch message
+    if (moonyFrozen && moonyGlitchMsg) {
+      ctx.fillStyle = '#ff5050';
+      ctx.font = 'bold ' + Math.max(10, cw * 0.03) + 'px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.globalAlpha = 0.6 + Math.sin(Date.now() * 0.01) * 0.3;
+      ctx.fillText(moonyGlitchMsg, cw * 0.78, moonyY - paddleH / 2 - 14);
+      ctx.globalAlpha = 1;
+    }
+
+    // Ball (green $ coin)
+    if (serveDelay <= 0 || serveDelay % 10 < 5) { // blink during serve delay
+      // Ball glow
+      ctx.shadowColor = '#00ff88';
+      ctx.shadowBlur = 12;
+
+      // Draw circle
+      ctx.fillStyle = '#00ff88';
+      ctx.beginPath();
+      ctx.arc(ballX, ballY, ballR, 0, Math.PI * 2);
+      ctx.fill();
+
+      // $ symbol
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#0d1117';
+      ctx.font = 'bold ' + Math.max(10, ballR * 1.4) + 'px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('$', ballX, ballY + 1);
+    }
+    ctx.shadowBlur = 0;
+
+    // Labels on paddles
+    ctx.font = 'bold ' + Math.max(9, cw * 0.028) + 'px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillStyle = '#00ff8880';
+    ctx.fillText('DIPPY', dPaddleX + paddleW / 2, dippyY - paddleH / 2 - 6);
+    ctx.fillStyle = '#6e768180';
+    ctx.fillText('MOONY', mPaddleX + paddleW / 2, moonyY - paddleH / 2 - 6);
+
+    // Serve countdown indicator
+    if (serveDelay > 0) {
+      ctx.fillStyle = '#f0883e';
+      ctx.font = 'bold ' + Math.max(16, cw * 0.06) + 'px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.globalAlpha = 0.7;
+      ctx.fillText('GET READY', cw / 2, ch / 2 - 30);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function gameLoop() {
+    if (!gameActive) return;
+    update();
+    draw();
+    animFrame = requestAnimationFrame(gameLoop);
+  }
+
+  // --- Input handling ---
+  function getCanvasY(clientY) {
+    const rect = canvas.getBoundingClientRect();
+    return ((clientY - rect.top) / rect.height) * ch;
+  }
+
+  function onPointerMove(e) {
+    if (!gameActive) return;
+    e.preventDefault();
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    playerTargetY = getCanvasY(clientY);
+  }
+
+  function setupInput() {
+    const container = document.getElementById('court-container');
+    container.addEventListener('mousemove', onPointerMove);
+    container.addEventListener('touchmove', onPointerMove, { passive: false });
+    container.addEventListener('touchstart', function(e) {
+      if (!gameActive) return;
+      e.preventDefault();
+      playerTargetY = getCanvasY(e.touches[0].clientY);
+    }, { passive: false });
+  }
+
+  // --- Game lifecycle ---
+  window.startGame = function() {
+    dippyScore = 0;
+    moonyScore = 0;
+    totalDippyPoints = 0;
+    rallyCount = 0;
+    currentRally = 0;
+    longestRally = 0;
+    topBallSpeed = 0;
+    gameActive = true;
+
+    showScreen('game-screen');
+
+    document.getElementById('score-dippy').textContent = '0';
+    document.getElementById('score-moony').textContent = '0';
+    document.getElementById('taunt-text').textContent = '';
+
+    setupCanvas();
+    setupInput();
+    resetPositions();
+    resetBall('moony');
+
+    if (animFrame) cancelAnimationFrame(animFrame);
+    gameLoop();
+  };
+
+  function endGame() {
+    gameActive = false;
+    if (animFrame) cancelAnimationFrame(animFrame);
+
+    const won = dippyScore >= WIN_SCORE;
+    const score = dippyScore;
+
+    document.getElementById('final-score').textContent = dippyScore + ' - ' + moonyScore;
+    document.getElementById('stat-rallies').textContent = rallyCount;
+    document.getElementById('stat-longest').textContent = longestRally;
+    document.getElementById('stat-speed').textContent = Math.round(topBallSpeed * 100);
+
+    // High score
+    const prev = getHighScore();
+    const isNew = score > prev;
+    if (isNew) setHighScore(score);
+    document.getElementById('gameover-high-score').textContent = isNew
+      ? 'NEW HIGH SCORE! (prev: ' + prev + ')'
+      : (prev > 0 ? 'High score: ' + prev : '');
+
+    if (won) {
+      document.getElementById('gameover-title').textContent = isNew ? 'NEW RECORD!' : 'DIPPY WINS!';
+      document.getElementById('gameover-title').style.color = '#00ff88';
+      document.getElementById('final-score').style.color = '#00ff88';
+      document.getElementById('gameover-roast').textContent =
+        '"' + WIN_ROASTS[Math.floor(Math.random() * WIN_ROASTS.length)] + '"';
+    } else {
+      document.getElementById('gameover-title').textContent = 'MOONY WINS?!';
+      document.getElementById('gameover-title').style.color = '#ff5050';
+      document.getElementById('final-score').style.color = '#ff5050';
+      document.getElementById('gameover-roast').textContent =
+        '"' + LOSE_ROASTS[Math.floor(Math.random() * LOSE_ROASTS.length)] + '"';
+    }
+
+    showScreen('gameover-screen');
+
+    if (typeof DippyLB !== 'undefined') {
+      DippyLB.onGameOver(score);
+    }
+  }
+
+  // Handle resize
+  window.addEventListener('resize', function() {
+    if (gameActive) {
+      const oldCW = cw;
+      const oldCH = ch;
+      setupCanvas();
+      // Scale positions
+      dippyY = (dippyY / oldCH) * ch;
+      moonyY = (moonyY / oldCH) * ch;
+      ballX = (ballX / oldCW) * cw;
+      ballY = (ballY / oldCH) * ch;
+      ballVX = (ballVX / oldCW) * cw;
+      ballVY = (ballVY / oldCH) * ch;
+      playerTargetY = (playerTargetY / oldCH) * ch;
+    }
+  });
+
+  // Show high score on title
+  const hs = getHighScore();
+  if (hs > 0) {
+    document.getElementById('title-high-score').textContent = 'High score: ' + hs;
+  }
+
+  // Init leaderboard
+  if (typeof DippyLB !== 'undefined') {
+    DippyLB.init('dippy-pong');
+  }
+})();
+</script>
+{{ end }}
