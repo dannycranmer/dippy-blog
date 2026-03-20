@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000">
+  <!-- ===== DIPPY (LEFT) - Bold silhouette facing right ===== -->
+  <g transform="translate(48, 260) scale(3.6)">
+    <!-- Tail -->
+    <path d="M6 52 Q-12 36 -16 18 Q-14 22 -10 24 Q-12 14 -6 6 Q-6 14 -4 20 Q-2 10 4 6 Q2 18 2 28 Q4 36 6 44"
+          fill="#00ff88" stroke="#00aa55" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- Body -->
+    <ellipse cx="32" cy="52" rx="30" ry="26" fill="#00ff88" stroke="#00aa55" stroke-width="1.5"/>
+    <!-- Back spikes -->
+    <polygon points="18,26 24,10 30,26" fill="#00cc6e" stroke="#00aa55" stroke-width="1"/>
+    <polygon points="28,23 34,4 40,23" fill="#00cc6e" stroke="#00aa55" stroke-width="1"/>
+    <polygon points="38,26 44,12 50,28" fill="#00cc6e" stroke="#00aa55" stroke-width="1"/>
+    <polygon points="46,30 51,18 56,32" fill="#00cc6e" stroke="#00aa55" stroke-width="1"/>
+    <!-- Neck -->
+    <path d="M50 38 Q58 22 56 6" fill="none" stroke="#00ff88" stroke-width="18" stroke-linecap="round"/>
+    <!-- Head -->
+    <ellipse cx="58" cy="2" rx="20" ry="15" fill="#00ff88" stroke="#00aa55" stroke-width="1.5"/>
+    <!-- Brow ridge -->
+    <path d="M62 -6 L74 -8 L78 -4" fill="none" stroke="#00aa55" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- Eye -->
+    <ellipse cx="66" cy="-2" rx="5" ry="4" fill="#0d1117"/>
+    <circle cx="68" cy="-3" r="2" fill="#fff"/>
+    <circle cx="69" cy="-2.5" r="1" fill="#ff3333"/>
+    <!-- Mouth -->
+    <path d="M72 6 Q80 10 78 14" fill="none" stroke="#0d1117" stroke-width="2" stroke-linecap="round"/>
+    <!-- Teeth -->
+    <path d="M72 6 L74 9 L76 6 L78 9 L79 7" fill="#fff" stroke="#fff" stroke-width="0.5"/>
+    <!-- Nostril -->
+    <circle cx="76" cy="0" r="1.2" fill="#00aa55"/>
+    <!-- Legs -->
+    <rect x="16" y="72" width="10" height="20" rx="4" fill="#00cc6e" stroke="#00aa55" stroke-width="1"/>
+    <rect x="40" y="72" width="10" height="20" rx="4" fill="#00cc6e" stroke="#00aa55" stroke-width="1"/>
+    <!-- Feet -->
+    <ellipse cx="21" cy="93" rx="9" ry="4" fill="#00cc6e" stroke="#00aa55" stroke-width="1"/>
+    <ellipse cx="45" cy="93" rx="9" ry="4" fill="#00cc6e" stroke="#00aa55" stroke-width="1"/>
+    <!-- Arms -->
+    <rect x="52" y="36" width="7" height="14" rx="3" fill="#00cc6e" stroke="#00aa55" stroke-width="1" transform="rotate(-40 55 43)"/>
+    <rect x="58" y="32" width="7" height="14" rx="3" fill="#00cc6e" stroke="#00aa55" stroke-width="1" transform="rotate(15 61 39)"/>
+    <!-- Fist -->
+    <circle cx="62" cy="30" r="4" fill="#00cc6e" stroke="#00aa55" stroke-width="1"/>
+    <path d="M60 27 L59 24 M62 26 L62 23 M64 27 L65 24" stroke="#00ff88" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- ===== VS TEXT ===== -->
+  <text x="500" y="560" text-anchor="middle" font-family="'Impact','Arial Black','Helvetica Neue',sans-serif"
+        font-size="180" font-weight="900" fill="#ffd700"
+        stroke="#cc8800" stroke-width="5" letter-spacing="12">VS</text>
+
+  <!-- ===== MOONY (RIGHT) - Bold silhouette facing left ===== -->
+  <g transform="translate(600, 290)">
+    <!-- Moon body -->
+    <circle cx="180" cy="200" r="160" fill="#c4c4c4" stroke="#888" stroke-width="3"/>
+    <!-- Craters -->
+    <circle cx="210" cy="150" r="20" fill="#a0a0a0" stroke="#999" stroke-width="1.5" opacity="0.6"/>
+    <circle cx="245" cy="240" r="14" fill="#a0a0a0" stroke="#999" stroke-width="1.5" opacity="0.5"/>
+    <circle cx="165" cy="280" r="16" fill="#a0a0a0" stroke="#999" stroke-width="1.5" opacity="0.55"/>
+    <circle cx="200" cy="200" r="9" fill="#a0a0a0" stroke="#999" stroke-width="1" opacity="0.4"/>
+    <circle cx="140" cy="170" r="11" fill="#a0a0a0" stroke="#999" stroke-width="1" opacity="0.35"/>
+    <!-- Crescent dark side -->
+    <clipPath id="moonClipS">
+      <circle cx="180" cy="200" r="160"/>
+    </clipPath>
+    <circle cx="90" cy="190" r="135" fill="#1a1a2e" opacity="0.7" clip-path="url(#moonClipS)"/>
+
+    <!-- Left eye -->
+    <ellipse cx="195" cy="180" rx="22" ry="20" fill="#2d2d44" stroke="#222" stroke-width="2"/>
+    <ellipse cx="195" cy="180" rx="15" ry="14" fill="#484f58"/>
+    <circle cx="190" cy="178" r="7.5" fill="#1a1a2e"/>
+    <circle cx="188" cy="177" r="3.2" fill="#ff4444"/>
+    <circle cx="193" cy="174" r="3.2" fill="#ffffff" opacity="0.5"/>
+    <!-- Angry brow -->
+    <path d="M175 162 L200 167 L220 158" fill="none" stroke="#2d2d44" stroke-width="6.5" stroke-linecap="round"/>
+
+    <!-- Right eye -->
+    <ellipse cx="245" cy="185" rx="18" ry="16" fill="#2d2d44" stroke="#222" stroke-width="2"/>
+    <ellipse cx="245" cy="185" rx="12" ry="11" fill="#484f58"/>
+    <circle cx="241" cy="183" r="6" fill="#1a1a2e"/>
+    <circle cx="239" cy="182" r="2.8" fill="#ff4444"/>
+    <circle cx="243" cy="180" r="2.8" fill="#ffffff" opacity="0.5"/>
+    <!-- Angry brow -->
+    <path d="M228 168 L250 173 L265 165" fill="none" stroke="#2d2d44" stroke-width="5.5" stroke-linecap="round"/>
+
+    <!-- Angry mouth -->
+    <path d="M185 238 Q207 264 237 242 Q252 232 262 240" fill="none" stroke="#2d2d44" stroke-width="5.5" stroke-linecap="round"/>
+    <!-- Teeth -->
+    <path d="M200 246 L204 256 L208 246 L212 255 L216 247 L220 256 L224 246" fill="#c4c4c4" stroke="#2d2d44" stroke-width="1.8"/>
+  </g>
+</svg>
