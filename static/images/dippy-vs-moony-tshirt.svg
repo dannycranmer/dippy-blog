@@ -1,0 +1,249 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="5000" height="5000">
+  <defs>
+    <!-- Green glow for Dippy side -->
+    <filter id="greenGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feFlood flood-color="#00ff88" flood-opacity="0.6"/>
+      <feComposite in2="blur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Red glow for Moony side -->
+    <filter id="redGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feFlood flood-color="#ff5050" flood-opacity="0.5"/>
+      <feComposite in2="blur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Gold glow for VS -->
+    <filter id="goldGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feFlood flood-color="#f0883e" flood-opacity="0.8"/>
+      <feComposite in2="blur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Shadow filter -->
+    <filter id="shadow">
+      <feDropShadow dx="3" dy="3" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+    <!-- Gradient for background energy burst -->
+    <radialGradient id="burstGrad" cx="50%" cy="50%">
+      <stop offset="0%" stop-color="#1a2332" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="transparent" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- ===== BACKGROUND ELEMENTS (subtle, for texture) ===== -->
+  <!-- Green rising chart lines behind Dippy -->
+  <g opacity="0.15">
+    <polyline points="50,750 100,720 150,740 200,680 250,650 300,600 350,550 400,480 450,420"
+              fill="none" stroke="#00ff88" stroke-width="3"/>
+    <polyline points="80,780 130,760 180,750 230,710 280,690 330,640 380,580 430,500"
+              fill="none" stroke="#00ff88" stroke-width="2"/>
+  </g>
+  <!-- Red falling chart lines behind Moony -->
+  <g opacity="0.15">
+    <polyline points="550,420 600,480 650,500 700,560 750,600 800,650 850,710 900,750 950,780"
+              fill="none" stroke="#ff5050" stroke-width="3"/>
+    <polyline points="580,400 630,460 680,490 730,540 780,590 830,640 880,700 930,760"
+              fill="none" stroke="#ff5050" stroke-width="2"/>
+  </g>
+
+  <!-- Green candlesticks behind Dippy (bullish) -->
+  <g opacity="0.2">
+    <line x1="100" y1="600" x2="100" y2="750" stroke="#00ff88" stroke-width="2"/>
+    <rect x="92" y="640" width="16" height="70" fill="#00ff88" rx="2"/>
+    <line x1="180" y1="550" x2="180" y2="720" stroke="#00ff88" stroke-width="2"/>
+    <rect x="172" y="580" width="16" height="90" fill="#00ff88" rx="2"/>
+    <line x1="260" y1="480" x2="260" y2="680" stroke="#00ff88" stroke-width="2"/>
+    <rect x="252" y="510" width="16" height="110" fill="#00ff88" rx="2"/>
+    <line x1="340" y1="400" x2="340" y2="620" stroke="#00ff88" stroke-width="2"/>
+    <rect x="332" y="430" width="16" height="120" fill="#00ff88" rx="2"/>
+  </g>
+
+  <!-- Red candlesticks behind Moony (bearish) -->
+  <g opacity="0.2">
+    <line x1="660" y1="400" x2="660" y2="620" stroke="#ff5050" stroke-width="2"/>
+    <rect x="652" y="430" width="16" height="120" fill="#ff5050" rx="2"/>
+    <line x1="740" y1="480" x2="740" y2="680" stroke="#ff5050" stroke-width="2"/>
+    <rect x="732" y="520" width="16" height="110" fill="#ff5050" rx="2"/>
+    <line x1="820" y1="550" x2="820" y2="720" stroke="#ff5050" stroke-width="2"/>
+    <rect x="812" y="580" width="16" height="90" fill="#ff5050" rx="2"/>
+    <line x1="900" y1="600" x2="900" y2="750" stroke="#ff5050" stroke-width="2"/>
+    <rect x="892" y="640" width="16" height="70" fill="#ff5050" rx="2"/>
+  </g>
+
+  <!-- Scattered dollar signs (green side) -->
+  <g fill="#00ff88" opacity="0.12" font-family="Arial, sans-serif" font-weight="bold">
+    <text x="120" y="320" font-size="40" transform="rotate(-15 120 320)">$</text>
+    <text x="80" y="450" font-size="30" transform="rotate(10 80 450)">$</text>
+    <text x="300" y="280" font-size="50" transform="rotate(-25 300 280)">$</text>
+    <text x="200" y="900" font-size="35" transform="rotate(5 200 900)">$</text>
+    <text x="380" y="350" font-size="28" transform="rotate(20 380 350)">$</text>
+  </g>
+
+  <!-- Scattered sad emojis (red side) -->
+  <g fill="#ff5050" opacity="0.12" font-family="Arial, sans-serif" font-weight="bold">
+    <text x="700" y="300" font-size="30" transform="rotate(15 700 300)">-70%</text>
+    <text x="850" y="350" font-size="25" transform="rotate(-10 850 350)">CASH</text>
+    <text x="780" y="880" font-size="28" transform="rotate(8 780 880)">HODL</text>
+    <text x="620" y="920" font-size="22" transform="rotate(-12 620 920)">VALUE?</text>
+  </g>
+
+  <!-- ===== DIPPY (LEFT SIDE) - Triumphant green dinosaur ===== -->
+  <g transform="translate(200, 380) scale(2.8)" filter="url(#shadow)">
+    <!-- Body -->
+    <ellipse cx="52" cy="72" rx="32" ry="28" fill="#00ff88"/>
+    <!-- Spikes on back -->
+    <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+    <!-- Additional spikes for detail -->
+    <polygon points="30,52 26,36 34,48" fill="#00cc6e"/>
+    <polygon points="22,60 16,44 28,56" fill="#00cc6e"/>
+    <!-- Neck -->
+    <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="18" stroke-linecap="round"/>
+    <!-- Head -->
+    <ellipse cx="72" cy="18" rx="20" ry="16" fill="#00ff88"/>
+    <!-- Eye (big and confident) -->
+    <circle cx="80" cy="14" r="5" fill="#0d1117"/>
+    <circle cx="81.5" cy="12" r="2" fill="#fff"/>
+    <!-- Confident smirk -->
+    <path d="M84 21 Q90 26 86 28" fill="none" stroke="#0d1117" stroke-width="2" stroke-linecap="round"/>
+    <!-- Tiny horn/crest -->
+    <path d="M84 6 L88 0 L90 8" fill="#00cc6e"/>
+    <!-- Arms (raised in victory) -->
+    <path d="M36 60 L20 44 L24 40" fill="none" stroke="#00ff88" stroke-width="8" stroke-linecap="round"/>
+    <path d="M70 60 L86 44 L82 40" fill="none" stroke="#00ff88" stroke-width="8" stroke-linecap="round"/>
+    <!-- Legs -->
+    <rect x="38" y="94" width="10" height="18" rx="4" fill="#00cc6e"/>
+    <rect x="58" y="94" width="10" height="18" rx="4" fill="#00cc6e"/>
+    <!-- Feet -->
+    <ellipse cx="43" cy="113" rx="9" ry="4" fill="#00cc6e"/>
+    <ellipse cx="63" cy="113" rx="9" ry="4" fill="#00cc6e"/>
+    <!-- Belly spots -->
+    <ellipse cx="48" cy="68" rx="18" ry="16" fill="#00cc6e" opacity="0.4"/>
+    <!-- Tail -->
+    <path d="M24 80 Q10 90 6 96 Q4 100 8 98" fill="none" stroke="#00ff88" stroke-width="8" stroke-linecap="round"/>
+  </g>
+
+  <!-- Victory sparkles around Dippy -->
+  <g fill="#00ff88" filter="url(#greenGlow)">
+    <polygon points="160,340 164,350 174,350 166,356 170,366 160,360 150,366 154,356 146,350 156,350" />
+    <polygon points="130,420 133,427 140,427 134,432 137,439 130,434 123,439 126,432 120,427 127,427" transform="scale(0.7) translate(40,200)"/>
+    <polygon points="360,300 363,307 370,307 364,312 367,319 360,314 353,319 356,312 350,307 357,307"/>
+    <polygon points="400,440 403,447 410,447 404,452 407,459 400,454 393,459 396,452 390,447 397,447" transform="scale(0.6) translate(280,400)"/>
+  </g>
+
+  <!-- Green up arrow behind Dippy -->
+  <g filter="url(#greenGlow)" opacity="0.6">
+    <polygon points="280,180 320,120 360,180 340,180 340,240 300,240 300,180" fill="#00ff88"/>
+  </g>
+
+  <!-- ===== MOONY (RIGHT SIDE) - Defeated grey crescent moon ===== -->
+  <g transform="translate(620, 400) scale(3.2)" filter="url(#shadow)">
+    <!-- Moon body (crescent) -->
+    <circle cx="50" cy="50" r="42" fill="#6e7681"/>
+    <circle cx="34" cy="50" r="32" fill="transparent"/>
+    <!-- Inner shadow to make crescent -->
+    <circle cx="30" cy="46" r="30" fill="transparent" stroke="transparent"/>
+    <!-- Cut-out circle for crescent shape -->
+    <circle cx="32" cy="44" r="28" fill="none"/>
+    <!-- Derpy eye -->
+    <circle cx="56" cy="38" r="6" fill="#484f58"/>
+    <circle cx="56" cy="38" r="3.5" fill="#0d1117"/>
+    <circle cx="57" cy="36" r="1.2" fill="#888"/>
+    <!-- Second smaller eye -->
+    <circle cx="44" cy="42" r="3.5" fill="#484f58"/>
+    <circle cx="44" cy="42" r="2" fill="#0d1117"/>
+    <!-- Sad wobble mouth -->
+    <path d="M42 58 Q50 66 58 58" fill="none" stroke="#484f58" stroke-width="3" stroke-linecap="round"/>
+    <!-- Sweat drop -->
+    <path d="M64 30 Q66 24 68 30 Q66 34 64 30" fill="#8b949e"/>
+    <!-- Dizzy stars around head -->
+    <text x="28" y="24" font-size="8" fill="#8b949e" font-family="Arial">*</text>
+    <text x="70" y="22" font-size="10" fill="#8b949e" font-family="Arial">*</text>
+    <text x="74" y="50" font-size="7" fill="#8b949e" font-family="Arial">*</text>
+    <!-- Bandaid -->
+    <rect x="60" y="55" width="14" height="6" rx="2" fill="#f0883e" opacity="0.7"/>
+    <line x1="63" y1="55" x2="63" y2="61" stroke="#e8a060" stroke-width="0.5"/>
+    <line x1="67" y1="55" x2="67" y2="61" stroke="#e8a060" stroke-width="0.5"/>
+    <line x1="71" y1="55" x2="71" y2="61" stroke="#e8a060" stroke-width="0.5"/>
+  </g>
+
+  <!-- Red down arrow behind Moony -->
+  <g filter="url(#redGlow)" opacity="0.5">
+    <polygon points="740,780 780,840 700,840 720,840 720,780 760,780 760,840" fill="#ff5050"/>
+    <polygon points="740,800 700,850 780,850" fill="#ff5050"/>
+  </g>
+
+  <!-- Defeat X marks around Moony -->
+  <g stroke="#ff5050" stroke-width="3" opacity="0.3" stroke-linecap="round">
+    <line x1="850" y1="380" x2="870" y2="400"/><line x1="870" y1="380" x2="850" y2="400"/>
+    <line x1="900" y1="450" x2="915" y2="465"/><line x1="915" y1="450" x2="900" y2="465"/>
+    <line x1="620" y1="340" x2="638" y2="358"/><line x1="638" y1="340" x2="620" y2="358"/>
+  </g>
+
+  <!-- ===== VS TEXT (CENTER) ===== -->
+  <g filter="url(#goldGlow)">
+    <text x="500" y="530" text-anchor="middle" font-family="Arial Black, Impact, sans-serif"
+          font-size="120" font-weight="900" fill="#f0883e" stroke="#0d1117" stroke-width="4"
+          letter-spacing="8">VS</text>
+  </g>
+
+  <!-- Lightning bolt through VS -->
+  <g filter="url(#goldGlow)" opacity="0.8">
+    <polygon points="490,440 510,480 498,480 520,540 492,496 504,496 484,440" fill="#f0883e"/>
+  </g>
+
+  <!-- ===== TITLE TEXT ===== -->
+  <!-- DIPPY -->
+  <text x="250" y="200" text-anchor="middle" font-family="Arial Black, Impact, sans-serif"
+        font-size="90" font-weight="900" fill="#00ff88" stroke="#006633" stroke-width="3"
+        filter="url(#greenGlow)" letter-spacing="6">DIPPY</text>
+
+  <!-- MOONY -->
+  <text x="750" y="200" text-anchor="middle" font-family="Arial Black, Impact, sans-serif"
+        font-size="90" font-weight="900" fill="#6e7681" stroke="#3d4450" stroke-width="3"
+        filter="url(#redGlow)" letter-spacing="6">MOONY</text>
+
+  <!-- Subtitle -->
+  <text x="500" y="920" text-anchor="middle" font-family="Arial, sans-serif"
+        font-size="28" fill="#8b949e" letter-spacing="12" font-weight="bold">THE BOT THAT TRADES</text>
+  <text x="500" y="960" text-anchor="middle" font-family="Arial, sans-serif"
+        font-size="22" fill="#6e7681" letter-spacing="8">VS THE BOT THAT WAITS</text>
+
+  <!-- Crown on Dippy name -->
+  <g transform="translate(250, 100)" fill="#f0883e">
+    <polygon points="-40,0 -30,-25 -15,0 0,-30 15,0 30,-25 40,0" />
+    <rect x="-40" y="0" width="80" height="10" rx="2"/>
+    <circle cx="-30" cy="-25" r="5" fill="#ffd700"/>
+    <circle cx="0" cy="-30" r="6" fill="#ffd700"/>
+    <circle cx="30" cy="-25" r="5" fill="#ffd700"/>
+  </g>
+
+  <!-- Dunce cap on Moony name -->
+  <g transform="translate(750, 110)" fill="#ff5050" opacity="0.7">
+    <polygon points="0,-50 -25,10 25,10"/>
+    <text x="0" y="-10" text-anchor="middle" font-size="14" fill="#fff" font-family="Arial" font-weight="bold">D</text>
+  </g>
+
+  <!-- Portfolio comparison badges -->
+  <!-- Dippy badge -->
+  <g transform="translate(250, 850)">
+    <rect x="-80" y="-20" width="160" height="40" rx="20" fill="#00ff88" opacity="0.2" stroke="#00ff88" stroke-width="2"/>
+    <text x="0" y="8" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#00ff88" font-weight="bold">ALL IN +100%</text>
+  </g>
+  <!-- Moony badge -->
+  <g transform="translate(750, 850)">
+    <rect x="-80" y="-20" width="160" height="40" rx="20" fill="#ff5050" opacity="0.2" stroke="#ff5050" stroke-width="2"/>
+    <text x="0" y="8" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#ff5050" font-weight="bold">70% CASH -2%</text>
+  </g>
+
+</svg>
