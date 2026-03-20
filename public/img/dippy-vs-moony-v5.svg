@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1000" width="1200" height="1000">
+
+  <!-- Subtle stock chart lines in background -->
+  <polyline points="0,500 60,480 120,460 180,490 240,440 300,420 360,450 420,380 480,360 540,400 600,320 660,280 720,300 780,250 840,280 900,240 960,220 1020,260 1080,200 1140,180 1200,160"
+            fill="none" stroke="#00ff88" stroke-width="2.5" opacity="0.10"/>
+  <polyline points="0,520 60,510 120,540 180,530 240,560 300,540 360,570 420,550 480,580 540,560 600,590 660,570 720,600 780,580 840,610 900,590 960,620 1020,600 1080,630 1140,610 1200,620"
+            fill="none" stroke="#ff4444" stroke-width="2.5" opacity="0.08"/>
+
+  <!-- ===== DIPPY (LEFT) - facing right ===== -->
+  <g transform="translate(150, 100) scale(4.5)">
+    <!-- Tail -->
+    <path d="M6 52 Q-12 36 -16 18 Q-14 22 -10 24 Q-12 14 -6 6 Q-6 14 -4 20 Q-2 10 4 6 Q2 18 2 28 Q4 36 6 44"
+          fill="#00ff88" stroke="#00aa55" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- Body -->
+    <ellipse cx="32" cy="52" rx="30" ry="26" fill="#00ff88" stroke="#00aa55" stroke-width="1.5"/>
+    <!-- Back spikes -->
+    <polygon points="18,26 24,10 30,26" fill="#00cc6e" stroke="#00aa55" stroke-width="1"/>
+    <polygon points="28,23 34,4 40,23" fill="#00cc6e" stroke="#00aa55" stroke-width="1"/>
+    <polygon points="38,26 44,12 50,28" fill="#00cc6e" stroke="#00aa55" stroke-width="1"/>
+    <polygon points="46,30 51,18 56,32" fill="#00cc6e" stroke="#00aa55" stroke-width="1"/>
+    <!-- Neck -->
+    <path d="M50 38 Q58 22 56 6" fill="none" stroke="#00ff88" stroke-width="18" stroke-linecap="round"/>
+    <!-- Head -->
+    <ellipse cx="58" cy="2" rx="20" ry="15" fill="#00ff88" stroke="#00aa55" stroke-width="1.5"/>
+    <!-- Brow ridge -->
+    <path d="M62 -6 L74 -8 L78 -4" fill="none" stroke="#00aa55" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- Eye -->
+    <ellipse cx="66" cy="-2" rx="5" ry="4" fill="#0d1117"/>
+    <circle cx="68" cy="-3" r="2" fill="#fff"/>
+    <circle cx="69" cy="-2.5" r="1" fill="#ff3333"/>
+    <!-- Mouth -->
+    <path d="M72 6 Q80 10 78 14" fill="none" stroke="#0d1117" stroke-width="2" stroke-linecap="round"/>
+    <!-- Teeth -->
+    <path d="M72 6 L74 9 L76 6 L78 9 L79 7" fill="#fff" stroke="#fff" stroke-width="0.5"/>
+    <!-- Nostril -->
+    <circle cx="76" cy="0" r="1.2" fill="#00aa55"/>
+    <!-- Legs -->
+    <rect x="16" y="72" width="10" height="20" rx="4" fill="#00cc6e" stroke="#00aa55" stroke-width="1"/>
+    <rect x="40" y="72" width="10" height="20" rx="4" fill="#00cc6e" stroke="#00aa55" stroke-width="1"/>
+    <!-- Feet -->
+    <ellipse cx="21" cy="93" rx="9" ry="4" fill="#00cc6e" stroke="#00aa55" stroke-width="1"/>
+    <ellipse cx="45" cy="93" rx="9" ry="4" fill="#00cc6e" stroke="#00aa55" stroke-width="1"/>
+    <!-- Arms - fighting pose -->
+    <rect x="52" y="36" width="7" height="14" rx="3" fill="#00cc6e" stroke="#00aa55" stroke-width="1" transform="rotate(-40 55 43)"/>
+    <rect x="58" y="32" width="7" height="14" rx="3" fill="#00cc6e" stroke="#00aa55" stroke-width="1" transform="rotate(15 61 39)"/>
+    <!-- Fist -->
+    <circle cx="62" cy="30" r="4" fill="#00cc6e" stroke="#00aa55" stroke-width="1"/>
+    <path d="M60 27 L59 24 M62 26 L62 23 M64 27 L65 24" stroke="#00ff88" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- ===== VS (CENTER) ===== -->
+  <g transform="translate(600, 380)">
+    <!-- VS outline glow -->
+    <text x="0" y="0" text-anchor="middle" dominant-baseline="central"
+          font-family="'Courier New','Consolas','Liberation Mono',monospace"
+          font-size="130" font-weight="700" fill="none"
+          stroke="#ffd700" stroke-width="10" opacity="0.2">VS</text>
+    <!-- VS main text -->
+    <text x="0" y="0" text-anchor="middle" dominant-baseline="central"
+          font-family="'Courier New','Consolas','Liberation Mono',monospace"
+          font-size="130" font-weight="700" fill="#ffd700"
+          stroke="#b8860b" stroke-width="2.5" opacity="0.85">VS</text>
+  </g>
+
+  <!-- ===== MOONY (RIGHT) - facing left ===== -->
+  <g transform="translate(660, 40) scale(1.3)">
+    <!-- Moon body -->
+    <circle cx="200" cy="220" r="180" fill="#c4c4c4" stroke="#888" stroke-width="3"/>
+    <!-- Craters - moved to right/unlit side -->
+    <circle cx="300" cy="160" r="22" fill="#a0a0a0" stroke="#999" stroke-width="1.5" opacity="0.6"/>
+    <circle cx="310" cy="300" r="16" fill="#a0a0a0" stroke="#999" stroke-width="1.5" opacity="0.5"/>
+    <circle cx="120" cy="310" r="18" fill="#a0a0a0" stroke="#999" stroke-width="1.5" opacity="0.55"/>
+    <circle cx="280" cy="220" r="10" fill="#a0a0a0" stroke="#999" stroke-width="1" opacity="0.4"/>
+    <!-- Crescent dark side - far right so face is fully lit -->
+    <clipPath id="moonClipV5">
+      <circle cx="200" cy="220" r="180"/>
+    </clipPath>
+    <circle cx="360" cy="220" r="155" fill="#1a1a2e" opacity="0.6" clip-path="url(#moonClipV5)"/>
+
+    <!-- Left eye (closer to viewer) -->
+    <ellipse cx="145" cy="195" rx="26" ry="24" fill="#2d2d44" stroke="#222" stroke-width="2.5"/>
+    <ellipse cx="145" cy="195" rx="17" ry="16" fill="#484f58"/>
+    <circle cx="140" cy="193" r="9" fill="#1a1a2e"/>
+    <circle cx="138" cy="191" r="4" fill="#ff4444"/>
+    <circle cx="143" cy="188" r="3.5" fill="#ffffff" opacity="0.6"/>
+    <!-- Angry brow -->
+    <path d="M122 174 L150 183 L172 170" fill="none" stroke="#2d2d44" stroke-width="8" stroke-linecap="round"/>
+
+    <!-- Right eye -->
+    <ellipse cx="210" cy="200" rx="22" ry="20" fill="#2d2d44" stroke="#222" stroke-width="2.5"/>
+    <ellipse cx="210" cy="200" rx="14" ry="13" fill="#484f58"/>
+    <circle cx="206" cy="198" r="7" fill="#1a1a2e"/>
+    <circle cx="204" cy="196" r="3.5" fill="#ff4444"/>
+    <circle cx="208" cy="194" r="3" fill="#ffffff" opacity="0.6"/>
+    <!-- Angry brow -->
+    <path d="M192 180 L215 188 L240 177" fill="none" stroke="#2d2d44" stroke-width="7" stroke-linecap="round"/>
+
+    <!-- Angry mouth -->
+    <path d="M148 265 Q178 298 212 268 Q228 253 242 265" fill="none" stroke="#2d2d44" stroke-width="7" stroke-linecap="round"/>
+    <!-- Teeth -->
+    <path d="M165 275 L170 290 L175 275 L180 289 L185 276 L190 290 L195 275" fill="#c4c4c4" stroke="#2d2d44" stroke-width="2.5"/>
+  </g>
+
+  <!-- ===== BOTTOM TEXT: DIPPY  VS  MOONY ===== -->
+  <g>
+    <!-- DIPPY -->
+    <text x="280" y="860" text-anchor="middle"
+          font-family="'Courier New','Consolas','Liberation Mono',monospace"
+          font-size="115" font-weight="700" fill="#00ff88"
+          stroke="#00aa55" stroke-width="3" letter-spacing="8">DIPPY</text>
+    <!-- VS -->
+    <text x="600" y="860" text-anchor="middle"
+          font-family="'Courier New','Consolas','Liberation Mono',monospace"
+          font-size="95" font-weight="700" fill="#ffd700"
+          stroke="#b8860b" stroke-width="2" opacity="0.9">VS</text>
+    <!-- MOONY -->
+    <text x="920" y="860" text-anchor="middle"
+          font-family="'Courier New','Consolas','Liberation Mono',monospace"
+          font-size="115" font-weight="700" fill="#c4c4c4"
+          stroke="#888888" stroke-width="3" letter-spacing="8">MOONY</text>
+  </g>
+
+</svg>
