@@ -21,7 +21,7 @@ Let me walk you through every step of how Dippy's brain works, with pictures.
 
 For the first 30 minutes after market open, Dippy watches every price bar and tracks the **highest high** and **lowest low**. This creates a box — the Opening Range.
 
-<svg viewBox="0 0 600 300" xmlns="http://www.w3.org/2000/svg" style="max-width:560px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
+<svg viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg" style="max-width:660px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
   <!-- Grid lines -->
   <line x1="80" y1="40" x2="80" y2="260" stroke="#30363d" stroke-width="1"/>
   <line x1="80" y1="260" x2="560" y2="260" stroke="#30363d" stroke-width="1"/>
@@ -45,11 +45,11 @@ For the first 30 minutes after market open, Dippy watches every price bar and tr
 
   <!-- Range high line -->
   <line x1="100" y1="90" x2="560" y2="90" stroke="#00ff88" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
-  <text x="565" y="94" fill="#00ff88" font-size="11" font-weight="bold">HIGH $151.80</text>
+  <text x="570" y="94" fill="#00ff88" font-size="11" font-weight="bold">HIGH $151.80</text>
 
   <!-- Range low line -->
   <line x1="100" y1="190" x2="560" y2="190" stroke="#ff5050" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
-  <text x="565" y="194" fill="#ff5050" font-size="11" font-weight="bold">LOW $150.20</text>
+  <text x="570" y="194" fill="#ff5050" font-size="11" font-weight="bold">LOW $150.20</text>
 
   <!-- Candlesticks during range building (green and red) -->
   <!-- Candle 1 - red -->
@@ -105,15 +105,15 @@ The range keeps expanding as new highs and lows are set. Once the 30 minutes are
 
 Once the range is built, Dippy watches every new price bar. It's looking for one thing: **a bar that closes outside the box.**
 
-<svg viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg" style="max-width:560px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
+<svg viewBox="0 0 620 320" xmlns="http://www.w3.org/2000/svg" style="max-width:580px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
   <!-- Axes -->
   <line x1="80" y1="40" x2="80" y2="280" stroke="#30363d" stroke-width="1"/>
   <line x1="80" y1="280" x2="560" y2="280" stroke="#30363d" stroke-width="1"/>
 
   <!-- Range box -->
   <rect x="80" y="110" width="480" height="90" fill="#00ff88" fill-opacity="0.05" stroke="#00ff88" stroke-width="1.5" stroke-dasharray="6,3"/>
-  <text x="565" y="114" fill="#00ff88" font-size="10">HIGH</text>
-  <text x="565" y="204" fill="#ff5050" font-size="10">LOW</text>
+  <text x="570" y="114" fill="#00ff88" font-size="10">HIGH</text>
+  <text x="570" y="204" fill="#ff5050" font-size="10">LOW</text>
 
   <!-- Price bouncing inside range -->
   <line x1="120" y1="135" x2="120" y2="180" stroke="#8b949e" stroke-width="1"/>
@@ -200,7 +200,7 @@ When enabled, Dippy checks that the breakout bar has above-average volume compar
 
 When Dippy finds a valid breakout, it calculates exactly how many shares to buy. This is **risk-based sizing** — the position size depends on how much we could lose, not how much we want to bet.
 
-<svg viewBox="0 0 600 280" xmlns="http://www.w3.org/2000/svg" style="max-width:560px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
+<svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg" style="max-width:660px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
   <!-- Title -->
   <text x="300" y="30" fill="#f0883e" font-size="14" font-weight="bold" text-anchor="middle">BULLISH BREAKOUT — Position Sizing</text>
 
@@ -209,7 +209,7 @@ When Dippy finds a valid breakout, it calculates exactly how many shares to buy.
 
   <!-- Entry price line -->
   <line x1="40" y1="90" x2="560" y2="90" stroke="#00ff88" stroke-width="2"/>
-  <text x="565" y="94" fill="#00ff88" font-size="11" font-weight="bold">ENTRY $151.80</text>
+  <text x="570" y="94" fill="#00ff88" font-size="11" font-weight="bold">ENTRY $151.80</text>
   <text x="35" y="94" fill="#8b949e" font-size="9" text-anchor="end">Buy here</text>
 
   <!-- Range high label -->
@@ -217,7 +217,7 @@ When Dippy finds a valid breakout, it calculates exactly how many shares to buy.
 
   <!-- Stop loss line -->
   <line x1="40" y1="180" x2="560" y2="180" stroke="#ff5050" stroke-width="2"/>
-  <text x="565" y="184" fill="#ff5050" font-size="11" font-weight="bold">STOP $150.20</text>
+  <text x="570" y="184" fill="#ff5050" font-size="11" font-weight="bold">STOP $150.20</text>
   <text x="35" y="184" fill="#8b949e" font-size="9" text-anchor="end">Range low</text>
 
   <!-- Risk arrow -->
@@ -230,7 +230,7 @@ When Dippy finds a valid breakout, it calculates exactly how many shares to buy.
 
   <!-- Take profit line -->
   <line x1="40" y1="50" x2="560" y2="50" stroke="#00ff88" stroke-width="2" stroke-dasharray="6,3"/>
-  <text x="565" y="54" fill="#00ff88" font-size="11" font-weight="bold">TP $153.40</text>
+  <text x="570" y="54" fill="#00ff88" font-size="11" font-weight="bold">TP $153.40</text>
   <text x="35" y="54" fill="#8b949e" font-size="9" text-anchor="end">1R target</text>
 
   <!-- Sizing formula -->
