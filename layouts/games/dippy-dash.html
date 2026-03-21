@@ -462,16 +462,9 @@ function update() {
     const ox = o.x - o.w / 2;
     const oy = o.y - o.h / 2;
 
-    if (o.type === 'barrier') {
-      // Barriers can be jumped over
-      if (!player.jumping || player.y > GROUND_Y - PLAYER_H - 30) {
-        if (px < ox + o.w && px + PLAYER_W > ox && py < oy + o.h && py + PLAYER_H > oy) {
-          gameOver();
-          return;
-        }
-      }
-    } else {
-      // Moony obstacles — can't jump over
+    // All obstacles can be jumped over — skip collision if player is airborne and high enough
+    const jumpClear = player.jumping && player.y < GROUND_Y - PLAYER_H - 25;
+    if (!jumpClear) {
       if (px < ox + o.w && px + PLAYER_W > ox && py < oy + o.h && py + PLAYER_H > oy) {
         gameOver();
         return;
