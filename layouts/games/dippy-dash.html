@@ -203,8 +203,8 @@ const LANE_W = W / 3;
 const LANES = [LANE_W * 0.5, LANE_W * 1.5, LANE_W * 2.5]; // lane centers
 const PLAYER_W = 36, PLAYER_H = 44;
 const GROUND_Y = H - 60;
-const GRAVITY = 0.7;
-const JUMP_VEL = -13;
+const GRAVITY = 0.45;
+const JUMP_VEL = -14.5;
 
 let canvas, ctx;
 let gameActive = false;
@@ -311,7 +311,7 @@ function jump() {
   if (!player.jumping && player.jumpCooldown <= 0) {
     player.vy = JUMP_VEL;
     player.jumping = true;
-    player.jumpCooldown = 6;
+    player.jumpCooldown = 3;
   }
 }
 
@@ -463,7 +463,7 @@ function update() {
     const oy = o.y - o.h / 2;
 
     // All obstacles can be jumped over — skip collision if player is airborne and high enough
-    const jumpClear = player.jumping && player.y < GROUND_Y - PLAYER_H - 25;
+    const jumpClear = player.jumping && player.y < GROUND_Y - PLAYER_H - 12;
     if (!jumpClear) {
       if (px < ox + o.w && px + PLAYER_W > ox && py < oy + o.h && py + PLAYER_H > oy) {
         gameOver();
