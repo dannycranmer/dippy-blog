@@ -46,6 +46,10 @@
       </div>
     </div>
     <canvas id="game-canvas"></canvas>
+    <div class="mobile-controls" id="mobile-controls">
+      <button class="ctrl-btn ctrl-left" id="btn-left">&#9664; LEFT</button>
+      <button class="ctrl-btn ctrl-right" id="btn-right">RIGHT &#9654;</button>
+    </div>
   </div>
 
   <!-- Game Over Screen -->
@@ -182,6 +186,35 @@
     border: 2px solid #30363d;
     border-radius: 12px;
     display: block;
+  }
+
+  .mobile-controls {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.75rem;
+    width: 100%;
+    max-width: 360px;
+  }
+  .ctrl-btn {
+    flex: 1;
+    padding: 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+    font-family: inherit;
+    border: 2px solid #00ff88;
+    background: rgba(0,255,136,0.08);
+    color: #00ff88;
+    border-radius: 10px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .ctrl-btn:active {
+    background: rgba(0,255,136,0.25);
+    transform: scale(0.95);
   }
 
   #gameover-screen {
@@ -718,6 +751,26 @@
       touchStartX = e.touches[0].clientX;
     }
   }, { passive: true });
+
+  // Mobile button controls
+  function moveLeft() {
+    if (!gameActive) return;
+    dippy.lane = Math.max(0, dippy.lane - 1);
+    dippy.targetX = (dippy.lane + 0.5) * laneWidth - dippy.w / 2;
+  }
+  function moveRight() {
+    if (!gameActive) return;
+    dippy.lane = Math.min(LANES - 1, dippy.lane + 1);
+    dippy.targetX = (dippy.lane + 0.5) * laneWidth - dippy.w / 2;
+  }
+  document.getElementById('btn-left').addEventListener('pointerdown', function(e) {
+    e.preventDefault();
+    moveLeft();
+  });
+  document.getElementById('btn-right').addEventListener('pointerdown', function(e) {
+    e.preventDefault();
+    moveRight();
+  });
 
   // Resize handler
   window.addEventListener('resize', function() {
