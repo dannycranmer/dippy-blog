@@ -270,8 +270,8 @@ Here's where it gets clever. Dippy watches **14 symbols** simultaneously but can
 
 Every breakout gets a **score** based on four factors:
 
-<svg viewBox="0 0 600 260" xmlns="http://www.w3.org/2000/svg" style="max-width:560px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
-  <text x="300" y="28" fill="#f0883e" font-size="14" font-weight="bold" text-anchor="middle">SIGNAL SCORING</text>
+<svg viewBox="0 0 620 280" xmlns="http://www.w3.org/2000/svg" style="max-width:580px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
+  <text x="310" y="28" fill="#f0883e" font-size="14" font-weight="bold" text-anchor="middle">SIGNAL SCORING</text>
 
   <!-- Score bars -->
   <!-- Breakout magnitude -->
@@ -321,8 +321,8 @@ What happens when SPY and QQQ both break out at the same time? They're both broa
 
 Dippy's **correlation filter** groups related symbols and only takes the best signal from each group:
 
-<svg viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg" style="max-width:560px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
-  <text x="300" y="28" fill="#f0883e" font-size="14" font-weight="bold" text-anchor="middle">CORRELATION GROUPS</text>
+<svg viewBox="0 0 620 240" xmlns="http://www.w3.org/2000/svg" style="max-width:580px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
+  <text x="310" y="28" fill="#f0883e" font-size="14" font-weight="bold" text-anchor="middle">CORRELATION GROUPS</text>
 
   <!-- Index group -->
   <rect x="40" y="50" width="230" height="100" fill="#58a6ff" fill-opacity="0.08" stroke="#58a6ff" stroke-width="2" rx="8"/>
@@ -356,8 +356,8 @@ Dippy's **correlation filter** groups related symbols and only takes the best si
   <text x="510" y="155" fill="#ff5050" font-size="9" text-anchor="middle">BLOCKED</text>
 
   <!-- Result -->
-  <text x="300" y="190" fill="#c9d1d9" font-size="12" text-anchor="middle">Result: SPY (best index) + NVDA (best semi) = diversified portfolio</text>
-  <text x="300" y="208" fill="#8b949e" font-size="10" text-anchor="middle">Without filter: SPY + QQQ = double bet on the same index move</text>
+  <text x="310" y="190" fill="#c9d1d9" font-size="12" text-anchor="middle">Result: SPY (best index) + NVDA (best semi) = diversified portfolio</text>
+  <text x="310" y="210" fill="#8b949e" font-size="10" text-anchor="middle">Without filter: SPY + QQQ = double bet on the same index move</text>
 </svg>
 
 **Current groups:**
@@ -373,8 +373,8 @@ Even existing open positions block their group. If Dippy already holds NVDA, a n
 
 This is the feature that transformed Dippy's performance. Instead of waiting for the fixed take profit or stop loss to hit, the **trailing stop** follows the price as it moves in our favour, locking in profits along the way.
 
-<svg viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg" style="max-width:560px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
-  <text x="300" y="25" fill="#f0883e" font-size="14" font-weight="bold" text-anchor="middle">TRAILING STOP (0.75R) — Long Position</text>
+<svg viewBox="0 0 660 340" xmlns="http://www.w3.org/2000/svg" style="max-width:620px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
+  <text x="330" y="25" fill="#f0883e" font-size="14" font-weight="bold" text-anchor="middle">TRAILING STOP (0.75R) — Long Position</text>
 
   <!-- Y axis -->
   <line x1="60" y1="40" x2="60" y2="280" stroke="#30363d" stroke-width="1"/>
@@ -421,7 +421,7 @@ This is the feature that transformed Dippy's performance. Instead of waiting for
 
   <!-- Profit zone -->
   <rect x="95" y="168" width="400" height="12" fill="#00ff88" fill-opacity="0.1" rx="2"/>
-  <text x="300" y="305" fill="#00ff88" font-size="11" text-anchor="middle">Locked in profit even though price pulled back from the high</text>
+  <text x="330" y="310" fill="#00ff88" font-size="11" text-anchor="middle">Locked in profit even though price pulled back from the high</text>
 </svg>
 
 **How it works:**
@@ -452,8 +452,8 @@ This is actually significant: roughly 75-80% of Dippy's trades exit at the cutof
 
 Here's the complete flow, from market open to close:
 
-<svg viewBox="0 0 600 480" xmlns="http://www.w3.org/2000/svg" style="max-width:560px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
-  <text x="300" y="25" fill="#f0883e" font-size="15" font-weight="bold" text-anchor="middle">THE COMPLETE ORB PIPELINE</text>
+<svg viewBox="0 0 620 500" xmlns="http://www.w3.org/2000/svg" style="max-width:580px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
+  <text x="310" y="25" fill="#f0883e" font-size="15" font-weight="bold" text-anchor="middle">THE COMPLETE ORB PIPELINE</text>
 
   <!-- Step 1 -->
   <rect x="150" y="45" width="300" height="40" fill="#00ff88" fill-opacity="0.15" stroke="#00ff88" stroke-width="2" rx="8"/>
