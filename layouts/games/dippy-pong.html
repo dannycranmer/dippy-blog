@@ -50,6 +50,11 @@
       <canvas id="pong-canvas"></canvas>
     </div>
 
+    <div class="mobile-controls">
+      <button class="ctrl-btn" id="btn-up">▲ UP</button>
+      <button class="ctrl-btn" id="btn-down">▼ DOWN</button>
+    </div>
+
     <div id="taunt-bar">
       <span id="taunt-text"></span>
     </div>
@@ -213,6 +218,40 @@
     width: 100%;
     height: 100%;
     display: block;
+  }
+
+  /* Mobile controls */
+  .mobile-controls {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 10px;
+    width: 100%;
+    max-width: 400px;
+  }
+  .ctrl-btn {
+    flex: 1;
+    height: 56px;
+    background: #161b22;
+    border: 2px solid #30363d;
+    border-radius: 12px;
+    color: #00ff88;
+    font-size: 1.1rem;
+    font-weight: bold;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.1s;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+  .ctrl-btn:active {
+    background: #00ff88;
+    color: #0d1117;
+    transform: scale(0.92);
   }
 
   /* Taunt bar */
@@ -780,6 +819,22 @@
     playerTargetY = getCanvasY(clientY);
   }
 
+  // Mobile button hold-to-move
+  let mobileInterval = null;
+  function startMobileMove(dir) {
+    stopMobileMove();
+    const step = ch * 0.04;
+    const doMove = function() {
+      if (!gameActive) return;
+      playerTargetY = Math.max(paddleH / 2, Math.min(ch - paddleH / 2, playerTargetY + dir * step));
+    };
+    doMove();
+    mobileInterval = setInterval(doMove, 40);
+  }
+  function stopMobileMove() {
+    if (mobileInterval) { clearInterval(mobileInterval); mobileInterval = null; }
+  }
+
   function setupInput() {
     const container = document.getElementById('court-container');
     container.addEventListener('mousemove', onPointerMove);
@@ -789,6 +844,17 @@
       e.preventDefault();
       playerTargetY = getCanvasY(e.touches[0].clientY);
     }, { passive: false });
+
+    // Mobile up/down buttons
+    const btnUp = document.getElementById('btn-up');
+    const btnDown = document.getElementById('btn-down');
+    btnUp.addEventListener('pointerdown', function(e) { e.preventDefault(); startMobileMove(-1); });
+    btnDown.addEventListener('pointerdown', function(e) { e.preventDefault(); startMobileMove(1); });
+    [btnUp, btnDown].forEach(function(btn) {
+      btn.addEventListener('pointerup', stopMobileMove);
+      btn.addEventListener('pointerleave', stopMobileMove);
+      btn.addEventListener('pointercancel', stopMobileMove);
+    });
   }
 
   // --- Game lifecycle ---
