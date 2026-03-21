@@ -1,0 +1,506 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">DIPPY FLAPPY</h1>
+    <p class="game-subtitle">Flap through the candlestick gaps.<br>Moony keeps narrowing them. How long can you fly?</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">START</button>
+    <p class="game-hint">Tap, click, or press Space to flap.<br>Moony designed these gaps. They get smaller.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="score">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">LEVEL</span>
+        <span class="hud-value" id="level">1</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">BEST</span>
+        <span class="hud-value" id="best">0</span>
+      </div>
+    </div>
+    <canvas id="game-canvas"></canvas>
+    <button id="flap-btn">FLAP</button>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="gameover-title" id="gameover-title">MOONY WINS</h1>
+    <div class="final-score">
+      <span class="final-label">PIPES CLEARED</span>
+      <span class="final-value" id="final-score">0</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-level">1</span><span class="stat-label">Level</span></div>
+      <div class="stat"><span class="stat-val" id="stat-speed">1.0x</span><span class="stat-label">Speed</span></div>
+      <div class="stat"><span class="stat-val" id="stat-gap">150</span><span class="stat-label">Gap Size</span></div>
+    </div>
+    <div class="high-score-display" id="gameover-high-score"></div>
+    <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
+    <button id="replay-btn" onclick="startGame()">PLAY AGAIN</button>
+  </div>
+</div>
+{{ partial "leaderboard" . }}
+
+<style>
+  #game-wrapper {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #title-screen { text-align: center; animation: fadeIn 0.5s ease; }
+  .title-dippy { margin-bottom: 1rem; animation: bounce 2s ease-in-out infinite; }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+  .game-title {
+    font-size: 2.2rem; color: #00ff88; margin: 0.5rem 0;
+    text-shadow: 0 0 20px rgba(0,255,136,0.5);
+  }
+  .game-subtitle { color: #8b949e; font-size: 0.95rem; margin: 0.5rem 0 1.5rem; line-height: 1.4; }
+  .game-hint { color: #484f58; font-size: 0.8rem; margin-top: 1rem; line-height: 1.4; }
+
+  .high-score-display {
+    color: #f0883e; font-size: 1rem; font-weight: bold; margin: 0.5rem 0;
+    min-height: 1.4rem;
+  }
+
+  button {
+    background: #00ff88; color: #0d1117; border: none; padding: 0.8rem 2.5rem;
+    font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer;
+    transition: all 0.2s; font-family: inherit;
+  }
+  button:hover { background: #00cc6e; transform: scale(1.05); }
+  button:active { transform: scale(0.95); }
+
+  .game-hud {
+    display: flex; justify-content: space-between; width: 100%; max-width: 420px;
+    margin-bottom: 0.5rem;
+  }
+  .hud-item { text-align: center; }
+  .hud-label { display: block; font-size: 0.7rem; color: #484f58; letter-spacing: 0.05em; }
+  .hud-value { display: block; font-size: 1.3rem; color: #00ff88; font-weight: bold; }
+
+  #game-canvas {
+    width: 100%; max-width: 420px; border-radius: 8px;
+    border: 2px solid #21262d; background: #0d1117;
+    touch-action: none;
+  }
+
+  #flap-btn {
+    margin-top: 0.5rem; width: 100%; max-width: 420px; padding: 1rem;
+    font-size: 1.2rem; background: #00ff88; border-radius: 8px;
+  }
+
+  #gameover-screen { text-align: center; animation: fadeIn 0.3s ease; }
+  .gameover-title { font-size: 2rem; color: #ff5050; margin-bottom: 1rem; }
+  .final-score { margin: 1rem 0; }
+  .final-label { display: block; font-size: 0.8rem; color: #484f58; letter-spacing: 0.05em; }
+  .final-value { display: block; font-size: 3rem; color: #00ff88; font-weight: bold; }
+
+  .stats-row { display: flex; justify-content: center; gap: 2rem; margin: 1rem 0; }
+  .stat { text-align: center; }
+  .stat-val { display: block; font-size: 1.3rem; color: #f0883e; font-weight: bold; }
+  .stat-label { display: block; font-size: 0.7rem; color: #484f58; margin-top: 0.2rem; }
+
+  .gameover-roast {
+    color: #8b949e; font-style: italic; margin: 1rem 0; padding: 0 1rem;
+    font-size: 0.9rem; line-height: 1.4;
+  }
+
+  #replay-btn { margin-top: 1rem; }
+
+  .lb-title-section { margin-top: 1.5rem; }
+</style>
+
+<script>
+const ROASTS = [
+  "Moony could fly better, but it's too busy sitting on 70% cash.",
+  "You flew about as well as Moony trades. Which is to say, into the ground.",
+  "Even Moony's value picks have more upside than that flight.",
+  "Moony designed those gaps. It also designs portfolios. Both are painful.",
+  "That landing was smoother than Moony's portfolio returns.",
+  "Flappy Dippy down! Moony is celebrating with a 0.3% CD return.",
+  "You hit a candle. Moony hits nothing — because it never enters the market.",
+  "Moony's watching from the ground. It's afraid of heights. And profits.",
+  "That was the financial equivalent of Moony buying bonds at the top.",
+  "Don't worry, Moony crashed harder. Into irrelevance.",
+  "The gap closed on you like Moony's trading window closes at 9:31 AM.",
+  "Dippy will fly again. Moony will continue to sit there doing nothing.",
+  "You lasted longer than Moony's last growth trade. Two whole seconds.",
+  "Moony says 'value investing' — Dippy says 'at least I tried to fly'.",
+  "Those candles were redder than Moony's portfolio. And that's saying something."
+];
+
+const GAME_TITLES = [
+  "MOONY WINS", "CANDLE CRASH", "RED DAY", "MARGIN CALLED",
+  "BEARS WIN", "PORTFOLIO DOWN", "STOP LOSS HIT", "GAP DOWN"
+];
+
+let canvas, ctx;
+let W, H;
+const BIRD_X = 80;
+const BIRD_SIZE = 24;
+const PIPE_WIDTH = 52;
+const BASE_GAP = 155;
+const MIN_GAP = 80;
+const GAP_SHRINK_PER_LEVEL = 8;
+const PIPES_PER_LEVEL = 5;
+const BASE_SPEED = 2.5;
+const SPEED_INCREASE = 0.25;
+const GRAVITY = 0.42;
+const FLAP_FORCE = -6.5;
+const PIPE_SPACING = 220;
+
+let bird, pipes, score, level, speed, gapSize, gameRunning, gameOver;
+let frameId;
+
+function initCanvas() {
+  canvas = document.getElementById('game-canvas');
+  ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  W = rect.width;
+  H = Math.min(W * 1.6, 640);
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function startGame() {
+  document.getElementById('title-screen').style.display = 'none';
+  document.getElementById('gameover-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = '';
+  initCanvas();
+
+  bird = { y: H / 2, vy: 0, angle: 0 };
+  pipes = [];
+  score = 0;
+  level = 1;
+  speed = BASE_SPEED;
+  gapSize = BASE_GAP;
+  gameRunning = true;
+  gameOver = false;
+
+  updateHUD();
+  spawnInitialPipes();
+
+  if (frameId) cancelAnimationFrame(frameId);
+  frameId = requestAnimationFrame(loop);
+}
+
+function spawnInitialPipes() {
+  let x = W + 100;
+  for (let i = 0; i < 4; i++) {
+    spawnPipe(x);
+    x += PIPE_SPACING;
+  }
+}
+
+function spawnPipe(x) {
+  const minTop = 50;
+  const maxTop = H - gapSize - 50;
+  const topH = minTop + Math.random() * (maxTop - minTop);
+  // Determine candle color: red or green
+  const isGreen = Math.random() > 0.4;
+  pipes.push({
+    x: x,
+    topH: topH,
+    gapSize: gapSize,
+    scored: false,
+    color: isGreen ? '#00ff88' : '#ff5050',
+    wickColor: isGreen ? '#00cc6e' : '#cc3030',
+    hasMoony: Math.random() < 0.15 + level * 0.02 // Moony face chance increases
+  });
+}
+
+function flap() {
+  if (gameOver) return;
+  if (!gameRunning) return;
+  bird.vy = FLAP_FORCE;
+}
+
+function loop() {
+  if (!gameRunning) return;
+  update();
+  draw();
+  frameId = requestAnimationFrame(loop);
+}
+
+function update() {
+  // Bird physics
+  bird.vy += GRAVITY;
+  bird.y += bird.vy;
+  bird.angle = Math.min(Math.max(bird.vy * 3, -30), 70);
+
+  // Ceiling/floor
+  if (bird.y < BIRD_SIZE / 2) {
+    bird.y = BIRD_SIZE / 2;
+    bird.vy = 0;
+  }
+  if (bird.y > H - BIRD_SIZE / 2) {
+    endGame();
+    return;
+  }
+
+  // Move pipes
+  for (let p of pipes) {
+    p.x -= speed;
+
+    // Score
+    if (!p.scored && p.x + PIPE_WIDTH < BIRD_X) {
+      p.scored = true;
+      score++;
+      updateHUD();
+
+      // Level up every N pipes
+      if (score % PIPES_PER_LEVEL === 0) {
+        level++;
+        speed = BASE_SPEED + (level - 1) * SPEED_INCREASE;
+        gapSize = Math.max(MIN_GAP, BASE_GAP - (level - 1) * GAP_SHRINK_PER_LEVEL);
+        updateHUD();
+      }
+    }
+
+    // Collision
+    if (checkCollision(p)) {
+      endGame();
+      return;
+    }
+  }
+
+  // Remove off-screen pipes
+  while (pipes.length > 0 && pipes[0].x + PIPE_WIDTH < -10) {
+    pipes.shift();
+  }
+
+  // Spawn new pipes
+  if (pipes.length > 0) {
+    const last = pipes[pipes.length - 1];
+    if (last.x < W - PIPE_SPACING + PIPE_WIDTH) {
+      spawnPipe(last.x + PIPE_SPACING);
+    }
+  }
+}
+
+function checkCollision(p) {
+  const bx = BIRD_X, by = bird.y, br = BIRD_SIZE / 2 - 2;
+  // Check horizontal overlap
+  if (bx + br < p.x || bx - br > p.x + PIPE_WIDTH) return false;
+  // Check top pipe
+  if (by - br < p.topH) return true;
+  // Check bottom pipe
+  if (by + br > p.topH + p.gapSize) return true;
+  return false;
+}
+
+function endGame() {
+  gameRunning = false;
+  gameOver = true;
+
+  const hs = localStorage.getItem('dippy-dippy-flappy-high') || 0;
+  const isNew = score > hs;
+  if (isNew) localStorage.setItem('dippy-dippy-flappy-high', score);
+
+  document.getElementById('game-screen').style.display = 'none';
+  document.getElementById('gameover-screen').style.display = '';
+  document.getElementById('gameover-title').textContent = GAME_TITLES[Math.floor(Math.random() * GAME_TITLES.length)];
+  document.getElementById('final-score').textContent = score;
+  document.getElementById('stat-level').textContent = level;
+  document.getElementById('stat-speed').textContent = speed.toFixed(1) + 'x';
+  document.getElementById('stat-gap').textContent = Math.round(gapSize);
+  document.getElementById('gameover-roast').textContent = ROASTS[Math.floor(Math.random() * ROASTS.length)];
+  document.getElementById('gameover-high-score').textContent = isNew
+    ? '🏆 NEW HIGH SCORE!'
+    : 'Best: ' + hs;
+
+  if (typeof submitScore === 'function') submitScore(score, 'lb-gameover');
+}
+
+function updateHUD() {
+  document.getElementById('score').textContent = score;
+  document.getElementById('level').textContent = level;
+  const hs = localStorage.getItem('dippy-dippy-flappy-high') || 0;
+  document.getElementById('best').textContent = hs;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Background — subtle grid
+  ctx.strokeStyle = '#161b22';
+  ctx.lineWidth = 0.5;
+  for (let x = 0; x < W; x += 30) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = 0; y < H; y += 30) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  // Draw pipes as candlesticks
+  for (let p of pipes) {
+    const cx = p.x + PIPE_WIDTH / 2;
+    const wickW = 6;
+
+    // Top candle (wick + body)
+    ctx.fillStyle = p.wickColor;
+    ctx.fillRect(cx - wickW / 2, 0, wickW, p.topH); // wick
+    ctx.fillStyle = p.color;
+    const topBodyH = Math.min(p.topH, 60);
+    ctx.fillRect(p.x, p.topH - topBodyH, PIPE_WIDTH, topBodyH); // body
+    // Body border
+    ctx.strokeStyle = '#21262d';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(p.x, p.topH - topBodyH, PIPE_WIDTH, topBodyH);
+
+    // Bottom candle
+    const botY = p.topH + p.gapSize;
+    ctx.fillStyle = p.wickColor;
+    ctx.fillRect(cx - wickW / 2, botY, wickW, H - botY); // wick
+    ctx.fillStyle = p.color;
+    const botBodyH = Math.min(H - botY, 60);
+    ctx.fillRect(p.x, botY, PIPE_WIDTH, botBodyH); // body
+    ctx.strokeStyle = '#21262d';
+    ctx.strokeRect(p.x, botY, PIPE_WIDTH, botBodyH);
+
+    // Moony face on some pipes
+    if (p.hasMoony) {
+      const my = botY + 30;
+      drawMoony(cx, my, 16);
+    }
+  }
+
+  // Draw bird (Dippy)
+  ctx.save();
+  ctx.translate(BIRD_X, bird.y);
+  ctx.rotate(bird.angle * Math.PI / 180);
+  drawDippy(0, 0, BIRD_SIZE);
+  ctx.restore();
+
+  // Level indicator
+  if (level > 1) {
+    ctx.fillStyle = 'rgba(0,255,136,0.15)';
+    ctx.font = 'bold 60px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('L' + level, W / 2, H / 2 + 20);
+  }
+}
+
+function drawDippy(x, y, s) {
+  const r = s / 2;
+  // Body
+  ctx.fillStyle = '#00ff88';
+  ctx.beginPath();
+  ctx.ellipse(x, y, r, r * 0.8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Eye
+  ctx.fillStyle = '#0d1117';
+  ctx.beginPath();
+  ctx.arc(x + r * 0.3, y - r * 0.2, r * 0.18, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(x + r * 0.35, y - r * 0.28, r * 0.08, 0, Math.PI * 2);
+  ctx.fill();
+  // Beak
+  ctx.fillStyle = '#f0883e';
+  ctx.beginPath();
+  ctx.moveTo(x + r, y - 2);
+  ctx.lineTo(x + r + 6, y + 1);
+  ctx.lineTo(x + r, y + 4);
+  ctx.closePath();
+  ctx.fill();
+  // Wing
+  ctx.fillStyle = '#00cc6e';
+  ctx.beginPath();
+  const wingFlap = Math.sin(Date.now() * 0.015) * 4;
+  ctx.ellipse(x - r * 0.3, y + wingFlap, r * 0.5, r * 0.3, -0.3, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawMoony(x, y, r) {
+  // Grey circle
+  ctx.fillStyle = '#484f58';
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  // Sad eyes
+  ctx.fillStyle = '#0d1117';
+  ctx.beginPath();
+  ctx.arc(x - 4, y - 3, 2.5, 0, Math.PI * 2);
+  ctx.arc(x + 4, y - 3, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+  // Frown
+  ctx.strokeStyle = '#0d1117';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(x, y + 6, 5, Math.PI + 0.3, -0.3);
+  ctx.stroke();
+}
+
+// Input handlers
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' || e.code === 'ArrowUp') {
+    e.preventDefault();
+    flap();
+  }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  const canvas = document.getElementById('game-canvas');
+  canvas.addEventListener('pointerdown', (e) => { e.preventDefault(); flap(); });
+
+  const flapBtn = document.getElementById('flap-btn');
+  flapBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); flap(); });
+
+  // Show high score on title
+  const hs = localStorage.getItem('dippy-dippy-flappy-high') || 0;
+  if (hs > 0) {
+    document.getElementById('title-high-score').textContent = 'Best: ' + hs;
+  }
+
+  // Leaderboard on title
+  if (typeof loadLeaderboard === 'function') {
+    loadLeaderboard('lb-title', { limit: 5 });
+  }
+});
+</script>
+{{ end }}
