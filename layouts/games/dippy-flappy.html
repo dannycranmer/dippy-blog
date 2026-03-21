@@ -356,7 +356,7 @@ function endGame() {
     ? '🏆 NEW HIGH SCORE!'
     : 'Best: ' + hs;
 
-  if (typeof submitScore === 'function') submitScore(score, 'lb-gameover');
+  DippyLB.onGameOver(score);
 }
 
 function updateHUD() {
@@ -501,10 +501,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('title-high-score').textContent = 'Best: ' + hs;
   }
 
-  // Leaderboard on title
-  if (typeof loadLeaderboard === 'function') {
-    loadLeaderboard('lb-title', { limit: 5 });
-  }
+  // Init leaderboard
+  DippyLB.init('dippy-flappy');
 });
 </script>
 {{ end }}
