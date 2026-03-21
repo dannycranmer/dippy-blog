@@ -226,10 +226,12 @@
   const INV_H = 18;
   const BOMB_W = 4;
   const BOMB_H = 8;
-  const BOMB_SPEED = 3;
+  const BOMB_SPEED = 4;
   const PLAYER_SPEED = 4;
   const COLS = 8;
-  const ROWS = 4;
+  const ROWS = 5;
+  const DIVE_CHANCE_BASE = 0.0008;
+  const DIVE_SPEED = 4;
 
   function showHigh(elId) {
     const h = localStorage.getItem(HIGH_KEY);
@@ -264,6 +266,7 @@
     particles = [];
 
     player = { x: W / 2 - PLAYER_W / 2, y: H - PLAYER_H - 10, w: PLAYER_W, h: PLAYER_H, cooldown: 0 };
+    divers = [];
     spawnWave();
     gameRunning = true;
     updateHUD();
@@ -287,8 +290,10 @@
       }
     }
     invaderDir = 1;
-    invaderSpeed = 0.5 + wave * 0.3;
-    bombChance = 0.003 + wave * 0.001;
+    baseInvaderSpeed = 0.6 + wave * 0.35;
+    invaderSpeed = baseInvaderSpeed;
+    totalInvaders = ROWS * COLS;
+    bombChance = 0.005 + wave * 0.002;
   }
 
   function updateHUD() {
@@ -369,7 +374,7 @@
     if (player.cooldown > 0) return;
     bullets.push({ x: player.x + player.w / 2 - BULLET_W / 2, y: player.y - BULLET_H, w: BULLET_W, h: BULLET_H });
     shotsFired++;
-    player.cooldown = 12;
+    player.cooldown = 16;
   }
 
   function hitTest(a, b) {
@@ -417,12 +422,17 @@
     }
 
     // Check wave clear
-    if (invaders.every(inv => !inv.alive)) {
+    if (invaders.every(inv => !inv.alive) && divers.length === 0) {
       wave++;
       updateHUD();
       spawnWave();
       return;
     }
+
+    // Speed up as fewer invaders remain (classic Space Invaders behavior)
+    const aliveInvaders = invaders.filter(inv => inv.alive);
+    const aliveRatio = aliveInvaders.length / totalInvaders;
+    invaderSpeed = baseInvaderSpeed * (1 + (1 - aliveRatio) * 2.5);
 
     // Move invaders
     let hitEdge = false;
@@ -434,21 +444,78 @@
     if (hitEdge) {
       invaderDir *= -1;
       for (let inv of invaders) {
-        if (inv.alive) inv.y += INV_H * 0.6;
+        if (inv.alive) inv.y += INV_H * 0.7;
       }
     }
 
-    // Invader bombs
-    const aliveInvaders = invaders.filter(inv => inv.alive);
+    // Invader bombs — some aimed at player
     if (Math.random() < bombChance && aliveInvaders.length > 0) {
       const shooter = aliveInvaders[Math.floor(Math.random() * aliveInvaders.length)];
-      bombs.push({ x: shooter.x + shooter.w / 2 - BOMB_W / 2, y: shooter.y + shooter.h, w: BOMB_W, h: BOMB_H });
+      const bx = shooter.x + shooter.w / 2 - BOMB_W / 2;
+      const by = shooter.y + shooter.h;
+      if (wave >= 2 && Math.random() < 0.4) {
+        // Aimed bomb — angles toward player
+        const dx = (player.x + player.w / 2) - (bx + BOMB_W / 2);
+        const dy = (player.y) - by;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const speed = BOMB_SPEED + wave * 0.3;
+        bombs.push({ x: bx, y: by, w: BOMB_W, h: BOMB_H, vx: dx / dist * speed * 0.5, vy: speed });
+      } else {
+        bombs.push({ x: bx, y: by, w: BOMB_W, h: BOMB_H, vx: 0, vy: BOMB_SPEED + wave * 0.4 });
+      }
+    }
+
+    // Dive-bombing Moonys — break formation and dive at player
+    const diveChance = DIVE_CHANCE_BASE + wave * 0.0004;
+    if (Math.random() < diveChance && aliveInvaders.length > 2) {
+      const diver = aliveInvaders[Math.floor(Math.random() * aliveInvaders.length)];
+      diver.alive = false;
+      const dx = (player.x + player.w / 2) - (diver.x + diver.w / 2);
+      const dy = (player.y) - diver.y;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      divers.push({
+        x: diver.x, y: diver.y, w: diver.w, h: diver.h,
+        vx: dx / dist * DIVE_SPEED,
+        vy: dy / dist * DIVE_SPEED,
+        type: diver.type
+      });
+    }
+
+    // Move divers
+    for (let i = divers.length - 1; i >= 0; i--) {
+      divers[i].x += divers[i].vx;
+      divers[i].y += divers[i].vy;
+      if (divers[i].y > H || divers[i].x < -50 || divers[i].x > W + 50) {
+        divers.splice(i, 1); continue;
+      }
+      if (hitTest(divers[i], player)) {
+        divers.splice(i, 1);
+        lives--;
+        spawnParticles(player.x + player.w / 2, player.y + player.h / 2, '#ff5050', 12);
+        updateHUD();
+        if (lives <= 0) { endGame(); return; }
+        continue;
+      }
+      // Bullets can hit divers
+      for (let j = bullets.length - 1; j >= 0; j--) {
+        if (hitTest(bullets[j], divers[i])) {
+          const pts = divers[i].type === 'gold' ? 50 : 20;
+          score += pts;
+          shotsHit++;
+          spawnParticles(divers[i].x + divers[i].w / 2, divers[i].y + divers[i].h / 2, '#ff5050', 10);
+          divers.splice(i, 1);
+          bullets.splice(j, 1);
+          updateHUD();
+          break;
+        }
+      }
     }
 
     // Move bombs
     for (let i = bombs.length - 1; i >= 0; i--) {
-      bombs[i].y += BOMB_SPEED + wave * 0.3;
-      if (bombs[i].y > H) { bombs.splice(i, 1); continue; }
+      bombs[i].x += bombs[i].vx;
+      bombs[i].y += bombs[i].vy;
+      if (bombs[i].y > H || bombs[i].x < -20 || bombs[i].x > W + 20) { bombs.splice(i, 1); continue; }
       if (hitTest(bombs[i], player)) {
         bombs.splice(i, 1);
         lives--;
@@ -490,6 +557,15 @@
     // Invaders
     for (let inv of invaders) {
       if (inv.alive) drawMoony(inv.x, inv.y, inv.w, inv.h, inv.type === 'gold');
+    }
+
+    // Divers (glowing red — kamikaze Moonys)
+    for (let d of divers) {
+      ctx.save();
+      ctx.shadowColor = '#ff5050';
+      ctx.shadowBlur = 8;
+      drawMoony(d.x, d.y, d.w, d.h, d.type === 'gold');
+      ctx.restore();
     }
 
     // Bullets
