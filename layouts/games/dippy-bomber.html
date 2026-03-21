@@ -25,7 +25,7 @@
     <p class="game-subtitle">Plant bombs. Blast Moonys.<br>Their portfolio isn't the only thing exploding.</p>
     <div class="high-score-display" id="title-high-score"></div>
     <button id="start-btn" onclick="startGame()">START</button>
-    <p class="game-hint">Arrow keys / WASD to move. Space / Tap to bomb.<br>Swipe to move on mobile. Don't blow yourself up.</p>
+    <p class="game-hint">Arrow keys / WASD to move. Space to bomb.<br>Mobile: D-pad or swipe to move. Tap grid to bomb.</p>
     <div id="lb-title" class="lb-title-section"></div>
   </div>
 
@@ -135,14 +135,15 @@
     padding: 12px 0; gap: 20px;
   }
   .dpad {
-    display: grid; grid-template-columns: 44px 44px 44px; grid-template-rows: 44px 44px 44px;
-    gap: 2px;
+    display: grid; grid-template-columns: 56px 56px 56px; grid-template-rows: 56px 56px 56px;
+    gap: 3px;
   }
   .dpad-btn {
-    background: #161b22; border: 1px solid #30363d; color: #8b949e;
-    font-size: 16px; border-radius: 6px; cursor: pointer;
+    background: #161b22; border: 2px solid #30363d; color: #8b949e;
+    font-size: 20px; border-radius: 8px; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
   .dpad-btn:active { background: #00ff8833; border-color: #00ff88; color: #00ff88; }
   .dpad-up { grid-column: 2; grid-row: 1; }
@@ -151,9 +152,10 @@
   .dpad-down { grid-column: 2; grid-row: 3; }
   .bomb-btn {
     background: #ff505033; border: 2px solid #ff5050; color: #ff5050;
-    font-size: 1em; font-weight: 900; padding: 20px 24px; border-radius: 50%;
+    font-size: 1.1em; font-weight: 900; width: 80px; height: 80px; border-radius: 50%;
     cursor: pointer; font-family: inherit; letter-spacing: 1px;
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
   .bomb-btn:active { background: #ff505066; }
 
@@ -180,7 +182,8 @@
     margin: 16px 8px; line-height: 1.4;
   }
 
-  @media (min-width: 500px) {
+  /* Always show mobile controls on touch devices */
+  @media (pointer: fine) and (hover: hover) {
     #mobile-controls { display: none; }
   }
   @media (max-width: 499px) {
@@ -276,6 +279,8 @@
   // mobile input
   let pendingDir = null;
   let touchStartX = 0, touchStartY = 0;
+  let touchStartTime = 0;
+  let swipeHandled = false;
 
   function getHighScore() {
     try { return parseInt(localStorage.getItem('dippy-dippy-bomber-high') || '0'); } catch(e) { return 0; }
@@ -950,6 +955,65 @@
     btnBomb.addEventListener('click', placeBomb);
   }
 
+  // --- Canvas Touch (swipe to move, tap to bomb) ---
+  function setupCanvasTouch() {
+    const cv = document.getElementById('game-canvas');
+    let swipeRepeatId = null;
+
+    cv.addEventListener('touchstart', (e) => {
+      if (!gameActive) return;
+      e.preventDefault();
+      const t = e.touches[0];
+      touchStartX = t.clientX;
+      touchStartY = t.clientY;
+      touchStartTime = Date.now();
+      swipeHandled = false;
+      if (swipeRepeatId) { clearInterval(swipeRepeatId); swipeRepeatId = null; }
+    }, { passive: false });
+
+    cv.addEventListener('touchmove', (e) => {
+      if (!gameActive) return;
+      e.preventDefault();
+      const t = e.touches[0];
+      const dx = t.clientX - touchStartX;
+      const dy = t.clientY - touchStartY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 20) return; // min swipe distance
+      swipeHandled = true;
+      let dr = 0, dc = 0;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        dc = dx > 0 ? 1 : -1;
+      } else {
+        dr = dy > 0 ? 1 : -1;
+      }
+      // Continuous movement while swiping
+      if (!swipeRepeatId || swipeRepeatId._dr !== dr || swipeRepeatId._dc !== dc) {
+        if (swipeRepeatId) clearInterval(swipeRepeatId);
+        movePlayer(dr, dc);
+        const id = setInterval(() => movePlayer(dr, dc), 100);
+        id._dr = dr; id._dc = dc;
+        swipeRepeatId = id;
+      }
+      // Update start for continuous swiping
+      touchStartX = t.clientX;
+      touchStartY = t.clientY;
+    }, { passive: false });
+
+    cv.addEventListener('touchend', (e) => {
+      if (!gameActive) return;
+      e.preventDefault();
+      if (swipeRepeatId) { clearInterval(swipeRepeatId); swipeRepeatId = null; }
+      // Short tap = place bomb
+      if (!swipeHandled && Date.now() - touchStartTime < 250) {
+        placeBomb();
+      }
+    }, { passive: false });
+
+    cv.addEventListener('touchcancel', (e) => {
+      if (swipeRepeatId) { clearInterval(swipeRepeatId); swipeRepeatId = null; }
+    });
+  }
+
   // --- Game Lifecycle ---
   window.startGame = function() {
     score = 0;
@@ -1029,6 +1093,7 @@
 
   // Init
   setupMobileControls();
+  setupCanvasTouch();
   if (typeof DippyLB !== 'undefined') {
     DippyLB.init('dippy-bomber');
   }
