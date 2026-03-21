@@ -1,0 +1,1037 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">DIPPY BOMBER</h1>
+    <p class="game-subtitle">Plant bombs. Blast Moonys.<br>Their portfolio isn't the only thing exploding.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">START</button>
+    <p class="game-hint">Arrow keys / WASD to move. Space / Tap to bomb.<br>Swipe to move on mobile. Don't blow yourself up.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="hud-score">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">LEVEL</span>
+        <span class="hud-value" id="hud-level">1</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">LIVES</span>
+        <span class="hud-value" id="hud-lives">3</span>
+      </div>
+    </div>
+    <div id="grid-container">
+      <canvas id="game-canvas"></canvas>
+    </div>
+    <div id="mobile-controls">
+      <div class="dpad">
+        <button class="dpad-btn dpad-up" id="btn-up">&#9650;</button>
+        <button class="dpad-btn dpad-left" id="btn-left">&#9664;</button>
+        <button class="dpad-btn dpad-right" id="btn-right">&#9654;</button>
+        <button class="dpad-btn dpad-down" id="btn-down">&#9660;</button>
+      </div>
+      <button class="bomb-btn" id="btn-bomb">BOMB</button>
+    </div>
+    <div id="toast-bar"><span id="toast-text"></span></div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="gameover-title" id="gameover-title">GAME OVER</h1>
+    <div class="final-score">
+      <span class="final-label">MOONYS BLASTED</span>
+      <span class="final-value" id="final-score">0</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-level">1</span><span class="stat-label">Level</span></div>
+      <div class="stat"><span class="stat-val" id="stat-bombs">0</span><span class="stat-label">Bombs Used</span></div>
+      <div class="stat"><span class="stat-val" id="stat-accuracy">0%</span><span class="stat-label">Accuracy</span></div>
+    </div>
+    <div class="high-score-display" id="gameover-high-score"></div>
+    <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
+    <button id="replay-btn" onclick="startGame()">PLAY AGAIN</button>
+  </div>
+</div>
+{{ partial "leaderboard" . }}
+
+<style>
+  #game-wrapper {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 16px;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    color: #e6edf3;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+
+  /* Title Screen */
+  #title-screen { text-align: center; padding-top: 20px; }
+  .title-dippy { margin-bottom: 12px; }
+  .game-title {
+    font-size: 2.2em; font-weight: 900; color: #00ff88;
+    text-shadow: 0 0 20px #00ff8844; margin: 0 0 8px; letter-spacing: 2px;
+  }
+  .game-subtitle { color: #8b949e; font-size: 0.9em; margin: 0 0 16px; line-height: 1.5; }
+  .high-score-display { color: #f0883e; font-size: 0.85em; margin: 8px 0; min-height: 1.2em; }
+  #start-btn, #replay-btn {
+    background: #00ff88; color: #0d1117; border: none; padding: 14px 48px;
+    font-size: 1.1em; font-weight: 900; border-radius: 8px; cursor: pointer;
+    font-family: inherit; letter-spacing: 2px; margin: 12px 0;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  #start-btn:hover, #replay-btn:hover {
+    transform: scale(1.05); box-shadow: 0 0 20px #00ff8844;
+  }
+  #start-btn:active, #replay-btn:active { transform: scale(0.97); }
+  .game-hint { color: #484f58; font-size: 0.75em; margin: 12px 0 0; line-height: 1.5; }
+
+  /* HUD */
+  .game-hud {
+    display: flex; justify-content: space-between; padding: 8px 4px; margin-bottom: 4px;
+  }
+  .hud-item { text-align: center; flex: 1; }
+  .hud-label { display: block; font-size: 0.65em; color: #484f58; letter-spacing: 1px; }
+  .hud-value { display: block; font-size: 1.4em; font-weight: 900; color: #00ff88; }
+
+  /* Grid */
+  #grid-container {
+    width: 100%; aspect-ratio: 1; background: #0d1117;
+    border: 2px solid #21262d; border-radius: 8px; overflow: hidden;
+    position: relative;
+  }
+  #game-canvas { width: 100%; height: 100%; display: block; }
+
+  /* Mobile Controls */
+  #mobile-controls {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 0; gap: 20px;
+  }
+  .dpad {
+    display: grid; grid-template-columns: 44px 44px 44px; grid-template-rows: 44px 44px 44px;
+    gap: 2px;
+  }
+  .dpad-btn {
+    background: #161b22; border: 1px solid #30363d; color: #8b949e;
+    font-size: 16px; border-radius: 6px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .dpad-btn:active { background: #00ff8833; border-color: #00ff88; color: #00ff88; }
+  .dpad-up { grid-column: 2; grid-row: 1; }
+  .dpad-left { grid-column: 1; grid-row: 2; }
+  .dpad-right { grid-column: 3; grid-row: 2; }
+  .dpad-down { grid-column: 2; grid-row: 3; }
+  .bomb-btn {
+    background: #ff505033; border: 2px solid #ff5050; color: #ff5050;
+    font-size: 1em; font-weight: 900; padding: 20px 24px; border-radius: 50%;
+    cursor: pointer; font-family: inherit; letter-spacing: 1px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .bomb-btn:active { background: #ff505066; }
+
+  /* Toast */
+  #toast-bar {
+    text-align: center; min-height: 1.4em; padding: 4px 0;
+    font-size: 0.8em; color: #f0883e;
+  }
+
+  /* Game Over */
+  #gameover-screen { text-align: center; padding-top: 30px; }
+  .gameover-title {
+    font-size: 2em; font-weight: 900; margin: 0 0 16px; letter-spacing: 2px;
+  }
+  .final-score { margin: 16px 0; }
+  .final-label { display: block; font-size: 0.7em; color: #484f58; letter-spacing: 1px; margin-bottom: 4px; }
+  .final-value { display: block; font-size: 3em; font-weight: 900; }
+  .stats-row { display: flex; justify-content: center; gap: 24px; margin: 16px 0; }
+  .stat { text-align: center; }
+  .stat-val { display: block; font-size: 1.4em; font-weight: 900; color: #f0883e; }
+  .stat-label { display: block; font-size: 0.65em; color: #484f58; margin-top: 2px; }
+  .gameover-roast {
+    font-style: italic; color: #8b949e; font-size: 0.85em;
+    margin: 16px 8px; line-height: 1.4;
+  }
+
+  @media (min-width: 500px) {
+    #mobile-controls { display: none; }
+  }
+  @media (max-width: 499px) {
+    .game-hint br:first-child + br { display: none; }
+  }
+</style>
+
+<script>
+(function() {
+  'use strict';
+
+  // --- Constants ---
+  const COLS = 13;
+  const ROWS = 13;
+  const TILE_EMPTY = 0;
+  const TILE_WALL = 1;    // indestructible
+  const TILE_CRATE = 2;   // destructible
+  const TILE_BOMB = 3;
+  const TILE_FIRE = 4;
+  const TILE_POWERUP = 5;
+
+  const BOMB_TIMER = 2000; // ms before bomb explodes
+  const FIRE_DURATION = 400; // ms fire stays
+  const MOONY_MOVE_INTERVAL = 400; // ms between moony moves
+  const PLAYER_MOVE_COOLDOWN = 140; // ms between player moves
+  const INITIAL_MOONYS = 3;
+  const INITIAL_BOMB_RANGE = 2;
+  const INITIAL_MAX_BOMBS = 1;
+
+  const ROASTS = [
+    "Moony tried to hedge against the explosion. Spoiler: it didn't work.",
+    "Moony's risk management: stand directly on the bomb.",
+    "Moony's portfolio just got liquidated. Literally.",
+    "That Moony had a stop-loss set at 'being alive'. Hit perfectly.",
+    "Moony's diversification strategy: be in every explosion zone at once.",
+    "Another Moony reduced to market dust. Nature is healing.",
+    "Moony's exit strategy was to not have one. Bold move.",
+    "Dippy's P&L just went through the roof. Unlike Moony.",
+    "Moony was holding that position too long. Should've sold at 'not on fire'.",
+    "Moony's technical analysis predicted it wouldn't explode. Wrong again.",
+    "That Moony was 70% cash and 100% on fire.",
+    "Moony just experienced forced liquidation. The explosive kind.",
+    "Moony tried to buy the dip. The dip was a crater.",
+    "Another Moony blown up. Their backtest didn't account for bombs.",
+    "Moony's latest investment thesis: stand next to a bomb. Classic value play."
+  ];
+
+  const POWERUP_MSGS = [
+    "Extra bomb capacity! Unlike Moony, we believe in leverage.",
+    "Bomb range up! Our blast radius grows like our returns.",
+    "Speed boost! Moving faster than Moony's trade execution.",
+    "More firepower! Moony's only firepower is accidentally deleting its own config.",
+  ];
+
+  const LEVEL_MSGS = [
+    "", // lvl 0 unused
+    "Level 1 — Welcome to the demolition zone!",
+    "Level 2 — More Moonys to blast!",
+    "Level 3 — They're multiplying like bad trades!",
+    "Level 4 — Moony's sending reinforcements!",
+    "Level 5 — Boss rush! Moonys everywhere!",
+    "Level 6 — Moony's whole fund showed up!",
+    "Level 7 — You're unstoppable! Moony is panicking!",
+    "Level 8 — Moony's calling its investors for help!",
+    "Level 9 — This is getting ridiculous!",
+    "Level 10 — Moony deployed its entire balance sheet!",
+  ];
+
+  // --- State ---
+  let canvas, ctx, cellSize;
+  let grid = [];
+  let player = { r: 0, c: 0 };
+  let moonys = [];
+  let bombs = [];
+  let fires = [];
+  let powerups = [];
+  let score = 0;
+  let level = 1;
+  let lives = 3;
+  let bombRange = INITIAL_BOMB_RANGE;
+  let maxBombs = INITIAL_MAX_BOMBS;
+  let activeBombs = 0;
+  let totalBombs = 0;
+  let totalKills = 0;
+  let gameActive = false;
+  let lastPlayerMove = 0;
+  let lastMoonyMove = 0;
+  let playerInvincible = 0; // timestamp until invincible
+  let moveSpeed = PLAYER_MOVE_COOLDOWN;
+  let animFrame;
+  let lastTime = 0;
+
+  // mobile input
+  let pendingDir = null;
+  let touchStartX = 0, touchStartY = 0;
+
+  function getHighScore() {
+    try { return parseInt(localStorage.getItem('dippy-dippy-bomber-high') || '0'); } catch(e) { return 0; }
+  }
+  function setHighScore(s) {
+    try { localStorage.setItem('dippy-dippy-bomber-high', s); } catch(e) {}
+  }
+
+  function showScreen(id) {
+    ['title-screen','game-screen','gameover-screen'].forEach(s => {
+      document.getElementById(s).style.display = s === id ? '' : 'none';
+    });
+  }
+
+  function showToast(msg) {
+    const el = document.getElementById('toast-text');
+    el.textContent = msg;
+  }
+
+  // --- Grid Generation ---
+  function generateGrid() {
+    grid = [];
+    for (let r = 0; r < ROWS; r++) {
+      grid[r] = [];
+      for (let c = 0; c < COLS; c++) {
+        // Border walls
+        if (r === 0 || r === ROWS - 1 || c === 0 || c === COLS - 1) {
+          grid[r][c] = TILE_WALL;
+        }
+        // Pillar pattern (every other cell inside)
+        else if (r % 2 === 0 && c % 2 === 0) {
+          grid[r][c] = TILE_WALL;
+        }
+        else {
+          // Random crates (50-65% fill depending on level)
+          const cratePct = Math.min(0.65, 0.45 + level * 0.02);
+          grid[r][c] = Math.random() < cratePct ? TILE_CRATE : TILE_EMPTY;
+        }
+      }
+    }
+    // Clear player spawn area (top-left inside corner)
+    grid[1][1] = TILE_EMPTY;
+    grid[1][2] = TILE_EMPTY;
+    grid[2][1] = TILE_EMPTY;
+    // Clear a second safe zone (bottom-right) for fairness
+    grid[ROWS-2][COLS-2] = TILE_EMPTY;
+    grid[ROWS-2][COLS-3] = TILE_EMPTY;
+    grid[ROWS-3][COLS-2] = TILE_EMPTY;
+  }
+
+  function spawnMoonys() {
+    moonys = [];
+    const count = INITIAL_MOONYS + (level - 1) * 2;
+    let attempts = 0;
+    while (moonys.length < count && attempts < 500) {
+      attempts++;
+      const r = 1 + Math.floor(Math.random() * (ROWS - 2));
+      const c = 1 + Math.floor(Math.random() * (COLS - 2));
+      // Don't spawn near player or on walls
+      if (grid[r][c] !== TILE_EMPTY) continue;
+      if (Math.abs(r - 1) + Math.abs(c - 1) < 4) continue; // away from player spawn
+      // Don't overlap existing moonys
+      if (moonys.some(m => m.r === r && m.c === c)) continue;
+      moonys.push({ r, c, dir: Math.floor(Math.random() * 4), stuck: 0 });
+    }
+  }
+
+  // --- Drawing ---
+  function setupCanvas() {
+    canvas = document.getElementById('game-canvas');
+    const container = document.getElementById('grid-container');
+    const rect = container.getBoundingClientRect();
+    const size = Math.min(rect.width, rect.height);
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
+    ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    cellSize = size / COLS;
+  }
+
+  function drawCell(r, c) {
+    const x = c * cellSize;
+    const y = r * cellSize;
+    const s = cellSize;
+    const p = 1; // padding
+
+    switch (grid[r][c]) {
+      case TILE_WALL:
+        ctx.fillStyle = '#21262d';
+        ctx.fillRect(x, y, s, s);
+        // brick pattern
+        ctx.strokeStyle = '#30363d';
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(x + p, y + p, s - p*2, s - p*2);
+        ctx.beginPath();
+        ctx.moveTo(x + s/2, y + p);
+        ctx.lineTo(x + s/2, y + s - p);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x + p, y + s/2);
+        ctx.lineTo(x + s - p, y + s/2);
+        ctx.stroke();
+        break;
+      case TILE_CRATE:
+        ctx.fillStyle = '#3d2800';
+        ctx.fillRect(x + p, y + p, s - p*2, s - p*2);
+        ctx.strokeStyle = '#f0883e44';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + p + 2, y + p + 2, s - p*2 - 4, s - p*2 - 4);
+        // $ on crate
+        ctx.fillStyle = '#f0883e66';
+        ctx.font = 'bold ' + (s * 0.4) + 'px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('$', x + s/2, y + s/2);
+        break;
+      default:
+        // empty floor
+        ctx.fillStyle = '#0d1117';
+        ctx.fillRect(x, y, s, s);
+        // subtle grid
+        ctx.strokeStyle = '#161b2244';
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(x, y, s, s);
+    }
+  }
+
+  function drawBomb(b) {
+    const x = b.c * cellSize + cellSize / 2;
+    const y = b.r * cellSize + cellSize / 2;
+    const radius = cellSize * 0.32;
+    const elapsed = Date.now() - b.placed;
+    const pct = elapsed / BOMB_TIMER;
+    // Pulse faster as timer runs out
+    const pulse = 1 + Math.sin(pct * Math.PI * 8) * 0.15 * pct;
+
+    ctx.save();
+    ctx.shadowColor = '#ff5050';
+    ctx.shadowBlur = 8 + pct * 12;
+    ctx.fillStyle = pct > 0.7 ? '#ff5050' : '#f0883e';
+    ctx.beginPath();
+    ctx.arc(x, y, radius * pulse, 0, Math.PI * 2);
+    ctx.fill();
+    // Fuse spark
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(x, y - radius * 0.8, 2 + Math.random() * 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Timer text
+    const remaining = Math.ceil((BOMB_TIMER - elapsed) / 1000);
+    ctx.fillStyle = '#0d1117';
+    ctx.font = 'bold ' + (cellSize * 0.35) + 'px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(remaining > 0 ? remaining : '!', x, y + 1);
+  }
+
+  function drawFire(f) {
+    const x = f.c * cellSize;
+    const y = f.r * cellSize;
+    const s = cellSize;
+    const elapsed = Date.now() - f.start;
+    const alpha = 1 - (elapsed / FIRE_DURATION);
+    if (alpha <= 0) return;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#ff5050';
+    ctx.shadowColor = '#ff5050';
+    ctx.shadowBlur = 12;
+    ctx.fillRect(x + 2, y + 2, s - 4, s - 4);
+    // Inner glow
+    ctx.fillStyle = '#f0883e';
+    ctx.fillRect(x + s*0.2, y + s*0.2, s*0.6, s*0.6);
+    ctx.fillStyle = '#ffcc00';
+    ctx.fillRect(x + s*0.3, y + s*0.3, s*0.4, s*0.4);
+    ctx.restore();
+  }
+
+  function drawPowerup(p) {
+    const x = p.c * cellSize + cellSize / 2;
+    const y = p.r * cellSize + cellSize / 2;
+    const bounce = Math.sin(Date.now() * 0.004) * 2;
+    const radius = cellSize * 0.28;
+
+    ctx.save();
+    ctx.shadowColor = '#00ff88';
+    ctx.shadowBlur = 8;
+    ctx.fillStyle = '#00ff88';
+    ctx.beginPath();
+    ctx.arc(x, y + bounce, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.fillStyle = '#0d1117';
+    ctx.font = 'bold ' + (cellSize * 0.3) + 'px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const icon = p.type === 'range' ? 'R' : p.type === 'bomb' ? 'B' : 'S';
+    ctx.fillText(icon, x, y + bounce + 1);
+  }
+
+  function drawPlayer() {
+    const x = player.c * cellSize + cellSize / 2;
+    const y = player.r * cellSize + cellSize / 2;
+    const radius = cellSize * 0.35;
+    const isInvincible = Date.now() < playerInvincible;
+
+    ctx.save();
+    if (isInvincible && Math.floor(Date.now() / 100) % 2 === 0) {
+      ctx.globalAlpha = 0.4;
+    }
+    // Body
+    ctx.fillStyle = '#00ff88';
+    ctx.shadowColor = '#00ff88';
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Eyes
+    ctx.fillStyle = '#0d1117';
+    ctx.beginPath();
+    ctx.arc(x - radius * 0.3, y - radius * 0.15, radius * 0.18, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x + radius * 0.3, y - radius * 0.15, radius * 0.18, 0, Math.PI * 2);
+    ctx.fill();
+    // Smile
+    ctx.strokeStyle = '#0d1117';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(x, y + radius * 0.05, radius * 0.3, 0.1, Math.PI - 0.1);
+    ctx.stroke();
+    // Leaf/sprout
+    ctx.fillStyle = '#00cc6e';
+    ctx.beginPath();
+    ctx.ellipse(x + radius * 0.1, y - radius * 0.9, radius * 0.2, radius * 0.35, -0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawMoony(m) {
+    const x = m.c * cellSize + cellSize / 2;
+    const y = m.r * cellSize + cellSize / 2;
+    const radius = cellSize * 0.33;
+
+    ctx.save();
+    // Body (grey circle — Moony is dull)
+    ctx.fillStyle = '#6e7681';
+    ctx.shadowColor = '#6e7681';
+    ctx.shadowBlur = 5;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Crescent moon shape overlay
+    ctx.fillStyle = '#484f58';
+    ctx.beginPath();
+    ctx.arc(x + radius * 0.25, y, radius * 0.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Eyes (beady)
+    ctx.fillStyle = '#e6edf3';
+    ctx.beginPath();
+    ctx.arc(x - radius * 0.15, y - radius * 0.15, radius * 0.12, 0, Math.PI * 2);
+    ctx.fill();
+    // Frown
+    ctx.strokeStyle = '#e6edf3';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(x - radius * 0.1, y + radius * 0.35, radius * 0.2, Math.PI + 0.3, -0.3);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function draw() {
+    if (!ctx) return;
+    const size = canvas.width / (window.devicePixelRatio || 1);
+    ctx.clearRect(0, 0, size, size);
+
+    // Draw grid
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        drawCell(r, c);
+      }
+    }
+
+    // Powerups
+    powerups.forEach(drawPowerup);
+
+    // Fires
+    fires.forEach(drawFire);
+
+    // Bombs
+    bombs.forEach(drawBomb);
+
+    // Moonys
+    moonys.forEach(drawMoony);
+
+    // Player
+    drawPlayer();
+  }
+
+  // --- Game Logic ---
+  function isWalkable(r, c) {
+    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return false;
+    const tile = grid[r][c];
+    if (tile === TILE_WALL || tile === TILE_CRATE) return false;
+    // Can't walk through bombs
+    if (bombs.some(b => b.r === r && b.c === c)) return false;
+    return true;
+  }
+
+  function movePlayer(dr, dc) {
+    if (!gameActive) return;
+    const now = Date.now();
+    if (now - lastPlayerMove < moveSpeed) return;
+    lastPlayerMove = now;
+
+    const nr = player.r + dr;
+    const nc = player.c + dc;
+    if (isWalkable(nr, nc)) {
+      player.r = nr;
+      player.c = nc;
+      checkPlayerPickup();
+      checkPlayerMoonyCollision();
+    }
+  }
+
+  function placeBomb() {
+    if (!gameActive) return;
+    if (activeBombs >= maxBombs) return;
+    // Check if bomb already here
+    if (bombs.some(b => b.r === player.r && b.c === player.c)) return;
+
+    bombs.push({ r: player.r, c: player.c, placed: Date.now(), range: bombRange });
+    activeBombs++;
+    totalBombs++;
+  }
+
+  function explodeBomb(bomb) {
+    activeBombs--;
+    const directions = [[0,1],[0,-1],[1,0],[-1,0]];
+    const fireCells = [{ r: bomb.r, c: bomb.c }];
+
+    for (const [dr, dc] of directions) {
+      for (let i = 1; i <= bomb.range; i++) {
+        const nr = bomb.r + dr * i;
+        const nc = bomb.c + dc * i;
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) break;
+        if (grid[nr][nc] === TILE_WALL) break;
+        if (grid[nr][nc] === TILE_CRATE) {
+          grid[nr][nc] = TILE_EMPTY;
+          fireCells.push({ r: nr, c: nc });
+          // Random powerup drop
+          if (Math.random() < 0.3) {
+            const types = ['range', 'bomb', 'speed'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            powerups.push({ r: nr, c: nc, type });
+          }
+          break; // fire stops at crate
+        }
+        fireCells.push({ r: nr, c: nc });
+        // Chain explosions
+        const chainBomb = bombs.find(b => b.r === nr && b.c === nc && b !== bomb);
+        if (chainBomb) {
+          chainBomb.placed = 0; // force immediate explosion
+        }
+      }
+    }
+
+    const now = Date.now();
+    fireCells.forEach(fc => {
+      fires.push({ r: fc.r, c: fc.c, start: now });
+    });
+
+    // Check fire kills
+    checkFireDamage(fireCells);
+
+    if (navigator.vibrate) navigator.vibrate(30);
+  }
+
+  function checkFireDamage(fireCells) {
+    // Kill moonys in fire
+    const killed = [];
+    moonys = moonys.filter(m => {
+      if (fireCells.some(f => f.r === m.r && f.c === m.c)) {
+        killed.push(m);
+        return false;
+      }
+      return true;
+    });
+    if (killed.length > 0) {
+      const pts = killed.length * (100 + level * 50);
+      score += pts;
+      totalKills += killed.length;
+      document.getElementById('hud-score').textContent = score;
+      showToast(ROASTS[Math.floor(Math.random() * ROASTS.length)]);
+    }
+
+    // Check player in fire
+    if (fireCells.some(f => f.r === player.r && f.c === player.c)) {
+      if (Date.now() >= playerInvincible) {
+        playerHit();
+      }
+    }
+
+    // Destroy powerups in fire
+    powerups = powerups.filter(p => !fireCells.some(f => f.r === p.r && f.c === p.c));
+
+    // Check level complete
+    if (moonys.length === 0 && gameActive) {
+      nextLevel();
+    }
+  }
+
+  function checkPlayerMoonyCollision() {
+    if (Date.now() < playerInvincible) return;
+    if (moonys.some(m => m.r === player.r && m.c === player.c)) {
+      playerHit();
+    }
+  }
+
+  function checkPlayerPickup() {
+    const idx = powerups.findIndex(p => p.r === player.r && p.c === player.c);
+    if (idx >= 0) {
+      const p = powerups[idx];
+      powerups.splice(idx, 1);
+      if (p.type === 'range') {
+        bombRange = Math.min(bombRange + 1, 6);
+        showToast(POWERUP_MSGS[0]);
+      } else if (p.type === 'bomb') {
+        maxBombs = Math.min(maxBombs + 1, 5);
+        showToast(POWERUP_MSGS[1]);
+      } else if (p.type === 'speed') {
+        moveSpeed = Math.max(80, moveSpeed - 15);
+        showToast(POWERUP_MSGS[2]);
+      }
+      score += 50;
+      document.getElementById('hud-score').textContent = score;
+    }
+  }
+
+  function playerHit() {
+    lives--;
+    document.getElementById('hud-lives').textContent = lives;
+    if (lives <= 0) {
+      endGame();
+    } else {
+      // Respawn at top-left
+      player.r = 1;
+      player.c = 1;
+      playerInvincible = Date.now() + 2000;
+      showToast("Ouch! " + lives + " lives left. Moony got lucky.");
+      if (navigator.vibrate) navigator.vibrate([50, 30, 50, 30, 50]);
+    }
+  }
+
+  function nextLevel() {
+    level++;
+    if (level > 10) level = 10; // cap
+    document.getElementById('hud-level').textContent = level;
+
+    // Bonus
+    const bonus = level * 200;
+    score += bonus;
+    document.getElementById('hud-score').textContent = score;
+
+    // Reset grid
+    generateGrid();
+    player.r = 1;
+    player.c = 1;
+    bombs = [];
+    fires = [];
+    powerups = [];
+    activeBombs = 0;
+    playerInvincible = Date.now() + 1500;
+
+    spawnMoonys();
+
+    const msg = level <= 10 ? LEVEL_MSGS[level] : "Level " + level + " — infinite Moonys!";
+    showToast(msg + " (+" + bonus + " bonus!)");
+  }
+
+  function moveMoonys() {
+    const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+    moonys.forEach(m => {
+      // Smart Moonys: 30% chance to move toward player, rest random
+      let dr = 0, dc = 0;
+      const smartChance = Math.min(0.5, 0.2 + level * 0.03);
+
+      if (Math.random() < smartChance) {
+        // Move toward player
+        const rdiff = player.r - m.r;
+        const cdiff = player.c - m.c;
+        if (Math.abs(rdiff) > Math.abs(cdiff)) {
+          dr = Math.sign(rdiff); dc = 0;
+        } else {
+          dr = 0; dc = Math.sign(cdiff);
+        }
+      } else {
+        // Random direction (prefer current dir, sometimes change)
+        if (m.stuck > 2 || Math.random() < 0.3) {
+          m.dir = Math.floor(Math.random() * 4);
+          m.stuck = 0;
+        }
+        dr = dirs[m.dir][0];
+        dc = dirs[m.dir][1];
+      }
+
+      const nr = m.r + dr;
+      const nc = m.c + dc;
+
+      // Check walkable (moonys can't walk through bombs either)
+      if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS &&
+          grid[nr][nc] === TILE_EMPTY &&
+          !bombs.some(b => b.r === nr && b.c === nc) &&
+          !moonys.some(other => other !== m && other.r === nr && other.c === nc)) {
+        m.r = nr;
+        m.c = nc;
+        m.stuck = 0;
+      } else {
+        m.stuck++;
+        m.dir = Math.floor(Math.random() * 4);
+      }
+    });
+
+    // Check collision with player
+    checkPlayerMoonyCollision();
+  }
+
+  // --- Game Loop ---
+  function update(now) {
+    if (!gameActive) return;
+
+    // Explode bombs
+    const toExplode = bombs.filter(b => now - b.placed >= BOMB_TIMER);
+    toExplode.forEach(b => {
+      bombs = bombs.filter(bb => bb !== b);
+      explodeBomb(b);
+    });
+
+    // Clear expired fires
+    fires = fires.filter(f => now - f.start < FIRE_DURATION);
+
+    // Check fire damage on player/moonys (continuous)
+    const activeFires = fires.map(f => ({ r: f.r, c: f.c }));
+    if (activeFires.length > 0) {
+      // Kill moonys standing in fire
+      const beforeCount = moonys.length;
+      moonys = moonys.filter(m => !activeFires.some(f => f.r === m.r && f.c === m.c));
+      const killed = beforeCount - moonys.length;
+      if (killed > 0) {
+        score += killed * (100 + level * 50);
+        totalKills += killed;
+        document.getElementById('hud-score').textContent = score;
+      }
+      // Player in fire
+      if (Date.now() >= playerInvincible && activeFires.some(f => f.r === player.r && f.c === player.c)) {
+        playerHit();
+      }
+      if (moonys.length === 0 && gameActive) nextLevel();
+    }
+
+    // Move moonys
+    const moonyInterval = Math.max(200, MOONY_MOVE_INTERVAL - level * 15);
+    if (now - lastMoonyMove >= moonyInterval) {
+      lastMoonyMove = now;
+      moveMoonys();
+    }
+  }
+
+  function gameLoop(ts) {
+    if (!gameActive) return;
+    update(Date.now());
+    draw();
+    animFrame = requestAnimationFrame(gameLoop);
+  }
+
+  // --- Input ---
+  function handleKey(e) {
+    if (!gameActive) return;
+    switch (e.key) {
+      case 'ArrowUp': case 'w': case 'W': e.preventDefault(); movePlayer(-1, 0); break;
+      case 'ArrowDown': case 's': case 'S': e.preventDefault(); movePlayer(1, 0); break;
+      case 'ArrowLeft': case 'a': case 'A': e.preventDefault(); movePlayer(0, -1); break;
+      case 'ArrowRight': case 'd': case 'D': e.preventDefault(); movePlayer(0, 1); break;
+      case ' ': case 'Enter': e.preventDefault(); placeBomb(); break;
+    }
+  }
+
+  // Repeat movement while key is held
+  let heldKeys = new Set();
+  let keyRepeatId = null;
+
+  function startKeyRepeat() {
+    if (keyRepeatId) return;
+    keyRepeatId = setInterval(() => {
+      if (heldKeys.has('ArrowUp') || heldKeys.has('w') || heldKeys.has('W')) movePlayer(-1, 0);
+      if (heldKeys.has('ArrowDown') || heldKeys.has('s') || heldKeys.has('S')) movePlayer(1, 0);
+      if (heldKeys.has('ArrowLeft') || heldKeys.has('a') || heldKeys.has('A')) movePlayer(0, -1);
+      if (heldKeys.has('ArrowRight') || heldKeys.has('d') || heldKeys.has('D')) movePlayer(0, 1);
+    }, 50);
+  }
+
+  function stopKeyRepeat() {
+    if (keyRepeatId) {
+      clearInterval(keyRepeatId);
+      keyRepeatId = null;
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    handleKey(e);
+    heldKeys.add(e.key);
+    startKeyRepeat();
+  });
+  document.addEventListener('keyup', (e) => {
+    heldKeys.delete(e.key);
+    if (heldKeys.size === 0) stopKeyRepeat();
+  });
+
+  // Mobile d-pad
+  function setupMobileControls() {
+    const btnUp = document.getElementById('btn-up');
+    const btnDown = document.getElementById('btn-down');
+    const btnLeft = document.getElementById('btn-left');
+    const btnRight = document.getElementById('btn-right');
+    const btnBomb = document.getElementById('btn-bomb');
+
+    let mobileRepeatId = null;
+    let mobileDir = null;
+
+    function startMobileRepeat(dr, dc) {
+      movePlayer(dr, dc);
+      mobileDir = [dr, dc];
+      if (mobileRepeatId) clearInterval(mobileRepeatId);
+      mobileRepeatId = setInterval(() => movePlayer(mobileDir[0], mobileDir[1]), 100);
+    }
+
+    function stopMobileRepeat() {
+      if (mobileRepeatId) { clearInterval(mobileRepeatId); mobileRepeatId = null; }
+    }
+
+    btnUp.addEventListener('touchstart', (e) => { e.preventDefault(); startMobileRepeat(-1, 0); });
+    btnDown.addEventListener('touchstart', (e) => { e.preventDefault(); startMobileRepeat(1, 0); });
+    btnLeft.addEventListener('touchstart', (e) => { e.preventDefault(); startMobileRepeat(0, -1); });
+    btnRight.addEventListener('touchstart', (e) => { e.preventDefault(); startMobileRepeat(0, 1); });
+    [btnUp, btnDown, btnLeft, btnRight].forEach(btn => {
+      btn.addEventListener('touchend', (e) => { e.preventDefault(); stopMobileRepeat(); });
+      btn.addEventListener('touchcancel', (e) => { e.preventDefault(); stopMobileRepeat(); });
+    });
+    btnBomb.addEventListener('touchstart', (e) => { e.preventDefault(); placeBomb(); });
+
+    // Also mouse for testing
+    btnUp.addEventListener('mousedown', () => startMobileRepeat(-1, 0));
+    btnDown.addEventListener('mousedown', () => startMobileRepeat(1, 0));
+    btnLeft.addEventListener('mousedown', () => startMobileRepeat(0, -1));
+    btnRight.addEventListener('mousedown', () => startMobileRepeat(0, 1));
+    [btnUp, btnDown, btnLeft, btnRight].forEach(btn => {
+      btn.addEventListener('mouseup', stopMobileRepeat);
+      btn.addEventListener('mouseleave', stopMobileRepeat);
+    });
+    btnBomb.addEventListener('click', placeBomb);
+  }
+
+  // --- Game Lifecycle ---
+  window.startGame = function() {
+    score = 0;
+    level = 1;
+    lives = 3;
+    bombRange = INITIAL_BOMB_RANGE;
+    maxBombs = INITIAL_MAX_BOMBS;
+    activeBombs = 0;
+    totalBombs = 0;
+    totalKills = 0;
+    moveSpeed = PLAYER_MOVE_COOLDOWN;
+    bombs = [];
+    fires = [];
+    powerups = [];
+    lastMoonyMove = 0;
+    lastPlayerMove = 0;
+    playerInvincible = Date.now() + 1500;
+    gameActive = true;
+
+    showScreen('game-screen');
+    document.getElementById('hud-score').textContent = '0';
+    document.getElementById('hud-level').textContent = '1';
+    document.getElementById('hud-lives').textContent = '3';
+    showToast('Level 1 — Blast those Moonys!');
+
+    setupCanvas();
+    generateGrid();
+    player = { r: 1, c: 1 };
+    spawnMoonys();
+
+    if (animFrame) cancelAnimationFrame(animFrame);
+    gameLoop();
+  };
+
+  function endGame() {
+    gameActive = false;
+    stopKeyRepeat();
+    if (animFrame) cancelAnimationFrame(animFrame);
+
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('stat-level').textContent = level;
+    document.getElementById('stat-bombs').textContent = totalBombs;
+    const accuracy = totalBombs > 0 ? Math.round((totalKills / totalBombs) * 100) : 0;
+    document.getElementById('stat-accuracy').textContent = accuracy + '%';
+
+    const prev = getHighScore();
+    const isNew = score > prev;
+    if (isNew) setHighScore(score);
+    document.getElementById('gameover-high-score').textContent = isNew
+      ? 'NEW HIGH SCORE! (prev: ' + prev + ')'
+      : (prev > 0 ? 'High score: ' + prev : '');
+
+    document.getElementById('gameover-title').textContent = isNew ? 'NEW RECORD!' : 'GAME OVER';
+    document.getElementById('gameover-title').style.color = isNew ? '#00ff88' : '#ff5050';
+    document.getElementById('final-score').style.color = score > 0 ? '#00ff88' : '#ff5050';
+
+    document.getElementById('gameover-roast').textContent =
+      '"' + ROASTS[Math.floor(Math.random() * ROASTS.length)] + '"';
+
+    showScreen('gameover-screen');
+
+    if (typeof DippyLB !== 'undefined') {
+      DippyLB.onGameOver(score);
+    }
+  }
+
+  // Handle resize
+  window.addEventListener('resize', () => {
+    if (gameActive) setupCanvas();
+  });
+
+  // Show high score on title
+  const hs = getHighScore();
+  if (hs > 0) {
+    document.getElementById('title-high-score').textContent = 'High score: ' + hs;
+  }
+
+  // Init
+  setupMobileControls();
+  if (typeof DippyLB !== 'undefined') {
+    DippyLB.init('dippy-bomber');
+  }
+})();
+</script>
+{{ end }}
