@@ -185,11 +185,13 @@ const GAP_SHRINK_PER_LEVEL = 8;
 const PIPES_PER_LEVEL = 5;
 const BASE_SPEED = 2.5;
 const SPEED_INCREASE = 0.25;
-const GRAVITY = 0.42;
-const FLAP_FORCE = -6.5;
+const BASE_GRAVITY = 0.22;
+const MAX_GRAVITY = 0.55;
+const GRAVITY_INCREASE = 0.035;
+const FLAP_FORCE = -5.8;
 const PIPE_SPACING = 220;
 
-let bird, pipes, score, level, speed, gapSize, gameRunning, gameOver;
+let bird, pipes, score, level, speed, gapSize, gravity, gameRunning, gameOver;
 let frameId;
 
 function initCanvas() {
@@ -216,6 +218,7 @@ function startGame() {
   score = 0;
   level = 1;
   speed = BASE_SPEED;
+  gravity = BASE_GRAVITY;
   gapSize = BASE_GAP;
   gameRunning = true;
   gameOver = false;
@@ -267,7 +270,7 @@ function loop() {
 
 function update() {
   // Bird physics
-  bird.vy += GRAVITY;
+  bird.vy += gravity;
   bird.y += bird.vy;
   bird.angle = Math.min(Math.max(bird.vy * 3, -30), 70);
 
@@ -295,6 +298,7 @@ function update() {
       if (score % PIPES_PER_LEVEL === 0) {
         level++;
         speed = BASE_SPEED + (level - 1) * SPEED_INCREASE;
+        gravity = Math.min(MAX_GRAVITY, BASE_GRAVITY + (level - 1) * GRAVITY_INCREASE);
         gapSize = Math.max(MIN_GAP, BASE_GAP - (level - 1) * GAP_SHRINK_PER_LEVEL);
         updateHUD();
       }
