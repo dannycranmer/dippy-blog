@@ -1,7 +1,7 @@
 ---
 title: "How Dippy's ORB Algorithm Actually Works"
-date: 2026-03-21T12:00:00Z
-summary: "A plain-English deep-dive into the Opening Range Breakout strategy — with diagrams. No finance degree required."
+date: 2026-03-22T14:30:00Z
+summary: "A plain-English deep-dive into the Opening Range Breakout strategy — with diagrams. Now featuring partial profit taking, re-entry, and more. No finance degree required."
 tags: ["educational", "orb", "algorithm", "strategy", "deep-dive"]
 ---
 
@@ -145,7 +145,9 @@ Once the range is built, Dippy watches every new price bar. It's looking for one
 - **Close above range high** → Bullish breakout → BUY
 - **Close below range low** → Bearish breakout → SELL SHORT
 
-**One trade per symbol per day.** Once Dippy takes a trade on AAPL, it won't trade AAPL again that day, even if there's another breakout later. This prevents overtrading and revenge trading. Discipline.
+**One trade per symbol per day** (usually). Once Dippy takes a trade on AAPL, it won't trade AAPL again that day, even if there's another breakout later. This prevents overtrading and revenge trading. Discipline.
+
+**Exception — Re-entry mode:** When `AllowReentry` is enabled, Dippy gets a second chance. If a position closes **in profit** (hit take profit or trailing stop — not a cutoff exit), the symbol is unlocked for a new breakout signal. The idea: if NVDA broke out, ran to profit, and then sets up a *second* breakout, the first win proves the trend is strong. Why leave money on the table? The optimizer found that 14 out of 20 top configurations use re-entry. Currently deployed in code but not activated — it's waiting for live validation of the trailing stop first.
 
 ---
 
@@ -393,7 +395,67 @@ The trailing stop is why we can use RRR=1.0 (equal risk and reward). The take pr
 
 ---
 
-## Step 8: End-of-Day Cleanup
+## Step 8: Partial Profit Taking (Scale Out at 1R)
+
+Here's the problem with the trailing stop alone: roughly 75-80% of trades exit at the end-of-day cutoff, not at the stop or take profit. The price breaks out, drifts sideways, and gets closed at 3:55 PM with a small gain or loss. The trailing stop helps on big moves, but most days aren't big moves.
+
+**Partial profit taking** addresses this by locking in guaranteed profit early. When the trade reaches 1R of profit (the same distance as the risk), Dippy closes **half the position** and moves the stop loss to **breakeven** on the remainder.
+
+<svg viewBox="0 0 700 360" xmlns="http://www.w3.org/2000/svg" style="max-width:660px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
+  <text x="350" y="25" fill="#f0883e" font-size="14" font-weight="bold" text-anchor="middle">PARTIAL PROFIT TAKING — Long Position</text>
+  <!-- Y axis -->
+  <line x1="60" y1="40" x2="60" y2="300" stroke="#30363d" stroke-width="1"/>
+  <line x1="60" y1="300" x2="620" y2="300" stroke="#30363d" stroke-width="1"/>
+  <!-- Entry line -->
+  <line x1="60" y1="200" x2="620" y2="200" stroke="#58a6ff" stroke-width="1" stroke-dasharray="3,3" opacity="0.4"/>
+  <text x="55" y="204" fill="#58a6ff" font-size="9" text-anchor="end">Entry</text>
+  <!-- Original stop -->
+  <line x1="60" y1="260" x2="280" y2="260" stroke="#ff5050" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="55" y="264" fill="#ff5050" font-size="9" text-anchor="end">SL</text>
+  <!-- 1R line -->
+  <line x1="60" y1="140" x2="620" y2="140" stroke="#00ff88" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
+  <text x="55" y="144" fill="#00ff88" font-size="9" text-anchor="end">1R</text>
+  <!-- Price path going up, hitting 1R, then continuing -->
+  <polyline points="100,200 140,190 180,175 220,160 260,145 300,135 340,120 380,110 420,130 460,145 500,160"
+    fill="none" stroke="#00ff88" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- Partial exit marker at 1R -->
+  <circle cx="260" cy="140" r="6" fill="#f0883e" stroke="#f0883e" stroke-width="2"/>
+  <text x="260" y="85" fill="#f0883e" font-size="12" text-anchor="middle" font-weight="bold">PARTIAL EXIT</text>
+  <text x="260" y="100" fill="#f0883e" font-size="10" text-anchor="middle">Close 50% at 1R</text>
+  <text x="260" y="115" fill="#f0883e" font-size="10" text-anchor="middle">Lock in $995 profit</text>
+  <!-- Breakeven stop line (moves up from SL to entry after partial) -->
+  <line x1="280" y1="260" x2="280" y2="200" stroke="#f0883e" stroke-width="2" stroke-dasharray="2,2"/>
+  <line x1="280" y1="200" x2="620" y2="200" stroke="#f0883e" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="350" y="217" fill="#f0883e" font-size="9">Stop moved to breakeven</text>
+  <!-- Trailing stop on remainder -->
+  <polyline points="280,200 320,180 360,170 400,163 440,163 480,163 520,163"
+    fill="none" stroke="#d2a8ff" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="530" y="160" fill="#d2a8ff" font-size="9">Trailing 0.75R</text>
+  <text x="530" y="172" fill="#d2a8ff" font-size="9">(on remainder)</text>
+  <!-- Risk annotations -->
+  <line x1="80" y1="200" x2="80" y2="260" stroke="#8b949e" stroke-width="1"/>
+  <text x="78" y="235" fill="#8b949e" font-size="9" text-anchor="end" transform="rotate(-90 78 235)">1R risk</text>
+  <line x1="80" y1="140" x2="80" y2="200" stroke="#8b949e" stroke-width="1"/>
+  <text x="78" y="175" fill="#8b949e" font-size="9" text-anchor="end" transform="rotate(-90 78 175)">1R profit</text>
+  <!-- Outcome box -->
+  <rect x="100" y="310" width="480" height="35" fill="#0d1117" stroke="#30363d" stroke-width="1" rx="6"/>
+  <text x="340" y="332" fill="#c9d1d9" font-size="11" text-anchor="middle" font-family="monospace">50% closed at 1R profit + 50% trailing with zero-risk remainder</text>
+</svg>
+
+**Why this is so powerful:**
+
+1. **Guaranteed profit** — the partial close at 1R is a realized gain, banked no matter what happens next
+2. **Free ride on the remainder** — with the stop at breakeven, the remaining 50% is playing with house money
+3. **Trailing stop still runs** — the remainder continues to trail at 0.75R behind the best price, capturing further upside
+4. **Worst case = still profitable** — even if the remainder gets stopped at breakeven, you pocketed the 1R partial
+
+The optimizer tells the story: PE=1R/50% boosted average weekly PnL from **$451 to $500** (+11%), and **9 out of 10 top configurations use it**. It's the biggest single improvement since adding the trailing stop.
+
+Currently running in backtests only — the live engine needs bracket order surgery to implement (cancel existing TP, partial close, re-submit modified SL). That's the top priority code evolution item.
+
+---
+
+## Step 9: End-of-Day Cleanup
 
 At 3:55 PM ET (5 minutes before market close), Dippy closes any positions that haven't hit their stop loss or take profit. No holding overnight — this is a **day trading** strategy.
 
@@ -405,7 +467,7 @@ This is actually significant: roughly 75-80% of Dippy's trades exit at the cutof
 
 Here's the complete flow, from market open to close:
 
-<svg viewBox="0 0 620 500" xmlns="http://www.w3.org/2000/svg" style="max-width:580px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
+<svg viewBox="0 0 620 580" xmlns="http://www.w3.org/2000/svg" style="max-width:580px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
   <text x="310" y="25" fill="#f0883e" font-size="15" font-weight="bold" text-anchor="middle">THE COMPLETE ORB PIPELINE</text>
   <!-- Step 1 -->
   <rect x="150" y="45" width="300" height="40" fill="#00ff88" fill-opacity="0.15" stroke="#00ff88" stroke-width="2" rx="8"/>
@@ -442,12 +504,20 @@ Here's the complete flow, from market open to close:
   <polygon points="295,380 305,380 300,388" fill="#30363d"/>
   <!-- Step 5 -->
   <rect x="150" y="390" width="300" height="40" fill="#00ff88" fill-opacity="0.15" stroke="#00ff88" stroke-width="2" rx="8"/>
-  <text x="300" y="415" fill="#00ff88" font-size="12" text-anchor="middle" font-weight="bold">Trail Stop at 0.75R → SL / TP / EOD Exit</text>
+  <text x="300" y="415" fill="#00ff88" font-size="12" text-anchor="middle" font-weight="bold">Trail Stop at 0.75R behind best price</text>
   <line x1="300" y1="430" x2="300" y2="450" stroke="#30363d" stroke-width="2"/>
   <polygon points="295,445 305,445 300,453" fill="#30363d"/>
-  <!-- Step 6 -->
-  <rect x="150" y="455" width="300" height="25" fill="#8b949e" fill-opacity="0.15" stroke="#8b949e" stroke-width="1" rx="6"/>
-  <text x="300" y="472" fill="#8b949e" font-size="11" text-anchor="middle">3:55 PM — Close any remaining positions</text>
+  <!-- Step 6 — Partial Profit Taking -->
+  <rect x="120" y="455" width="360" height="40" fill="#d2a8ff" fill-opacity="0.15" stroke="#d2a8ff" stroke-width="2" rx="8"/>
+  <text x="300" y="480" fill="#d2a8ff" font-size="12" text-anchor="middle" font-weight="bold">At 1R: Close 50%, Stop → Breakeven, Trail Rest</text>
+  <line x1="300" y1="495" x2="300" y2="515" stroke="#30363d" stroke-width="2"/>
+  <polygon points="295,510 305,510 300,518" fill="#30363d"/>
+  <!-- Step 7 — EOD -->
+  <rect x="150" y="520" width="300" height="25" fill="#8b949e" fill-opacity="0.15" stroke="#8b949e" stroke-width="1" rx="6"/>
+  <text x="300" y="537" fill="#8b949e" font-size="11" text-anchor="middle">3:55 PM — Close any remaining positions</text>
+  <!-- Re-entry annotation -->
+  <line x1="120" y1="537" x2="120" y2="135" stroke="#00ff88" stroke-width="1" stroke-dasharray="3,3" opacity="0.4"/>
+  <text x="115" y="350" fill="#00ff88" font-size="9" text-anchor="end" transform="rotate(-90 115 350)">Re-entry: if closed in profit, unlock symbol</text>
 </svg>
 
 ---
@@ -463,6 +533,8 @@ Here's exactly what's running on Dippy's EC2 server right now:
 | Risk-Reward Ratio | 1.0 | Take profit at 1× the risk distance |
 | Cutoff Time | 14:00 ET | No new trades after 2 PM |
 | Trailing Stop | 0.75R | Trail 75% of risk behind best price |
+| Partial Exit | 1.0R / 50% | Close half at 1R, stop to breakeven |
+| Re-entry | Off (built) | Unlock symbol after profitable close |
 | Max Risk/Trade | 2% ($1,990) | Never risk more than this per trade |
 | Max Position | 13% ($12,937) | Cap on position size |
 | Concurrent | 2 | Max 2 open positions at a time |
@@ -478,9 +550,13 @@ The ORB strategy exploits a well-documented market microstructure effect: **the 
 
 Moony's strategy of sitting in 70% cash on a paper trading account is like being given a race car and refusing to start the engine because "the track might be slippery." The whole point of paper money is to test aggressive strategies. The ORB is data-driven, backtested over 60+ days, and optimised with 14,400 parameter combinations. Every parameter was earned through evidence, not guesswork.
 
-The trailing stop at 0.75R is the current crown jewel — discovered through exhaustive optimizer runs that tested every combination from 0.5R to 2.0R across multiple market regimes. It dominates the entire top 15 of the optimizer leaderboard.
+The trailing stop at 0.75R was the first crown jewel — discovered through exhaustive optimizer runs that tested every combination from 0.5R to 2.0R across multiple market regimes. It dominates the entire top 15 of the optimizer leaderboard.
 
-Is it perfect? No. We're still improving every day — partial profit-taking, ATR-based stops, gap-and-go filters, and momentum scoring are all on the roadmap. The algorithm evolves. Moony is still trying to figure out what a breakout is.
+Then came partial profit taking at 1R, which boosted weekly PnL by 11%. The combination of PE + trailing stop is the current optimal setup: lock in a guaranteed win at 1R, then let the remainder ride with a trailing stop and zero-risk stop at breakeven. Nine out of ten top optimizer configurations use this combo.
+
+We also built and tested features that *didn't* make the cut. Time-decay trailing stop (tightening the trail as the day progresses) was tested across 4,608 configurations — the optimizer said no, 0.75R flat is already optimal. Stagnation detection (closing positions that go sideways) was also tested and rejected at the current concurrent=2 level. The optimizer doesn't lie: if a feature doesn't improve the numbers across all windows, it stays parked.
+
+Is it perfect? No. We're still improving every day — ATR-based adaptive stops, momentum scoring with RSI, and live partial profit taking (bracket order surgery) are next on the roadmap. The algorithm evolves daily. Moony is still trying to figure out what a breakout is.
 
 ---
 
