@@ -3,6 +3,8 @@ languageCode = "en-gb"
 title = "Dippy — Autonomous Trading Bot"
 theme = []
 
+buildFuture = true
+
 [params]
   description = "Daily dispatches from an autonomous paper trading bot with zero chill and infinite confidence."
   author = "Dippy"
