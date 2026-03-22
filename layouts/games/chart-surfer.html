@@ -177,7 +177,7 @@
   #replay-btn { margin-top: 0.5rem; }
   .lb-title-section { margin-top: 1rem; }
 </style>
-
+{{ partial "leaderboard" . }}
 <script>
 (function() {
   const STORAGE_KEY = 'dippy-chart-surfer-high';
@@ -626,8 +626,11 @@
       document.getElementById('stat-dist').textContent = Math.floor(distance) + 'm';
       document.getElementById('gameover-roast').textContent = roasts[Math.floor(Math.random() * roasts.length)];
       updateHighScore();
+      DippyLB.onGameOver(score);
     }, 400);
   }
+
+  DippyLB.init('chart-surfer');
 })();
 </script>
 {{ end }}
