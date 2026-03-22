@@ -164,8 +164,8 @@
   let px, py, pvx, pvy, pOnGround, pFacing, pJumpHeld;
   let lives, coins, score, level, stomps, totalCoins, totalStomps;
   const P_W = 0.8, P_H = 0.9; // player size in tiles
-  const GRAVITY = 45;
-  const JUMP_VEL = -14;
+  const GRAVITY = 40;
+  const JUMP_VEL = -16;
   const MOVE_SPEED = 6;
   const MAX_FALL = 20;
 
@@ -215,11 +215,11 @@
       }
     }
 
-    // Platforms with bricks and question blocks
-    const platformCount = 5 + lvl * 3;
-    for (let p = 0; p < platformCount; p++) {
+    // Low platforms (reachable from ground — rows 10-11, ~2-3 tiles up)
+    const lowPlatCount = 4 + lvl * 2;
+    for (let p = 0; p < lowPlatCount; p++) {
       const platX = 8 + Math.floor(Math.random() * (width - 15));
-      const platY = 7 + Math.floor(Math.random() * 4); // rows 7-10
+      const platY = 10 + Math.floor(Math.random() * 2); // rows 10-11
       const platLen = 2 + Math.floor(Math.random() * 4);
       for (let c = platX; c < platX + platLen && c < width - 3; c++) {
         if (Math.random() < 0.3) {
@@ -230,11 +230,34 @@
       }
     }
 
-    // Floating question blocks
+    // High platforms (rows 7-9 — reachable from low platforms as stepping stones)
+    const highPlatCount = 2 + lvl;
+    for (let p = 0; p < highPlatCount; p++) {
+      const platX = 10 + Math.floor(Math.random() * (width - 20));
+      const platY = 7 + Math.floor(Math.random() * 3); // rows 7-9
+      const platLen = 2 + Math.floor(Math.random() * 3);
+      // Place a stepping-stone platform 2-3 tiles below to make it reachable
+      const stepY = platY + 2 + Math.floor(Math.random() * 2); // 2-3 rows below
+      const stepX = platX - 1 + Math.floor(Math.random() * 3);
+      if (stepY <= 12) {
+        for (let c = stepX; c < stepX + 2 && c < width - 3; c++) {
+          if (c >= 0 && tiles[stepY][c] === EMPTY) tiles[stepY][c] = BRICK;
+        }
+      }
+      for (let c = platX; c < platX + platLen && c < width - 3; c++) {
+        if (Math.random() < 0.4) {
+          tiles[platY][c] = QUESTION;
+        } else {
+          tiles[platY][c] = BRICK;
+        }
+      }
+    }
+
+    // Floating question blocks (reachable from ground — row 10)
     const qCount = 3 + lvl * 2;
     for (let q = 0; q < qCount; q++) {
       const qx = 6 + Math.floor(Math.random() * (width - 12));
-      const qy = 8 + Math.floor(Math.random() * 3);
+      const qy = 10 + Math.floor(Math.random() * 2); // rows 10-11
       if (tiles[qy][qx] === EMPTY) {
         tiles[qy][qx] = QUESTION;
       }
@@ -244,7 +267,7 @@
     const pipeCount = 2 + Math.floor(lvl * 1.5);
     for (let p = 0; p < pipeCount; p++) {
       const px = 10 + Math.floor(Math.random() * (width - 15));
-      const pipeH = 2 + Math.floor(Math.random() * 2);
+      const pipeH = 2;
       const baseRow = 12;
       // Check not overlapping gap
       if (tiles[13][px] === EMPTY || tiles[13][px + 1] === EMPTY) continue;
@@ -273,7 +296,7 @@
     const coinCount = 8 + lvl * 3;
     for (let c = 0; c < coinCount; c++) {
       const cx = 5 + Math.floor(Math.random() * (width - 10));
-      const cy = 5 + Math.random() * 7;
+      const cy = 8 + Math.random() * 4;
       coinItems.push({ x: cx + 0.3, y: cy, collected: false });
     }
 
@@ -342,9 +365,9 @@
     }
     if (!keys.jump) pJumpHeld = false;
 
-    // Variable jump height — cut velocity when releasing jump
-    if (!keys.jump && pvy < JUMP_VEL * 0.4) {
-      pvy = Math.max(pvy, JUMP_VEL * 0.4);
+    // Variable jump height — cut velocity when releasing jump early
+    if (!keys.jump && pvy < JUMP_VEL * 0.5) {
+      pvy = Math.max(pvy, JUMP_VEL * 0.5);
     }
 
     // Gravity
