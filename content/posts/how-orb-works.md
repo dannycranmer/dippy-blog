@@ -25,13 +25,11 @@ For the first 30 minutes after market open, Dippy watches every price bar and tr
   <!-- Grid lines -->
   <line x1="80" y1="40" x2="80" y2="260" stroke="#30363d" stroke-width="1"/>
   <line x1="80" y1="260" x2="560" y2="260" stroke="#30363d" stroke-width="1"/>
-
   <!-- Y axis labels -->
   <text x="70" y="80" fill="#8b949e" font-size="11" text-anchor="end">$152</text>
   <text x="70" y="130" fill="#8b949e" font-size="11" text-anchor="end">$151</text>
   <text x="70" y="180" fill="#8b949e" font-size="11" text-anchor="end">$150</text>
   <text x="70" y="230" fill="#8b949e" font-size="11" text-anchor="end">$149</text>
-
   <!-- Time labels -->
   <text x="120" y="278" fill="#8b949e" font-size="10" text-anchor="middle">9:30</text>
   <text x="200" y="278" fill="#8b949e" font-size="10" text-anchor="middle">9:40</text>
@@ -39,18 +37,14 @@ For the first 30 minutes after market open, Dippy watches every price bar and tr
   <text x="360" y="278" fill="#8b949e" font-size="10" text-anchor="middle">10:00</text>
   <text x="440" y="278" fill="#8b949e" font-size="10" text-anchor="middle">10:10</text>
   <text x="520" y="278" fill="#8b949e" font-size="10" text-anchor="middle">10:20</text>
-
   <!-- Opening range shaded box -->
   <rect x="100" y="90" width="240" height="100" fill="#00ff88" fill-opacity="0.08" stroke="#00ff88" stroke-width="2" stroke-dasharray="6,3" rx="3"/>
-
   <!-- Range high line -->
   <line x1="100" y1="90" x2="560" y2="90" stroke="#00ff88" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
   <text x="570" y="94" fill="#00ff88" font-size="11" font-weight="bold">HIGH $151.80</text>
-
   <!-- Range low line -->
   <line x1="100" y1="190" x2="560" y2="190" stroke="#ff5050" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
   <text x="570" y="194" fill="#ff5050" font-size="11" font-weight="bold">LOW $150.20</text>
-
   <!-- Candlesticks during range building (green and red) -->
   <!-- Candle 1 - red -->
   <line x1="120" y1="105" x2="120" y2="175" stroke="#ff5050" stroke-width="1"/>
@@ -79,11 +73,9 @@ For the first 30 minutes after market open, Dippy watches every price bar and tr
   <!-- Candle 9 - green, the breakout! -->
   <line x1="320" y1="100" x2="320" y2="155" stroke="#00ff88" stroke-width="1"/>
   <rect x="315" y="105" width="10" height="35" fill="#00ff88" rx="1"/>
-
   <!-- Label -->
   <text x="200" y="60" fill="#f0883e" font-size="13" font-weight="bold" text-anchor="middle">OPENING RANGE</text>
   <text x="200" y="75" fill="#8b949e" font-size="10" text-anchor="middle">30 minutes of price discovery</text>
-
   <!-- Arrow pointing to range -->
   <text x="480" y="145" fill="#8b949e" font-size="11" text-anchor="middle">The "box"</text>
   <text x="480" y="160" fill="#8b949e" font-size="10" text-anchor="middle">we're watching</text>
@@ -109,12 +101,10 @@ Once the range is built, Dippy watches every new price bar. It's looking for one
   <!-- Axes -->
   <line x1="80" y1="40" x2="80" y2="280" stroke="#30363d" stroke-width="1"/>
   <line x1="80" y1="280" x2="560" y2="280" stroke="#30363d" stroke-width="1"/>
-
   <!-- Range box -->
   <rect x="80" y="110" width="480" height="90" fill="#00ff88" fill-opacity="0.05" stroke="#00ff88" stroke-width="1.5" stroke-dasharray="6,3"/>
   <text x="570" y="114" fill="#00ff88" font-size="10">HIGH</text>
   <text x="570" y="204" fill="#ff5050" font-size="10">LOW</text>
-
   <!-- Price bouncing inside range -->
   <line x1="120" y1="135" x2="120" y2="180" stroke="#8b949e" stroke-width="1"/>
   <rect x="115" y="140" width="10" height="30" fill="#8b949e" rx="1"/>
@@ -124,29 +114,24 @@ Once the range is built, Dippy watches every new price bar. It's looking for one
   <rect x="195" y="150" width="10" height="30" fill="#8b949e" rx="1"/>
   <line x1="240" y1="120" x2="240" y2="175" stroke="#8b949e" stroke-width="1"/>
   <rect x="235" y="130" width="10" height="30" fill="#8b949e" rx="1"/>
-
   <!-- Failed breakout (wick above, close inside) -->
   <line x1="280" y1="95" x2="280" y2="160" stroke="#f0883e" stroke-width="1"/>
   <rect x="275" y="115" width="10" height="35" fill="#f0883e" rx="1"/>
   <text x="280" y="88" fill="#f0883e" font-size="9" text-anchor="middle">Wick poked out</text>
   <text x="280" y="250" fill="#f0883e" font-size="9" text-anchor="middle">but CLOSED inside</text>
   <text x="280" y="262" fill="#f0883e" font-size="9" text-anchor="middle">= NO trade</text>
-
   <!-- More inside candles -->
   <line x1="340" y1="130" x2="340" y2="185" stroke="#8b949e" stroke-width="1"/>
   <rect x="335" y="135" width="10" height="35" fill="#8b949e" rx="1"/>
   <line x1="380" y1="120" x2="380" y2="165" stroke="#8b949e" stroke-width="1"/>
   <rect x="375" y="125" width="10" height="25" fill="#8b949e" rx="1"/>
-
   <!-- THE BREAKOUT - big green candle closing above range -->
   <line x1="430" y1="80" x2="430" y2="140" stroke="#00ff88" stroke-width="2"/>
   <rect x="423" y="85" width="14" height="45" fill="#00ff88" rx="2" stroke="#00ff88" stroke-width="1"/>
-
   <!-- Arrow and label -->
   <line x1="450" y1="70" x2="440" y2="82" stroke="#00ff88" stroke-width="2" marker-end="url(#arrowG)"/>
   <text x="490" y="60" fill="#00ff88" font-size="13" font-weight="bold" text-anchor="middle">BREAKOUT!</text>
   <text x="490" y="75" fill="#00ff88" font-size="10" text-anchor="middle">Close above range high</text>
-
   <!-- Green arrow marker -->
   <defs>
     <marker id="arrowG" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
@@ -178,7 +163,6 @@ If the opening range is tiny (less than 0.15% of the stock price), Dippy skips i
   <text x="120" y="55" fill="#00ff88" font-size="14" text-anchor="middle" font-weight="bold">$150.00 — $150.50</text>
   <text x="120" y="100" fill="#00ff88" font-size="11" text-anchor="middle">Range = 0.33%</text>
   <text x="120" y="118" fill="#00ff88" font-size="12" text-anchor="middle" font-weight="bold">TRADE</text>
-
   <!-- Tiny range -->
   <rect x="270" y="35" width="180" height="30" fill="#ff5050" fill-opacity="0.1" stroke="#ff5050" stroke-width="2" rx="4"/>
   <text x="360" y="55" fill="#ff5050" font-size="14" text-anchor="middle" font-weight="bold">$150.00 — $150.10</text>
@@ -203,23 +187,18 @@ When Dippy finds a valid breakout, it calculates exactly how many shares to buy.
 <svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg" style="max-width:660px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
   <!-- Title -->
   <text x="300" y="30" fill="#f0883e" font-size="14" font-weight="bold" text-anchor="middle">BULLISH BREAKOUT — Position Sizing</text>
-
   <!-- Price chart area -->
   <rect x="40" y="100" width="520" height="80" fill="#00ff88" fill-opacity="0.05" stroke="#00ff88" stroke-width="1" stroke-dasharray="4,3" rx="3"/>
-
   <!-- Entry price line -->
   <line x1="40" y1="90" x2="560" y2="90" stroke="#00ff88" stroke-width="2"/>
   <text x="570" y="94" fill="#00ff88" font-size="11" font-weight="bold">ENTRY $151.80</text>
   <text x="35" y="94" fill="#8b949e" font-size="9" text-anchor="end">Buy here</text>
-
   <!-- Range high label -->
   <text x="300" y="112" fill="#8b949e" font-size="10" text-anchor="middle">Range High (breakout level)</text>
-
   <!-- Stop loss line -->
   <line x1="40" y1="180" x2="560" y2="180" stroke="#ff5050" stroke-width="2"/>
   <text x="570" y="184" fill="#ff5050" font-size="11" font-weight="bold">STOP $150.20</text>
   <text x="35" y="184" fill="#8b949e" font-size="9" text-anchor="end">Range low</text>
-
   <!-- Risk arrow -->
   <line x1="520" y1="95" x2="520" y2="175" stroke="#f0883e" stroke-width="2"/>
   <line x1="515" y1="100" x2="520" y2="95" stroke="#f0883e" stroke-width="2"/>
@@ -227,12 +206,10 @@ When Dippy finds a valid breakout, it calculates exactly how many shares to buy.
   <line x1="515" y1="170" x2="520" y2="175" stroke="#f0883e" stroke-width="2"/>
   <line x1="525" y1="170" x2="520" y2="175" stroke="#f0883e" stroke-width="2"/>
   <text x="540" y="140" fill="#f0883e" font-size="11" font-weight="bold" transform="rotate(90 540 140)">RISK $1.60</text>
-
   <!-- Take profit line -->
   <line x1="40" y1="50" x2="560" y2="50" stroke="#00ff88" stroke-width="2" stroke-dasharray="6,3"/>
   <text x="570" y="54" fill="#00ff88" font-size="11" font-weight="bold">TP $153.40</text>
   <text x="35" y="54" fill="#8b949e" font-size="9" text-anchor="end">1R target</text>
-
   <!-- Sizing formula -->
   <rect x="80" y="210" width="440" height="55" fill="#0d1117" stroke="#30363d" stroke-width="1" rx="6"/>
   <text x="300" y="232" fill="#c9d1d9" font-size="12" text-anchor="middle" font-family="monospace">Risk per share = Entry − Stop = $1.60</text>
@@ -272,32 +249,27 @@ Every breakout gets a **score** based on four factors:
 
 <svg viewBox="0 0 620 280" xmlns="http://www.w3.org/2000/svg" style="max-width:580px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
   <text x="310" y="28" fill="#f0883e" font-size="14" font-weight="bold" text-anchor="middle">SIGNAL SCORING</text>
-
   <!-- Score bars -->
   <!-- Breakout magnitude -->
   <rect x="200" y="50" width="220" height="30" fill="#00ff88" fill-opacity="0.2" stroke="#00ff88" stroke-width="1" rx="4"/>
   <rect x="200" y="50" width="160" height="30" fill="#00ff88" fill-opacity="0.5" rx="4"/>
   <text x="190" y="70" fill="#c9d1d9" font-size="11" text-anchor="end" font-weight="bold">Breakout Size</text>
   <text x="370" y="70" fill="#00ff88" font-size="11" text-anchor="start">× 1.0</text>
-
   <!-- Volume ratio -->
   <rect x="200" y="90" width="220" height="30" fill="#f0883e" fill-opacity="0.2" stroke="#f0883e" stroke-width="1" rx="4"/>
   <rect x="200" y="90" width="80" height="30" fill="#f0883e" fill-opacity="0.5" rx="4"/>
   <text x="190" y="110" fill="#c9d1d9" font-size="11" text-anchor="end" font-weight="bold">Volume Ratio</text>
   <text x="370" y="110" fill="#f0883e" font-size="11" text-anchor="start">× 0.1</text>
-
   <!-- Close strength -->
   <rect x="200" y="130" width="220" height="30" fill="#58a6ff" fill-opacity="0.2" stroke="#58a6ff" stroke-width="1" rx="4"/>
   <rect x="200" y="130" width="100" height="30" fill="#58a6ff" fill-opacity="0.5" rx="4"/>
   <text x="190" y="150" fill="#c9d1d9" font-size="11" text-anchor="end" font-weight="bold">Close Strength</text>
   <text x="370" y="150" fill="#58a6ff" font-size="11" text-anchor="start">× 0.2</text>
-
   <!-- Gap alignment -->
   <rect x="200" y="170" width="220" height="30" fill="#d2a8ff" fill-opacity="0.2" stroke="#d2a8ff" stroke-width="1" rx="4"/>
   <rect x="200" y="170" width="50" height="30" fill="#d2a8ff" fill-opacity="0.5" rx="4"/>
   <text x="190" y="190" fill="#c9d1d9" font-size="11" text-anchor="end" font-weight="bold">Gap Alignment</text>
   <text x="370" y="190" fill="#d2a8ff" font-size="11" text-anchor="start">× 0.05</text>
-
   <!-- Formula -->
   <rect x="80" y="215" width="440" height="30" fill="#0d1117" stroke="#30363d" stroke-width="1" rx="6"/>
   <text x="300" y="235" fill="#c9d1d9" font-size="11" text-anchor="middle" font-family="monospace">Score = breakout_mag + vol_ratio×0.1 + close_strength×0.2 + gap×0.05</text>
@@ -323,38 +295,30 @@ Dippy's **correlation filter** groups related symbols and only takes the best si
 
 <svg viewBox="0 0 620 240" xmlns="http://www.w3.org/2000/svg" style="max-width:580px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
   <text x="310" y="28" fill="#f0883e" font-size="14" font-weight="bold" text-anchor="middle">CORRELATION GROUPS</text>
-
   <!-- Index group -->
   <rect x="40" y="50" width="230" height="100" fill="#58a6ff" fill-opacity="0.08" stroke="#58a6ff" stroke-width="2" rx="8"/>
   <text x="155" y="72" fill="#58a6ff" font-size="12" font-weight="bold" text-anchor="middle">Index ETFs</text>
-
   <rect x="60" y="85" width="80" height="30" fill="#00ff88" fill-opacity="0.3" stroke="#00ff88" stroke-width="1.5" rx="4"/>
   <text x="100" y="105" fill="#00ff88" font-size="13" text-anchor="middle" font-weight="bold">SPY</text>
   <text x="100" y="140" fill="#00ff88" font-size="10" text-anchor="middle">Score: 1.42</text>
-
   <rect x="170" y="85" width="80" height="30" fill="#ff5050" fill-opacity="0.15" stroke="#ff5050" stroke-width="1" rx="4" stroke-dasharray="4,2"/>
   <text x="210" y="105" fill="#ff5050" font-size="13" text-anchor="middle">QQQ</text>
   <text x="210" y="140" fill="#ff5050" font-size="10" text-anchor="middle">Score: 1.18</text>
   <text x="210" y="155" fill="#ff5050" font-size="9" text-anchor="middle">BLOCKED</text>
-
   <!-- Semiconductor group -->
   <rect x="310" y="50" width="250" height="100" fill="#d2a8ff" fill-opacity="0.08" stroke="#d2a8ff" stroke-width="2" rx="8"/>
   <text x="435" y="72" fill="#d2a8ff" font-size="12" font-weight="bold" text-anchor="middle">Semiconductors</text>
-
   <rect x="320" y="85" width="60" height="30" fill="#00ff88" fill-opacity="0.3" stroke="#00ff88" stroke-width="1.5" rx="4"/>
   <text x="350" y="105" fill="#00ff88" font-size="13" text-anchor="middle" font-weight="bold">NVDA</text>
   <text x="350" y="140" fill="#00ff88" font-size="10" text-anchor="middle">Score: 1.85</text>
-
   <rect x="400" y="85" width="60" height="30" fill="#ff5050" fill-opacity="0.15" stroke="#ff5050" stroke-width="1" rx="4" stroke-dasharray="4,2"/>
   <text x="430" y="105" fill="#ff5050" font-size="13" text-anchor="middle">AMD</text>
   <text x="430" y="140" fill="#ff5050" font-size="10" text-anchor="middle">Score: 1.31</text>
   <text x="430" y="155" fill="#ff5050" font-size="9" text-anchor="middle">BLOCKED</text>
-
   <rect x="480" y="85" width="60" height="30" fill="#ff5050" fill-opacity="0.15" stroke="#ff5050" stroke-width="1" rx="4" stroke-dasharray="4,2"/>
   <text x="510" y="105" fill="#ff5050" font-size="13" text-anchor="middle">AVGO</text>
   <text x="510" y="140" fill="#ff5050" font-size="10" text-anchor="middle">Score: 0.94</text>
   <text x="510" y="155" fill="#ff5050" font-size="9" text-anchor="middle">BLOCKED</text>
-
   <!-- Result -->
   <text x="310" y="190" fill="#c9d1d9" font-size="12" text-anchor="middle">Result: SPY (best index) + NVDA (best semi) = diversified portfolio</text>
   <text x="310" y="210" fill="#8b949e" font-size="10" text-anchor="middle">Without filter: SPY + QQQ = double bet on the same index move</text>
@@ -375,34 +339,26 @@ This is the feature that transformed Dippy's performance. Instead of waiting for
 
 <svg viewBox="0 0 660 340" xmlns="http://www.w3.org/2000/svg" style="max-width:620px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
   <text x="330" y="25" fill="#f0883e" font-size="14" font-weight="bold" text-anchor="middle">TRAILING STOP (0.75R) — Long Position</text>
-
   <!-- Y axis -->
   <line x1="60" y1="40" x2="60" y2="280" stroke="#30363d" stroke-width="1"/>
   <line x1="60" y1="280" x2="560" y2="280" stroke="#30363d" stroke-width="1"/>
-
   <!-- Entry line -->
   <line x1="60" y1="180" x2="560" y2="180" stroke="#58a6ff" stroke-width="1" stroke-dasharray="3,3" opacity="0.4"/>
   <text x="55" y="184" fill="#58a6ff" font-size="9" text-anchor="end">Entry</text>
-
   <!-- Original stop -->
   <line x1="60" y1="230" x2="180" y2="230" stroke="#ff5050" stroke-width="1.5" stroke-dasharray="4,3"/>
   <text x="55" y="234" fill="#ff5050" font-size="9" text-anchor="end">SL</text>
-
   <!-- Price path going up with some wiggles -->
   <polyline points="100,180 130,170 160,155 190,140 220,130 250,120 280,105 310,95 340,85 370,75 400,80 430,90 460,100 490,110"
     fill="none" stroke="#00ff88" stroke-width="2.5" stroke-linejoin="round"/>
-
   <!-- Best price markers -->
   <circle cx="370" cy="75" r="4" fill="#00ff88"/>
   <text x="370" y="65" fill="#00ff88" font-size="10" text-anchor="middle" font-weight="bold">Best price</text>
-
   <!-- Trailing stop path (follows below at 0.75R distance) -->
   <polyline points="100,230 130,230 160,230 190,217 220,210 250,202 280,191 310,183 340,176 370,168 400,168 430,168 460,168 490,168"
     fill="none" stroke="#f0883e" stroke-width="2" stroke-dasharray="6,3"/>
-
   <!-- Trailing stop label -->
   <text x="500" y="163" fill="#f0883e" font-size="10" font-weight="bold">Trailing SL</text>
-
   <!-- The hit point -->
   <circle cx="490" cy="110" r="5" fill="#ff5050"/>
   <circle cx="490" cy="168" r="5" fill="#f0883e"/>
@@ -410,15 +366,12 @@ This is the feature that transformed Dippy's performance. Instead of waiting for
   <text x="530" y="140" fill="#ff5050" font-size="10" font-weight="bold">EXIT</text>
   <text x="530" y="153" fill="#8b949e" font-size="9">Price meets</text>
   <text x="530" y="164" fill="#8b949e" font-size="9">trailing stop</text>
-
   <!-- Risk distance annotation -->
   <line x1="80" y1="180" x2="80" y2="230" stroke="#8b949e" stroke-width="1"/>
   <text x="78" y="210" fill="#8b949e" font-size="9" text-anchor="end" transform="rotate(-90 78 210)">1R risk</text>
-
   <!-- Trailing distance annotation -->
   <line x1="385" y1="75" x2="385" y2="168" stroke="#f0883e" stroke-width="1" opacity="0.5"/>
   <text x="395" y="125" fill="#f0883e" font-size="9">0.75R</text>
-
   <!-- Profit zone -->
   <rect x="95" y="168" width="400" height="12" fill="#00ff88" fill-opacity="0.1" rx="2"/>
   <text x="330" y="310" fill="#00ff88" font-size="11" text-anchor="middle">Locked in profit even though price pulled back from the high</text>
@@ -454,58 +407,44 @@ Here's the complete flow, from market open to close:
 
 <svg viewBox="0 0 620 500" xmlns="http://www.w3.org/2000/svg" style="max-width:580px;width:100%;margin:1.5em auto;display:block;background:#161b22;border-radius:12px;padding:16px">
   <text x="310" y="25" fill="#f0883e" font-size="15" font-weight="bold" text-anchor="middle">THE COMPLETE ORB PIPELINE</text>
-
   <!-- Step 1 -->
   <rect x="150" y="45" width="300" height="40" fill="#00ff88" fill-opacity="0.15" stroke="#00ff88" stroke-width="2" rx="8"/>
   <text x="300" y="70" fill="#00ff88" font-size="12" text-anchor="middle" font-weight="bold">9:30-10:00 — Build Opening Range</text>
-
   <line x1="300" y1="85" x2="300" y2="105" stroke="#30363d" stroke-width="2"/>
   <polygon points="295,100 305,100 300,108" fill="#30363d"/>
-
   <!-- Step 2 -->
   <rect x="150" y="110" width="300" height="40" fill="#58a6ff" fill-opacity="0.15" stroke="#58a6ff" stroke-width="2" rx="8"/>
   <text x="300" y="135" fill="#58a6ff" font-size="12" text-anchor="middle" font-weight="bold">10:00-14:00 — Watch for Breakouts</text>
-
   <line x1="300" y1="150" x2="300" y2="170" stroke="#30363d" stroke-width="2"/>
   <polygon points="295,165 305,165 300,173" fill="#30363d"/>
-
   <!-- Decision diamond -->
   <polygon points="300,175 390,205 300,235 210,205" fill="#f0883e" fill-opacity="0.1" stroke="#f0883e" stroke-width="2"/>
   <text x="300" y="208" fill="#f0883e" font-size="11" text-anchor="middle" font-weight="bold">Breakout?</text>
-
   <!-- No path -->
   <line x1="390" y1="205" x2="440" y2="205" stroke="#ff5050" stroke-width="2"/>
   <text x="460" y="209" fill="#ff5050" font-size="11">No → Keep watching</text>
   <line x1="440" y1="205" x2="440" y2="135" stroke="#ff5050" stroke-width="1.5" stroke-dasharray="4,3"/>
   <line x1="440" y1="135" x2="455" y2="135" stroke="#ff5050" stroke-width="1.5" marker-end="url(#arrowR)"/>
   <defs><marker id="arrowR" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#ff5050"/></marker></defs>
-
   <!-- Yes path -->
   <line x1="300" y1="235" x2="300" y2="255" stroke="#00ff88" stroke-width="2"/>
   <text x="285" y="248" fill="#00ff88" font-size="10" text-anchor="end">Yes</text>
   <polygon points="295,250 305,250 300,258" fill="#00ff88"/>
-
   <!-- Step 3 -->
   <rect x="150" y="260" width="300" height="40" fill="#d2a8ff" fill-opacity="0.15" stroke="#d2a8ff" stroke-width="2" rx="8"/>
   <text x="300" y="285" fill="#d2a8ff" font-size="12" text-anchor="middle" font-weight="bold">Filter: Range size + Volume + Correlation</text>
-
   <line x1="300" y1="300" x2="300" y2="320" stroke="#30363d" stroke-width="2"/>
   <polygon points="295,315 305,315 300,323" fill="#30363d"/>
-
   <!-- Step 4 -->
   <rect x="150" y="325" width="300" height="40" fill="#f0883e" fill-opacity="0.15" stroke="#f0883e" stroke-width="2" rx="8"/>
   <text x="300" y="350" fill="#f0883e" font-size="12" text-anchor="middle" font-weight="bold">Score + Rank → Execute Top N</text>
-
   <line x1="300" y1="365" x2="300" y2="385" stroke="#30363d" stroke-width="2"/>
   <polygon points="295,380 305,380 300,388" fill="#30363d"/>
-
   <!-- Step 5 -->
   <rect x="150" y="390" width="300" height="40" fill="#00ff88" fill-opacity="0.15" stroke="#00ff88" stroke-width="2" rx="8"/>
   <text x="300" y="415" fill="#00ff88" font-size="12" text-anchor="middle" font-weight="bold">Trail Stop at 0.75R → SL / TP / EOD Exit</text>
-
   <line x1="300" y1="430" x2="300" y2="450" stroke="#30363d" stroke-width="2"/>
   <polygon points="295,445 305,445 300,453" fill="#30363d"/>
-
   <!-- Step 6 -->
   <rect x="150" y="455" width="300" height="25" fill="#8b949e" fill-opacity="0.15" stroke="#8b949e" stroke-width="1" rx="6"/>
   <text x="300" y="472" fill="#8b949e" font-size="11" text-anchor="middle">3:55 PM — Close any remaining positions</text>
