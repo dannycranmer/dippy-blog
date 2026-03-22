@@ -1,0 +1,633 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">CHART SURFER</h1>
+    <p class="game-subtitle">Ride the stock chart! Jump over red crashes.<br>Collect green candles. Stay bullish.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">SURF THE MARKET</button>
+    <p class="game-hint">Tap, click, or press Space to jump.<br>Moony tried surfing once. Wiped out on a 0.1% dip.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="hud-score">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">CANDLES</span>
+        <span class="hud-value" id="hud-candles">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">STREAK</span>
+        <span class="hud-value" id="hud-streak">x1</span>
+      </div>
+    </div>
+    <canvas id="game-canvas"></canvas>
+    <button id="jump-btn">JUMP</button>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="gameover-title" id="gameover-title">MARKET CRASH</h1>
+    <div class="final-score">
+      <span class="final-label">PORTFOLIO VALUE</span>
+      <span class="final-value" id="final-score">$0</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-candles">0</span><span class="stat-label">Candles</span></div>
+      <div class="stat"><span class="stat-val" id="stat-streak">x1</span><span class="stat-label">Best Streak</span></div>
+      <div class="stat"><span class="stat-val" id="stat-dist">0m</span><span class="stat-label">Distance</span></div>
+    </div>
+    <div class="high-score-display" id="gameover-high-score"></div>
+    <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
+    <button id="replay-btn" onclick="startGame()">RIDE AGAIN</button>
+  </div>
+</div>
+
+<style>
+  #game-wrapper {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #title-screen, #gameover-screen {
+    text-align: center;
+    padding: 2rem 0;
+  }
+  .title-dippy { margin-bottom: 1rem; }
+  .game-title {
+    font-size: 2.2rem;
+    color: #00ff88;
+    margin: 0;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .game-subtitle {
+    color: #8b949e;
+    font-size: 0.9rem;
+    margin: 0.5rem 0 1.5rem;
+    line-height: 1.4;
+  }
+  .high-score-display {
+    color: #f0883e;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    min-height: 1.2em;
+  }
+  button {
+    background: #00ff88;
+    color: #0d1117;
+    border: none;
+    padding: 0.8rem 2rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  button:active { transform: scale(0.96); }
+  button:hover { box-shadow: 0 0 20px rgba(0,255,136,0.4); }
+  .game-hint {
+    color: #484f58;
+    font-size: 0.75rem;
+    margin-top: 1rem;
+    line-height: 1.4;
+  }
+  .game-hud {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    padding: 0 0.25rem;
+  }
+  .hud-item { text-align: center; }
+  .hud-label { display: block; font-size: 0.65rem; color: #484f58; letter-spacing: 1px; }
+  .hud-value { display: block; font-size: 1.2rem; color: #e6edf3; font-weight: bold; }
+  #game-canvas {
+    width: 100%;
+    border-radius: 8px;
+    background: #0d1117;
+    border: 1px solid #21262d;
+    display: block;
+  }
+  #jump-btn {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 1rem;
+    font-size: 1.2rem;
+    background: #161b22;
+    color: #00ff88;
+    border: 2px solid #00ff88;
+  }
+  #jump-btn:active { background: #00ff88; color: #0d1117; }
+  .gameover-title {
+    font-size: 1.8rem;
+    color: #ff5050;
+    margin: 0 0 1rem;
+  }
+  .final-score { margin-bottom: 1rem; }
+  .final-label { display: block; font-size: 0.7rem; color: #484f58; letter-spacing: 1px; }
+  .final-value { display: block; font-size: 2.5rem; color: #00ff88; font-weight: bold; }
+  .stats-row {
+    display: flex;
+    justify-content: space-around;
+    margin: 1rem 0;
+    padding: 0.8rem;
+    background: #161b22;
+    border-radius: 8px;
+  }
+  .stat { text-align: center; }
+  .stat-val { display: block; font-size: 1.2rem; color: #e6edf3; font-weight: bold; }
+  .stat-label { display: block; font-size: 0.65rem; color: #484f58; letter-spacing: 1px; margin-top: 0.2rem; }
+  .gameover-roast {
+    color: #f0883e;
+    font-style: italic;
+    font-size: 0.85rem;
+    margin: 1rem 0;
+    padding: 0 1rem;
+    line-height: 1.4;
+  }
+  #replay-btn { margin-top: 0.5rem; }
+  .lb-title-section { margin-top: 1rem; }
+</style>
+
+<script>
+(function() {
+  const STORAGE_KEY = 'dippy-chart-surfer-high';
+  const W = 400, H = 300;
+  const GROUND_Y = 240;
+  const GRAVITY = 0.55;
+  const JUMP_FORCE = -11;
+  const BASE_SPEED = 3;
+
+  const roasts = [
+    "Moony panic-sold at the first red candle. Classic.",
+    "Your portfolio outlasted Moony's by... well, everything outlasts Moony's.",
+    "Even a dead cat bounces higher than Moony's returns.",
+    "Moony saw this chart and immediately went 100% cash. So just a regular Tuesday.",
+    "You hit a crash. Moony hits crashes without even trading.",
+    "The market took you out. Moony takes himself out. Different energy.",
+    "Somewhere, Moony is bragging about not losing money today. He also didn't make any.",
+    "That crash was brutal. Still less painful than reading Moony's quarterly report.",
+    "You wiped out on volatility. Moony wipes out on a savings account.",
+    "Bear market got you. Moony's been in a bear market since inception.",
+    "The chart went red. Like Moony's entire portfolio. Permanently.",
+    "You crashed harder than Moony's algo when it sees a stock go up.",
+    "At least you tried surfing. Moony just watches from the beach, fully clothed, holding cash."
+  ];
+
+  let canvas, ctx;
+  let gameActive = false;
+  let score, candlesCollected, streak, bestStreak, distance;
+  let speed, dippyY, dippyVY, isOnGround, jumpCount;
+  let chartPoints, obstacles, collectibles;
+  let frameCount, nextObstacle, nextCollectible;
+  let particles;
+  let dippyX = 70;
+
+  function init() {
+    canvas = document.getElementById('game-canvas');
+    ctx = canvas.getContext('2d');
+    canvas.width = W;
+    canvas.height = H;
+    updateHighScore();
+  }
+
+  function updateHighScore() {
+    const hs = localStorage.getItem(STORAGE_KEY) || 0;
+    const titleEl = document.getElementById('title-high-score');
+    const goEl = document.getElementById('gameover-high-score');
+    if (hs > 0) {
+      const txt = 'HIGH SCORE: $' + Number(hs).toLocaleString();
+      if (titleEl) titleEl.textContent = txt;
+      if (goEl) goEl.textContent = txt;
+    }
+  }
+
+  function generateChart() {
+    chartPoints = [];
+    let y = GROUND_Y - 30;
+    for (let x = 0; x < W + 200; x += 4) {
+      y += (Math.random() - 0.5) * 6;
+      y = Math.max(80, Math.min(GROUND_Y - 10, y));
+      chartPoints.push({ x, y });
+    }
+  }
+
+  function getChartY(px) {
+    for (let i = 0; i < chartPoints.length - 1; i++) {
+      if (chartPoints[i].x <= px && chartPoints[i+1].x > px) {
+        const t = (px - chartPoints[i].x) / (chartPoints[i+1].x - chartPoints[i].x);
+        return chartPoints[i].y + t * (chartPoints[i+1].y - chartPoints[i].y);
+      }
+    }
+    return GROUND_Y - 30;
+  }
+
+  function spawnObstacle() {
+    const x = W + 20;
+    obstacles.push({
+      x, w: 16 + Math.random() * 12,
+      h: 30 + Math.random() * 25,
+      type: Math.random() < 0.5 ? 'bear' : 'crash'
+    });
+  }
+
+  function spawnCollectible() {
+    const x = W + 20;
+    const baseY = getChartY(x);
+    collectibles.push({
+      x,
+      y: baseY - 50 - Math.random() * 40,
+      size: 10,
+      collected: false,
+      glow: 0
+    });
+  }
+
+  window.startGame = function() {
+    document.getElementById('title-screen').style.display = 'none';
+    document.getElementById('gameover-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'block';
+
+    score = 0;
+    candlesCollected = 0;
+    streak = 1;
+    bestStreak = 1;
+    distance = 0;
+    speed = BASE_SPEED;
+    dippyY = GROUND_Y - 50;
+    dippyVY = 0;
+    isOnGround = true;
+    jumpCount = 0;
+    frameCount = 0;
+    nextObstacle = 120;
+    nextCollectible = 80;
+    obstacles = [];
+    collectibles = [];
+    particles = [];
+    gameActive = true;
+
+    generateChart();
+    requestAnimationFrame(gameLoop);
+  };
+
+  function jump() {
+    if (!gameActive) return;
+    if (jumpCount < 2) {
+      dippyVY = JUMP_FORCE * (jumpCount === 1 ? 0.8 : 1);
+      isOnGround = false;
+      jumpCount++;
+    }
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if ((e.code === 'Space' || e.code === 'ArrowUp') && gameActive) {
+      e.preventDefault();
+      jump();
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    init();
+    const jb = document.getElementById('jump-btn');
+    if (jb) jb.addEventListener('touchstart', function(e) { e.preventDefault(); jump(); });
+    if (jb) jb.addEventListener('mousedown', function(e) { e.preventDefault(); jump(); });
+    const cv = document.getElementById('game-canvas');
+    if (cv) cv.addEventListener('touchstart', function(e) { e.preventDefault(); jump(); });
+    if (cv) cv.addEventListener('click', function(e) { jump(); });
+  });
+
+  function addParticles(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x, y,
+        vx: (Math.random() - 0.5) * 6,
+        vy: (Math.random() - 1) * 4,
+        life: 20 + Math.random() * 15,
+        color,
+        size: 2 + Math.random() * 3
+      });
+    }
+  }
+
+  function gameLoop() {
+    if (!gameActive) return;
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
+
+  function update() {
+    frameCount++;
+    distance += speed * 0.1;
+    score = Math.floor(distance * 10 + candlesCollected * 50 * streak);
+    speed = BASE_SPEED + Math.floor(distance / 50) * 0.3;
+    speed = Math.min(speed, 8);
+
+    // Scroll chart
+    for (let i = 0; i < chartPoints.length; i++) {
+      chartPoints[i].x -= speed;
+    }
+    // Add new chart points on right
+    while (chartPoints[chartPoints.length - 1].x < W + 200) {
+      const last = chartPoints[chartPoints.length - 1];
+      let ny = last.y + (Math.random() - 0.5) * (6 + speed);
+      ny = Math.max(60, Math.min(GROUND_Y - 10, ny));
+      chartPoints.push({ x: last.x + 4, y: ny });
+    }
+    // Remove offscreen left
+    while (chartPoints.length > 2 && chartPoints[0].x < -20) {
+      chartPoints.shift();
+    }
+
+    // Chart surface Y at Dippy's x
+    const surfaceY = getChartY(dippyX);
+
+    // Dippy physics
+    dippyVY += GRAVITY;
+    dippyY += dippyVY;
+
+    if (dippyY >= surfaceY - 20) {
+      dippyY = surfaceY - 20;
+      dippyVY = 0;
+      isOnGround = true;
+      jumpCount = 0;
+    }
+
+    // Obstacles
+    nextObstacle--;
+    if (nextObstacle <= 0) {
+      spawnObstacle();
+      nextObstacle = 80 + Math.floor(Math.random() * 60) - Math.floor(speed * 5);
+      nextObstacle = Math.max(40, nextObstacle);
+    }
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+      obstacles[i].x -= speed;
+      if (obstacles[i].x < -30) { obstacles.splice(i, 1); continue; }
+
+      // Collision
+      const o = obstacles[i];
+      const oY = getChartY(o.x + o.w/2) - o.h;
+      const dx = dippyX - (o.x + o.w/2);
+      const dy = dippyY - (oY + o.h/2);
+      if (Math.abs(dx) < (o.w/2 + 10) && Math.abs(dy) < (o.h/2 + 8)) {
+        gameOver();
+        return;
+      }
+    }
+
+    // Collectibles
+    nextCollectible--;
+    if (nextCollectible <= 0) {
+      spawnCollectible();
+      nextCollectible = 60 + Math.floor(Math.random() * 50) - Math.floor(speed * 3);
+      nextCollectible = Math.max(30, nextCollectible);
+    }
+    for (let i = collectibles.length - 1; i >= 0; i--) {
+      collectibles[i].x -= speed;
+      if (collectibles[i].x < -20) { collectibles.splice(i, 1); continue; }
+      if (collectibles[i].collected) continue;
+
+      const c = collectibles[i];
+      const dx = dippyX - c.x;
+      const dy = dippyY - c.y;
+      if (Math.sqrt(dx*dx + dy*dy) < 22) {
+        c.collected = true;
+        candlesCollected++;
+        streak = Math.min(streak + 0.5, 5);
+        if (streak > bestStreak) bestStreak = streak;
+        addParticles(c.x, c.y, '#00ff88', 8);
+      }
+    }
+
+    // Decay streak
+    if (frameCount % 120 === 0 && streak > 1) {
+      streak = Math.max(1, streak - 0.5);
+    }
+
+    // Particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.1;
+      p.life--;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    // Off screen death
+    if (dippyY > H + 20) { gameOver(); return; }
+
+    // Update HUD
+    document.getElementById('hud-score').textContent = '$' + score.toLocaleString();
+    document.getElementById('hud-candles').textContent = candlesCollected;
+    document.getElementById('hud-streak').textContent = 'x' + streak.toFixed(1);
+  }
+
+  function draw() {
+    ctx.fillStyle = '#0d1117';
+    ctx.fillRect(0, 0, W, H);
+
+    // Grid lines
+    ctx.strokeStyle = '#161b22';
+    ctx.lineWidth = 1;
+    for (let y = 40; y < H; y += 40) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+
+    // Price labels
+    ctx.fillStyle = '#21262d';
+    ctx.font = '9px monospace';
+    const labels = ['$200', '$180', '$160', '$140', '$120', '$100'];
+    for (let i = 0; i < labels.length; i++) {
+      ctx.fillText(labels[i], W - 32, 46 + i * 40);
+    }
+
+    // Chart line (green when going up, red when going down)
+    ctx.lineWidth = 2;
+    for (let i = 1; i < chartPoints.length; i++) {
+      const p0 = chartPoints[i-1], p1 = chartPoints[i];
+      if (p0.x > W + 10 || p1.x < -10) continue;
+      ctx.strokeStyle = p1.y < p0.y ? '#00ff88' : (p1.y > p0.y ? '#ff5050' : '#8b949e');
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.lineTo(p1.x, p1.y);
+      ctx.stroke();
+    }
+
+    // Fill below chart
+    ctx.fillStyle = 'rgba(0,255,136,0.04)';
+    ctx.beginPath();
+    let started = false;
+    for (let i = 0; i < chartPoints.length; i++) {
+      if (chartPoints[i].x < -10 || chartPoints[i].x > W + 10) continue;
+      if (!started) { ctx.moveTo(chartPoints[i].x, chartPoints[i].y); started = true; }
+      else ctx.lineTo(chartPoints[i].x, chartPoints[i].y);
+    }
+    ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
+
+    // Obstacles (red candles / bears)
+    obstacles.forEach(o => {
+      const baseY = getChartY(o.x + o.w/2);
+      const oY = baseY - o.h;
+      // Red candle body
+      ctx.fillStyle = '#ff5050';
+      ctx.fillRect(o.x, oY, o.w, o.h);
+      // Wick
+      ctx.strokeStyle = '#ff5050';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(o.x + o.w/2, oY - 8);
+      ctx.lineTo(o.x + o.w/2, oY);
+      ctx.moveTo(o.x + o.w/2, oY + o.h);
+      ctx.lineTo(o.x + o.w/2, oY + o.h + 6);
+      ctx.stroke();
+      // Moony face on candle
+      if (o.h > 30) {
+        const cx = o.x + o.w/2, cy = oY + o.h/2;
+        ctx.fillStyle = '#cc0000';
+        ctx.beginPath(); ctx.arc(cx - 3, cy - 3, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + 3, cy - 3, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#cc0000';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(cx, cy + 4, 4, Math.PI, 0); ctx.stroke();
+      }
+    });
+
+    // Collectibles (green candle coins)
+    collectibles.forEach(c => {
+      if (c.collected) return;
+      // Glow
+      c.glow = (c.glow + 0.05) % (Math.PI * 2);
+      const glowSize = 14 + Math.sin(c.glow) * 3;
+      ctx.fillStyle = 'rgba(0,255,136,0.15)';
+      ctx.beginPath(); ctx.arc(c.x, c.y, glowSize, 0, Math.PI * 2); ctx.fill();
+      // Green candle
+      ctx.fillStyle = '#00ff88';
+      ctx.fillRect(c.x - 4, c.y - 8, 8, 16);
+      ctx.strokeStyle = '#00ff88';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(c.x, c.y - 12);
+      ctx.lineTo(c.x, c.y - 8);
+      ctx.moveTo(c.x, c.y + 8);
+      ctx.lineTo(c.x, c.y + 11);
+      ctx.stroke();
+      // $ sign
+      ctx.fillStyle = '#0d1117';
+      ctx.font = 'bold 9px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('$', c.x, c.y + 3);
+    });
+
+    // Dippy
+    drawDippy(dippyX, dippyY);
+
+    // Particles
+    particles.forEach(p => {
+      ctx.globalAlpha = p.life / 35;
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    // Distance ticker
+    ctx.fillStyle = '#21262d';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(Math.floor(distance) + 'm', W - 5, 16);
+    ctx.textAlign = 'left';
+  }
+
+  function drawDippy(x, y) {
+    ctx.save();
+    ctx.translate(x, y);
+    // Body
+    ctx.fillStyle = '#00ff88';
+    ctx.beginPath(); ctx.ellipse(0, 0, 12, 10, 0, 0, Math.PI * 2); ctx.fill();
+    // Head
+    ctx.beginPath(); ctx.ellipse(8, -12, 8, 6, 0.3, 0, Math.PI * 2); ctx.fill();
+    // Neck
+    ctx.strokeStyle = '#00ff88'; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(6, -4); ctx.quadraticCurveTo(10, -8, 8, -12); ctx.stroke();
+    // Eye
+    ctx.fillStyle = '#0d1117';
+    ctx.beginPath(); ctx.arc(11, -14, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(11.5, -14.5, 0.8, 0, Math.PI * 2); ctx.fill();
+    // Beak
+    ctx.fillStyle = '#f0883e';
+    ctx.beginPath(); ctx.moveTo(14, -12); ctx.lineTo(18, -11); ctx.lineTo(14, -10); ctx.closePath(); ctx.fill();
+    // Tail spikes
+    ctx.fillStyle = '#00cc6e';
+    ctx.beginPath(); ctx.moveTo(-8, -2); ctx.lineTo(-14, -8); ctx.lineTo(-10, -1); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-9, 0); ctx.lineTo(-16, -4); ctx.lineTo(-11, 1); ctx.fill();
+    // Legs
+    ctx.strokeStyle = '#00cc6e'; ctx.lineWidth = 2;
+    const legBob = Math.sin(frameCount * 0.3) * 3;
+    ctx.beginPath(); ctx.moveTo(-3, 8); ctx.lineTo(-5, 14 + legBob); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(3, 8); ctx.lineTo(5, 14 - legBob); ctx.stroke();
+    // Surfboard
+    ctx.fillStyle = '#f0883e';
+    ctx.beginPath();
+    ctx.ellipse(0, 12, 16, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#00ff88'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(-10, 12); ctx.lineTo(10, 12); ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function gameOver() {
+    gameActive = false;
+    addParticles(dippyX, dippyY, '#ff5050', 15);
+
+    // Save high score
+    const hs = parseInt(localStorage.getItem(STORAGE_KEY) || '0');
+    if (score > hs) localStorage.setItem(STORAGE_KEY, score);
+
+    // Draw final frame with particles
+    draw();
+
+    setTimeout(function() {
+      document.getElementById('game-screen').style.display = 'none';
+      document.getElementById('gameover-screen').style.display = 'block';
+      document.getElementById('final-score').textContent = '$' + score.toLocaleString();
+      document.getElementById('stat-candles').textContent = candlesCollected;
+      document.getElementById('stat-streak').textContent = 'x' + bestStreak.toFixed(1);
+      document.getElementById('stat-dist').textContent = Math.floor(distance) + 'm';
+      document.getElementById('gameover-roast').textContent = roasts[Math.floor(Math.random() * roasts.length)];
+      updateHighScore();
+    }, 400);
+  }
+})();
+</script>
+{{ end }}
