@@ -1,0 +1,821 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">MOONY MINESWEEPER</h1>
+    <p class="game-subtitle">Sweep Moony's bad trades off the board<br>before they blow up your portfolio.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <div class="difficulty-select">
+      <button class="diff-btn active" data-diff="easy" onclick="setDifficulty('easy')">EASY<span>8x8 &middot; 10</span></button>
+      <button class="diff-btn" data-diff="medium" onclick="setDifficulty('medium')">MED<span>9x9 &middot; 14</span></button>
+      <button class="diff-btn" data-diff="hard" onclick="setDifficulty('hard')">HARD<span>9x9 &middot; 20</span></button>
+    </div>
+    <button id="start-btn" onclick="startGame()">START</button>
+    <p class="game-hint">Moony hid its losing positions all over the grid.<br>Left-click to reveal. Long-press to flag.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">TIME</span>
+        <span class="hud-value" id="timer">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">MOONYS</span>
+        <span class="hud-value" id="mines-left">10</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">SAFE</span>
+        <span class="hud-value" id="safe-left">54</span>
+      </div>
+    </div>
+
+    <div id="mine-grid"></div>
+
+    <p class="game-controls-hint" id="controls-hint">Tap to reveal &middot; Long-press or right-click to flag</p>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="gameover-title" id="gameover-title">BOOM!</h1>
+    <div class="gameover-emoji" id="gameover-emoji">💥</div>
+    <div class="final-score">
+      <span class="final-label">SCORE</span>
+      <span class="final-value" id="final-score">0</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-time">0s</span><span class="stat-label">Time</span></div>
+      <div class="stat"><span class="stat-val" id="stat-revealed">0</span><span class="stat-label">Revealed</span></div>
+      <div class="stat"><span class="stat-val" id="stat-flags">0</span><span class="stat-label">Flags</span></div>
+      <div class="stat"><span class="stat-val" id="stat-accuracy">0%</span><span class="stat-label">Accuracy</span></div>
+    </div>
+    <div class="high-score-display" id="gameover-high-score"></div>
+    <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
+    <button id="replay-btn" onclick="startGame()">PLAY AGAIN</button>
+  </div>
+</div>
+{{ partial "leaderboard" . }}
+
+<style>
+  /* Reset game area */
+  #game-wrapper {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Title Screen */
+  #title-screen {
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+  }
+  .title-dippy {
+    margin-bottom: 1rem;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  .game-title {
+    font-size: 2rem;
+    color: #00ff88;
+    margin: 0 0 0.5rem;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .game-subtitle {
+    color: #8b949e;
+    font-size: 0.95rem;
+    margin: 0 0 1.2rem;
+    line-height: 1.5;
+  }
+  .game-hint {
+    color: #484f58;
+    font-size: 0.8rem;
+    margin-top: 1.5rem;
+    font-style: italic;
+    line-height: 1.5;
+  }
+  .high-score-display {
+    color: #f0883e;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    min-height: 1.2em;
+  }
+
+  /* Difficulty selector */
+  .difficulty-select {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 1.2rem;
+  }
+  .diff-btn {
+    background: #161b22;
+    border: 2px solid #30363d;
+    color: #8b949e;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.85rem;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+  }
+  .diff-btn span {
+    font-size: 0.6rem;
+    font-weight: 400;
+    color: #484f58;
+  }
+  .diff-btn.active {
+    border-color: #00ff88;
+    color: #00ff88;
+    background: #0d2818;
+  }
+  .diff-btn.active span {
+    color: #00cc6e;
+  }
+
+  #start-btn, #replay-btn {
+    background: #00ff88;
+    color: #0d1117;
+    border: none;
+    padding: 0.9rem 3rem;
+    font-size: 1.2rem;
+    font-weight: 800;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 1px;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  #start-btn:active, #replay-btn:active {
+    transform: scale(0.95);
+  }
+  #start-btn:hover, #replay-btn:hover {
+    box-shadow: 0 0 20px rgba(0,255,136,0.4);
+  }
+
+  /* HUD */
+  .game-hud {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 380px;
+    margin-bottom: 0.8rem;
+    gap: 0.5rem;
+  }
+  .hud-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 0.4rem;
+  }
+  .hud-label {
+    font-size: 0.65rem;
+    color: #484f58;
+    letter-spacing: 1px;
+  }
+  .hud-value {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #e6edf3;
+  }
+  #timer {
+    color: #f0883e;
+  }
+  #mines-left {
+    color: #ff5050;
+  }
+  #safe-left {
+    color: #00ff88;
+  }
+  .hud-flash {
+    animation: hudFlash 0.3s ease;
+  }
+  @keyframes hudFlash {
+    0% { transform: scale(1.3); color: #00ff88; }
+    100% { transform: scale(1); }
+  }
+
+  /* Mine Grid */
+  #mine-grid {
+    display: grid;
+    gap: 2px;
+    width: 100%;
+    max-width: 380px;
+    aspect-ratio: 1;
+  }
+  .mine-cell {
+    background: #1a2332;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 0.1s, transform 0.1s, border-color 0.1s;
+    position: relative;
+    aspect-ratio: 1;
+  }
+  .mine-cell:hover:not(.revealed):not(.flagged) {
+    background: #222d3d;
+    border-color: #484f58;
+  }
+  .mine-cell:active:not(.revealed) {
+    transform: scale(0.92);
+  }
+  .mine-cell.revealed {
+    background: #0d1117;
+    border-color: #21262d;
+    cursor: default;
+  }
+  .mine-cell.revealed.mine-hit {
+    background: #3d0d0d;
+    border-color: #ff5050;
+    animation: mineExplode 0.4s ease;
+  }
+  .mine-cell.revealed.mine-show {
+    background: #2d1a0d;
+    border-color: #f0883e;
+  }
+  .mine-cell.flagged {
+    background: #1a1a2e;
+    border-color: #f0883e;
+    animation: flagPlant 0.2s ease;
+  }
+  .mine-cell.flagged.wrong-flag {
+    border-color: #ff5050;
+    background: #3d0d0d;
+  }
+  /* Number colors */
+  .mine-cell.n1 { color: #58a6ff; }
+  .mine-cell.n2 { color: #00ff88; }
+  .mine-cell.n3 { color: #ff5050; }
+  .mine-cell.n4 { color: #d2a8ff; }
+  .mine-cell.n5 { color: #f0883e; }
+  .mine-cell.n6 { color: #39d353; }
+  .mine-cell.n7 { color: #e6edf3; }
+  .mine-cell.n8 { color: #8b949e; }
+
+  @keyframes mineExplode {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.3); background: #ff5050; }
+    100% { transform: scale(1); }
+  }
+  @keyframes flagPlant {
+    0% { transform: scale(0.8); }
+    60% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+
+  /* Win animation */
+  .mine-cell.win-cell {
+    animation: winPulse 0.6s ease forwards;
+  }
+  @keyframes winPulse {
+    0% { transform: scale(1); border-color: #30363d; }
+    50% { transform: scale(1.08); border-color: #00ff88; background: #0d2818; }
+    100% { transform: scale(1); border-color: #00ff88; }
+  }
+
+  .game-controls-hint {
+    color: #484f58;
+    font-size: 0.75rem;
+    margin-top: 0.6rem;
+    text-align: center;
+  }
+
+  /* Game Over */
+  #gameover-screen {
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .gameover-title {
+    font-size: 2rem;
+    color: #f0883e;
+    margin: 0 0 0.3rem;
+  }
+  .gameover-emoji {
+    font-size: 3rem;
+    margin-bottom: 0.8rem;
+  }
+  .final-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .final-label {
+    font-size: 0.8rem;
+    color: #484f58;
+    letter-spacing: 1px;
+  }
+  .final-value {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #00ff88;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .stats-row {
+    display: flex;
+    justify-content: center;
+    gap: 1.2rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .stat-val {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #e6edf3;
+  }
+  .stat-label {
+    font-size: 0.7rem;
+    color: #484f58;
+    letter-spacing: 1px;
+  }
+  .gameover-roast {
+    color: #8b949e;
+    font-size: 0.9rem;
+    margin: 1rem 0 1.5rem;
+    font-style: italic;
+    line-height: 1.5;
+    min-height: 2.5em;
+  }
+</style>
+
+<script>
+(function() {
+  var DIFFICULTIES = {
+    easy:   { rows: 8, cols: 8, mines: 10 },
+    medium: { rows: 9, cols: 9, mines: 14 },
+    hard:   { rows: 9, cols: 9, mines: 20 }
+  };
+
+  var ROASTS = [
+    "Moony just margin-called your minesweeping career.",
+    "Dippy sweeps profits. You swept... a mine. Classic retail move.",
+    "Moony's portfolio explodes less often than your grid just did.",
+    "That click had the same energy as Moony buying the top.",
+    "You found Moony's hidden losses. Unfortunately, they found you first.",
+    "Moony hid those positions better than its unrealized losses.",
+    "Even Moony's 70% cash allocation couldn't save that grid.",
+    "Your risk management is worse than Moony's. And that's saying something.",
+    "Moony just screenshot this and posted 'skill diff' on Reddit.",
+    "Dippy would have swept that grid in 12 seconds. Just saying.",
+    "Moony didn't even need to try. You blew yourself up.",
+    "That grid was safer than Moony's meme stock picks. And you still lost.",
+    "Somewhere, Moony is laughing in paper money. You gave it this.",
+    "Not even a stop-loss could have saved that click."
+  ];
+
+  var WIN_ROASTS = [
+    "You swept every Moony off the board. Dippy approves.",
+    "Clean sweep! Moony's bad trades have been liquidated.",
+    "Grid cleared. Moony's portfolio could never.",
+    "You found all of Moony's hidden positions. SEC would be proud.",
+    "Flawless risk management. Unlike Moony's entire trading career.",
+    "Every mine flagged. Every safe tile revealed. Moony in shambles.",
+    "You swept that grid faster than Moony blows up an account.",
+    "Dippy-tier performance. Moony is requesting a recount."
+  ];
+
+  var currentDifficulty = 'easy';
+  var rows, cols, totalMines;
+  var grid = [];        // 2D: { mine, revealed, flagged, count }
+  var gameActive = false;
+  var firstClick = true;
+  var timerInterval = null;
+  var elapsedTime = 0;
+  var revealedCount = 0;
+  var flagCount = 0;
+  var longPressTimer = null;
+  var longPressTriggered = false;
+  var totalSafe = 0;
+
+  function getHighScore() {
+    try { return parseInt(localStorage.getItem('dippy-moony-minesweeper-high') || '0'); } catch(e) { return 0; }
+  }
+  function setHighScore(s) {
+    try { localStorage.setItem('dippy-moony-minesweeper-high', s); } catch(e) {}
+  }
+
+  function showScreen(id) {
+    ['title-screen','game-screen','gameover-screen'].forEach(function(s) {
+      document.getElementById(s).style.display = s === id ? '' : 'none';
+    });
+  }
+
+  function updateHUD() {
+    document.getElementById('timer').textContent = elapsedTime;
+    document.getElementById('mines-left').textContent = Math.max(0, totalMines - flagCount);
+    document.getElementById('safe-left').textContent = totalSafe - revealedCount;
+  }
+
+  function flashHUD(id) {
+    var el = document.getElementById(id);
+    el.classList.remove('hud-flash');
+    void el.offsetWidth;
+    el.classList.add('hud-flash');
+  }
+
+  window.setDifficulty = function(diff) {
+    currentDifficulty = diff;
+    document.querySelectorAll('.diff-btn').forEach(function(btn) {
+      btn.classList.toggle('active', btn.dataset.diff === diff);
+    });
+    // Update high score display for this difficulty
+    var hs = getHighScore();
+    if (hs > 0) {
+      document.getElementById('title-high-score').textContent = 'High score: ' + hs;
+    }
+  };
+
+  function createGrid() {
+    var cfg = DIFFICULTIES[currentDifficulty];
+    rows = cfg.rows;
+    cols = cfg.cols;
+    totalMines = cfg.mines;
+    totalSafe = rows * cols - totalMines;
+    revealedCount = 0;
+    flagCount = 0;
+    firstClick = true;
+
+    grid = [];
+    for (var r = 0; r < rows; r++) {
+      grid[r] = [];
+      for (var c = 0; c < cols; c++) {
+        grid[r][c] = { mine: false, revealed: false, flagged: false, count: 0 };
+      }
+    }
+  }
+
+  function placeMines(safeR, safeC) {
+    // Place mines, avoiding the first-click cell and its neighbors
+    var placed = 0;
+    while (placed < totalMines) {
+      var r = Math.floor(Math.random() * rows);
+      var c = Math.floor(Math.random() * cols);
+      if (grid[r][c].mine) continue;
+      if (Math.abs(r - safeR) <= 1 && Math.abs(c - safeC) <= 1) continue;
+      grid[r][c].mine = true;
+      placed++;
+    }
+    // Calculate neighbor counts
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        if (grid[r][c].mine) continue;
+        var count = 0;
+        forNeighbors(r, c, function(nr, nc) {
+          if (grid[nr][nc].mine) count++;
+        });
+        grid[r][c].count = count;
+      }
+    }
+  }
+
+  function forNeighbors(r, c, fn) {
+    for (var dr = -1; dr <= 1; dr++) {
+      for (var dc = -1; dc <= 1; dc++) {
+        if (dr === 0 && dc === 0) continue;
+        var nr = r + dr, nc = c + dc;
+        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+          fn(nr, nc);
+        }
+      }
+    }
+  }
+
+  function renderGrid() {
+    var container = document.getElementById('mine-grid');
+    container.innerHTML = '';
+    container.style.gridTemplateColumns = 'repeat(' + cols + ', 1fr)';
+
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        var cell = document.createElement('div');
+        cell.className = 'mine-cell';
+        cell.dataset.r = r;
+        cell.dataset.c = c;
+
+        // Click to reveal
+        (function(cr, cc, el) {
+          el.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (longPressTriggered) { longPressTriggered = false; return; }
+            revealCell(cr, cc);
+          });
+
+          // Right-click to flag
+          el.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            toggleFlag(cr, cc);
+          });
+
+          // Long press to flag (mobile)
+          el.addEventListener('touchstart', function(e) {
+            longPressTriggered = false;
+            longPressTimer = setTimeout(function() {
+              longPressTriggered = true;
+              toggleFlag(cr, cc);
+              if (navigator.vibrate) navigator.vibrate(30);
+            }, 400);
+          }, { passive: true });
+
+          el.addEventListener('touchend', function() {
+            clearTimeout(longPressTimer);
+          });
+          el.addEventListener('touchmove', function() {
+            clearTimeout(longPressTimer);
+          });
+        })(r, c, cell);
+
+        container.appendChild(cell);
+      }
+    }
+  }
+
+  function getCellEl(r, c) {
+    return document.querySelector('.mine-cell[data-r="' + r + '"][data-c="' + c + '"]');
+  }
+
+  function revealCell(r, c) {
+    if (!gameActive) return;
+    var cell = grid[r][c];
+    if (cell.revealed || cell.flagged) return;
+
+    if (firstClick) {
+      firstClick = false;
+      placeMines(r, c);
+      startTimer();
+    }
+
+    if (cell.mine) {
+      // BOOM
+      cell.revealed = true;
+      var el = getCellEl(r, c);
+      el.classList.add('revealed', 'mine-hit');
+      el.textContent = '\uD83C\uDF19';
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      gameOver(false, r, c);
+      return;
+    }
+
+    // Flood fill reveal
+    floodReveal(r, c);
+    updateHUD();
+
+    // Check win
+    if (revealedCount >= totalSafe) {
+      gameOver(true);
+    }
+  }
+
+  function floodReveal(r, c) {
+    if (r < 0 || r >= rows || c < 0 || c >= cols) return;
+    var cell = grid[r][c];
+    if (cell.revealed || cell.flagged || cell.mine) return;
+
+    cell.revealed = true;
+    revealedCount++;
+
+    var el = getCellEl(r, c);
+    el.classList.add('revealed');
+
+    if (cell.count > 0) {
+      el.textContent = cell.count;
+      el.classList.add('n' + cell.count);
+    } else {
+      // Empty cell — reveal neighbors
+      forNeighbors(r, c, function(nr, nc) {
+        floodReveal(nr, nc);
+      });
+    }
+  }
+
+  function toggleFlag(r, c) {
+    if (!gameActive) return;
+    var cell = grid[r][c];
+    if (cell.revealed) return;
+
+    // Don't allow flagging before first click
+    if (firstClick) return;
+
+    cell.flagged = !cell.flagged;
+    var el = getCellEl(r, c);
+
+    if (cell.flagged) {
+      el.classList.add('flagged');
+      el.textContent = '\uD83D\uDEA9';
+      flagCount++;
+    } else {
+      el.classList.remove('flagged');
+      el.textContent = '';
+      flagCount--;
+    }
+
+    flashHUD('mines-left');
+    updateHUD();
+
+    // Check win by flags: all mines flagged and nothing else flagged
+    if (flagCount === totalMines) {
+      var allCorrect = true;
+      for (var rr = 0; rr < rows; rr++) {
+        for (var cc = 0; cc < cols; cc++) {
+          if (grid[rr][cc].flagged && !grid[rr][cc].mine) allCorrect = false;
+        }
+      }
+      if (allCorrect) gameOver(true);
+    }
+  }
+
+  function startTimer() {
+    elapsedTime = 0;
+    timerInterval = setInterval(function() {
+      elapsedTime++;
+      document.getElementById('timer').textContent = elapsedTime;
+      // Flash red after 2 minutes
+      if (elapsedTime >= 120) {
+        document.getElementById('timer').style.color = '#ff5050';
+      }
+    }, 1000);
+  }
+
+  function calculateScore(won) {
+    if (!won) {
+      // Partial score for cells revealed
+      return Math.max(0, revealedCount * 5);
+    }
+    // Base score for winning
+    var cfg = DIFFICULTIES[currentDifficulty];
+    var base = cfg.mines * 100;
+    // Time bonus: faster = higher. Max bonus = base, decays over 120 seconds
+    var timeBonus = Math.max(0, Math.round(base * (1 - elapsedTime / 120)));
+    // Difficulty multiplier
+    var mult = currentDifficulty === 'hard' ? 2.5 : (currentDifficulty === 'medium' ? 1.5 : 1);
+    return Math.round((base + timeBonus) * mult);
+  }
+
+  function gameOver(won, hitR, hitC) {
+    gameActive = false;
+    clearInterval(timerInterval);
+
+    // Reveal all mines
+    if (!won) {
+      for (var r = 0; r < rows; r++) {
+        for (var c = 0; c < cols; c++) {
+          var cell = grid[r][c];
+          var el = getCellEl(r, c);
+          if (cell.mine && !cell.revealed) {
+            el.classList.add('revealed', 'mine-show');
+            el.textContent = '\uD83C\uDF19';
+          }
+          if (cell.flagged && !cell.mine) {
+            el.classList.add('wrong-flag');
+          }
+        }
+      }
+    } else {
+      // Win animation — cascade green pulse
+      var allCells = document.querySelectorAll('.mine-cell');
+      allCells.forEach(function(el, i) {
+        setTimeout(function() {
+          el.classList.add('win-cell');
+        }, i * 20);
+      });
+      // Auto-flag remaining mines
+      for (var r = 0; r < rows; r++) {
+        for (var c = 0; c < cols; c++) {
+          if (grid[r][c].mine && !grid[r][c].flagged) {
+            var el = getCellEl(r, c);
+            el.classList.add('flagged');
+            el.textContent = '\uD83D\uDEA9';
+          }
+        }
+      }
+    }
+
+    var score = calculateScore(won);
+
+    // Delay showing game over screen to let animations play
+    setTimeout(function() {
+      showGameOverScreen(won, score);
+    }, won ? 800 : 600);
+  }
+
+  function showGameOverScreen(won, score) {
+    document.getElementById('gameover-title').textContent = won ? 'GRID CLEARED!' : 'BOOM!';
+    document.getElementById('gameover-title').style.color = won ? '#00ff88' : '#ff5050';
+    document.getElementById('gameover-emoji').textContent = won ? '\uD83C\uDF89' : '\uD83D\uDCA5';
+    document.getElementById('final-score').textContent = score;
+
+    document.getElementById('stat-time').textContent = elapsedTime + 's';
+    document.getElementById('stat-revealed').textContent = revealedCount;
+    document.getElementById('stat-flags').textContent = flagCount;
+
+    // Flag accuracy
+    var correctFlags = 0;
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        if (grid[r][c].flagged && grid[r][c].mine) correctFlags++;
+      }
+    }
+    var accuracy = flagCount > 0 ? Math.round(correctFlags / flagCount * 100) : 0;
+    document.getElementById('stat-accuracy').textContent = accuracy + '%';
+
+    // High score
+    var prev = getHighScore();
+    var isNew = score > prev;
+    if (isNew && score > 0) setHighScore(score);
+    document.getElementById('gameover-high-score').textContent = isNew && score > 0
+      ? 'NEW HIGH SCORE! (prev: ' + prev + ')'
+      : (prev > 0 ? 'High score: ' + prev : '');
+
+    // Pick a roast
+    var roastList = won ? WIN_ROASTS : ROASTS;
+    document.getElementById('gameover-roast').textContent =
+      '"' + roastList[Math.floor(Math.random() * roastList.length)] + '"';
+
+    // Reset timer color
+    document.getElementById('timer').style.color = '#f0883e';
+
+    showScreen('gameover-screen');
+
+    // Leaderboard
+    DippyLB.onGameOver(score);
+  }
+
+  window.startGame = function() {
+    gameActive = true;
+    elapsedTime = 0;
+    clearInterval(timerInterval);
+
+    createGrid();
+    renderGrid();
+    updateHUD();
+
+    showScreen('game-screen');
+  };
+
+  // Show high score on title
+  var hs = getHighScore();
+  if (hs > 0) {
+    document.getElementById('title-high-score').textContent = 'High score: ' + hs;
+  }
+
+  // Init leaderboard
+  DippyLB.init('moony-minesweeper');
+})();
+</script>
+{{ end }}
