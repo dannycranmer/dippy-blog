@@ -1,0 +1,657 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">DIPPY SNAKE</h1>
+    <p class="game-subtitle">Slither through the market.<br>Eat coins. Avoid Moony. Don't crash.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">START</button>
+    <p class="game-hint">Arrow keys / WASD or swipe.<br>Moony lurks after every 5 coins.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="hud-score">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">HIGH</span>
+        <span class="hud-value" id="hud-high">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">LENGTH</span>
+        <span class="hud-value" id="hud-length">3</span>
+      </div>
+    </div>
+    <canvas id="game-canvas"></canvas>
+    <div class="mobile-controls">
+      <div class="dpad-row">
+        <button class="ctrl-btn" id="btn-up">&#9650;</button>
+      </div>
+      <div class="dpad-row">
+        <button class="ctrl-btn" id="btn-left">&#9664;</button>
+        <button class="ctrl-btn" id="btn-down">&#9660;</button>
+        <button class="ctrl-btn" id="btn-right">&#9654;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="gameover-title">GAME OVER</h1>
+    <div class="final-score">
+      <span class="final-label">FINAL SCORE</span>
+      <span class="final-value" id="final-score">0</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-length">3</span><span class="stat-label">Length</span></div>
+      <div class="stat"><span class="stat-val" id="stat-coins">0</span><span class="stat-label">Coins</span></div>
+      <div class="stat"><span class="stat-val" id="stat-moonys">0</span><span class="stat-label">Moonys</span></div>
+    </div>
+    <div class="high-score-display" id="gameover-high-score"></div>
+    <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
+    <button id="replay-btn" onclick="startGame()">PLAY AGAIN</button>
+  </div>
+</div>
+{{ partial "leaderboard" . }}
+
+<style>
+  #game-wrapper {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #title-screen { text-align: center; animation: fadeIn 0.5s ease; }
+  .title-dippy { margin-bottom: 1rem; animation: bounce 2s ease-in-out infinite; }
+
+  .game-title {
+    font-size: 2.4rem;
+    font-weight: 900;
+    color: #00ff88;
+    margin: 0 0 0.5rem 0;
+    text-shadow: 0 0 20px rgba(0,255,136,0.4);
+    letter-spacing: 2px;
+  }
+
+  .game-subtitle {
+    color: #8b949e;
+    font-size: 0.95rem;
+    margin: 0 0 1rem 0;
+    line-height: 1.5;
+  }
+
+  .game-hint {
+    color: #484f58;
+    font-size: 0.8rem;
+    margin-top: 1rem;
+    line-height: 1.4;
+  }
+
+  .high-score-display {
+    color: #f0883e;
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0.5rem 0;
+  }
+
+  #start-btn, #replay-btn {
+    background: #00ff88;
+    color: #0d1117;
+    border: none;
+    padding: 14px 48px;
+    font-size: 1.2rem;
+    font-weight: 900;
+    border-radius: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    transition: all 0.2s;
+    margin-top: 0.5rem;
+  }
+
+  #start-btn:hover, #replay-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(0,255,136,0.4);
+  }
+
+  #start-btn:active, #replay-btn:active {
+    transform: scale(0.97);
+  }
+
+  /* HUD */
+  .game-hud {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 380px;
+    margin-bottom: 8px;
+  }
+
+  .hud-item { text-align: center; }
+  .hud-label { display: block; font-size: 0.65rem; color: #484f58; letter-spacing: 1px; font-weight: 700; }
+  .hud-value { display: block; font-size: 1.3rem; font-weight: 900; color: #00ff88; }
+
+  /* Canvas */
+  #game-canvas {
+    border: 2px solid #21262d;
+    border-radius: 6px;
+    background: #0d1117;
+    display: block;
+  }
+
+  /* D-Pad Controls */
+  .mobile-controls {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .dpad-row {
+    display: flex;
+    gap: 4px;
+  }
+
+  .ctrl-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
+    border: 2px solid #21262d;
+    background: #161b22;
+    color: #8b949e;
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .ctrl-btn:active {
+    background: #00ff88;
+    color: #0d1117;
+    border-color: #00ff88;
+  }
+
+  /* Game Over */
+  #gameover-screen {
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+  }
+
+  .gameover-title {
+    font-size: 2rem;
+    font-weight: 900;
+    color: #ff5050;
+    margin: 0 0 1rem 0;
+    text-shadow: 0 0 20px rgba(255,80,80,0.4);
+  }
+
+  .final-score { margin-bottom: 1rem; }
+  .final-label { display: block; font-size: 0.75rem; color: #484f58; letter-spacing: 1px; font-weight: 700; }
+  .final-value { display: block; font-size: 3rem; font-weight: 900; color: #00ff88; text-shadow: 0 0 20px rgba(0,255,136,0.3); }
+
+  .stats-row {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .stat { text-align: center; }
+  .stat-val { display: block; font-size: 1.4rem; font-weight: 900; color: #f0883e; }
+  .stat-label { display: block; font-size: 0.7rem; color: #484f58; letter-spacing: 1px; font-weight: 700; text-transform: uppercase; }
+
+  .gameover-roast {
+    color: #8b949e;
+    font-style: italic;
+    font-size: 0.9rem;
+    margin: 1rem 0;
+    padding: 0 1rem;
+    line-height: 1.4;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+</style>
+
+<script>
+(function() {
+  // --- Constants ---
+  var GRID = 20;
+  var CELL;
+  var CANVAS_PX;
+  var INITIAL_SPEED = 140;
+  var MIN_SPEED = 60;
+  var SPEED_STEP = 4;
+  var LS_KEY = 'dippy-dippy-snake-high';
+
+  var roasts = [
+    "Moony tried to play Snake. It sat still and called it 'value investing'.",
+    "Your portfolio just hit a wall. Just like Moony's returns.",
+    "Game over! But hey, at least you moved. Moony's still sitting in cash.",
+    "That crash looked like Moony's entire trading history.",
+    "You collected more coins in 30 seconds than Moony has in 30 days.",
+    "Moony would have stopped playing after the first coin. Too risky.",
+    "The snake died, but its spirit lives on. Unlike Moony's portfolio.",
+    "At least you tried something. Moony's idea of risk is buying a savings bond.",
+    "Dippy goes down swinging. Moony goes down sitting.",
+    "That wall hit harder than Moony's annual returns report.",
+    "You ate more green than Moony has seen all quarter.",
+    "Game over! Moony says this is why it stays 70% cash."
+  ];
+
+  // --- State ---
+  var canvas, ctx;
+  var snake, dir, nextDir, food, moonys;
+  var score, coins, highScore, moonyCount;
+  var gameLoop, speed;
+  var alive;
+  var touchStartX, touchStartY;
+
+  function init() {
+    canvas = document.getElementById('game-canvas');
+    ctx = canvas.getContext('2d');
+    sizeCanvas();
+    highScore = parseInt(localStorage.getItem(LS_KEY)) || 0;
+    showHighScores();
+    window.addEventListener('resize', sizeCanvas);
+  }
+
+  function sizeCanvas() {
+    var maxW = Math.min(380, window.innerWidth - 40);
+    CELL = Math.floor(maxW / GRID);
+    CANVAS_PX = CELL * GRID;
+    if (canvas) {
+      canvas.width = CANVAS_PX;
+      canvas.height = CANVAS_PX;
+    }
+  }
+
+  function showHighScores() {
+    var el1 = document.getElementById('title-high-score');
+    var el2 = document.getElementById('gameover-high-score');
+    var txt = highScore > 0 ? ('HIGH SCORE: ' + highScore) : '';
+    if (el1) el1.textContent = txt;
+    if (el2) el2.textContent = txt;
+  }
+
+  function showScreen(id) {
+    document.getElementById('title-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'none';
+    document.getElementById('gameover-screen').style.display = 'none';
+    document.getElementById(id).style.display = '';
+  }
+
+  // --- Game Start ---
+  window.startGame = function() {
+    snake = [];
+    var startX = Math.floor(GRID / 2);
+    var startY = Math.floor(GRID / 2);
+    for (var i = 0; i < 3; i++) {
+      snake.push({ x: startX - i, y: startY });
+    }
+    dir = { x: 1, y: 0 };
+    nextDir = { x: 1, y: 0 };
+    score = 0;
+    coins = 0;
+    moonyCount = 0;
+    moonys = [];
+    speed = INITIAL_SPEED;
+    alive = true;
+    placeFood();
+    showScreen('game-screen');
+    updateHUD();
+    if (gameLoop) clearInterval(gameLoop);
+    gameLoop = setInterval(tick, speed);
+  };
+
+  function placeFood() {
+    var pos;
+    do {
+      pos = { x: Math.floor(Math.random() * GRID), y: Math.floor(Math.random() * GRID) };
+    } while (isOccupied(pos));
+    food = pos;
+  }
+
+  function placeMoony() {
+    var pos;
+    var attempts = 0;
+    do {
+      pos = { x: Math.floor(Math.random() * GRID), y: Math.floor(Math.random() * GRID) };
+      attempts++;
+    } while (isOccupied(pos) && attempts < 200);
+    if (attempts < 200) {
+      moonys.push(pos);
+      moonyCount++;
+    }
+  }
+
+  function isOccupied(pos) {
+    for (var i = 0; i < snake.length; i++) {
+      if (snake[i].x === pos.x && snake[i].y === pos.y) return true;
+    }
+    if (food && food.x === pos.x && food.y === pos.y) return true;
+    for (var j = 0; j < moonys.length; j++) {
+      if (moonys[j].x === pos.x && moonys[j].y === pos.y) return true;
+    }
+    return false;
+  }
+
+  // --- Game Tick ---
+  function tick() {
+    if (!alive) return;
+
+    dir = { x: nextDir.x, y: nextDir.y };
+    var head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+    // Wall collision
+    if (head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID) {
+      return gameOver();
+    }
+
+    // Self collision
+    for (var i = 0; i < snake.length; i++) {
+      if (snake[i].x === head.x && snake[i].y === head.y) {
+        return gameOver();
+      }
+    }
+
+    // Moony collision
+    for (var j = 0; j < moonys.length; j++) {
+      if (moonys[j].x === head.x && moonys[j].y === head.y) {
+        return gameOver();
+      }
+    }
+
+    snake.unshift(head);
+
+    // Food collision
+    if (head.x === food.x && head.y === food.y) {
+      score += 10;
+      coins++;
+      placeFood();
+
+      // Spawn moony every 5 coins
+      if (coins % 5 === 0) {
+        placeMoony();
+      }
+
+      // Speed up
+      speed = Math.max(MIN_SPEED, INITIAL_SPEED - (coins * SPEED_STEP));
+      clearInterval(gameLoop);
+      gameLoop = setInterval(tick, speed);
+    } else {
+      snake.pop();
+    }
+
+    updateHUD();
+    draw();
+  }
+
+  function updateHUD() {
+    document.getElementById('hud-score').textContent = score;
+    document.getElementById('hud-high').textContent = Math.max(score, highScore);
+    document.getElementById('hud-length').textContent = snake.length;
+  }
+
+  // --- Drawing ---
+  function draw() {
+    ctx.clearRect(0, 0, CANVAS_PX, CANVAS_PX);
+
+    // Grid
+    ctx.strokeStyle = '#161b22';
+    ctx.lineWidth = 0.5;
+    for (var i = 0; i <= GRID; i++) {
+      ctx.beginPath();
+      ctx.moveTo(i * CELL, 0);
+      ctx.lineTo(i * CELL, CANVAS_PX);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, i * CELL);
+      ctx.lineTo(CANVAS_PX, i * CELL);
+      ctx.stroke();
+    }
+
+    // Snake body (connected rounded segments)
+    for (var s = snake.length - 1; s >= 0; s--) {
+      var seg = snake[s];
+      var cx = seg.x * CELL + CELL / 2;
+      var cy = seg.y * CELL + CELL / 2;
+      var r = CELL / 2 - 1;
+
+      if (s === 0) {
+        // Head - brighter
+        ctx.fillStyle = '#33ffaa';
+        ctx.shadowColor = 'rgba(0,255,136,0.5)';
+        ctx.shadowBlur = 8;
+      } else {
+        // Body - gradient fade
+        var t = s / snake.length;
+        var g = Math.floor(255 - t * 80);
+        ctx.fillStyle = 'rgb(0,' + g + ',102)';
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+      }
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Connect segments
+      if (s > 0) {
+        var prev = snake[s - 1];
+        var px = prev.x * CELL + CELL / 2;
+        var py = prev.y * CELL + CELL / 2;
+        var mr = CELL / 2 - 2;
+        ctx.fillStyle = s === 1 ? '#33ffaa' : ('rgb(0,' + g + ',102)');
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.arc((cx + px) / 2, (cy + py) / 2, mr, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+
+    // Head eyes
+    if (snake.length > 0) {
+      var h = snake[0];
+      var hx = h.x * CELL + CELL / 2;
+      var hy = h.y * CELL + CELL / 2;
+      var eyeOff = CELL * 0.2;
+      var eyeR = CELL * 0.12;
+
+      var e1x, e1y, e2x, e2y;
+      if (dir.x === 1) { e1x = hx + eyeOff; e1y = hy - eyeOff; e2x = hx + eyeOff; e2y = hy + eyeOff; }
+      else if (dir.x === -1) { e1x = hx - eyeOff; e1y = hy - eyeOff; e2x = hx - eyeOff; e2y = hy + eyeOff; }
+      else if (dir.y === -1) { e1x = hx - eyeOff; e1y = hy - eyeOff; e2x = hx + eyeOff; e2y = hy - eyeOff; }
+      else { e1x = hx - eyeOff; e1y = hy + eyeOff; e2x = hx + eyeOff; e2y = hy + eyeOff; }
+
+      ctx.fillStyle = '#0d1117';
+      ctx.beginPath(); ctx.arc(e1x, e1y, eyeR, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(e2x, e2y, eyeR, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Food (gold coin with $)
+    var fx = food.x * CELL + CELL / 2;
+    var fy = food.y * CELL + CELL / 2;
+    var fr = CELL / 2 - 2;
+
+    ctx.fillStyle = '#f0883e';
+    ctx.shadowColor = 'rgba(240,136,62,0.6)';
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(fx, fy, fr, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = '#0d1117';
+    ctx.font = 'bold ' + Math.floor(CELL * 0.6) + 'px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('$', fx, fy + 1);
+
+    // Moonys
+    for (var m = 0; m < moonys.length; m++) {
+      var mo = moonys[m];
+      var mx = mo.x * CELL + CELL / 2;
+      var my = mo.y * CELL + CELL / 2;
+      var moR = CELL / 2 - 1;
+
+      // Gray circle
+      ctx.fillStyle = '#484f58';
+      ctx.beginPath();
+      ctx.arc(mx, my, moR, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Crescent moon effect (darker arc)
+      ctx.fillStyle = '#30363d';
+      ctx.beginPath();
+      ctx.arc(mx + CELL * 0.15, my - CELL * 0.1, moR * 0.75, 0, Math.PI * 2);
+      ctx.fill();
+
+      // M letter
+      ctx.fillStyle = '#8b949e';
+      ctx.font = 'bold ' + Math.floor(CELL * 0.45) + 'px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('M', mx, my + 1);
+    }
+  }
+
+  // --- Game Over ---
+  function gameOver() {
+    alive = false;
+    clearInterval(gameLoop);
+
+    if (score > highScore) {
+      highScore = score;
+      localStorage.setItem(LS_KEY, highScore);
+    }
+
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('stat-length').textContent = snake.length;
+    document.getElementById('stat-coins').textContent = coins;
+    document.getElementById('stat-moonys').textContent = moonyCount;
+    document.getElementById('gameover-roast').textContent = '"' + roasts[Math.floor(Math.random() * roasts.length)] + '"';
+    showHighScores();
+    showScreen('gameover-screen');
+
+    if (typeof DippyLB !== 'undefined' && DippyLB.onGameOver) {
+      DippyLB.onGameOver(score);
+    }
+  }
+
+  // --- Controls: Keyboard ---
+  document.addEventListener('keydown', function(e) {
+    var key = e.key;
+    if ((key === 'ArrowUp' || key === 'w' || key === 'W') && dir.y !== 1) {
+      nextDir = { x: 0, y: -1 }; e.preventDefault();
+    } else if ((key === 'ArrowDown' || key === 's' || key === 'S') && dir.y !== -1) {
+      nextDir = { x: 0, y: 1 }; e.preventDefault();
+    } else if ((key === 'ArrowLeft' || key === 'a' || key === 'A') && dir.x !== 1) {
+      nextDir = { x: -1, y: 0 }; e.preventDefault();
+    } else if ((key === 'ArrowRight' || key === 'd' || key === 'D') && dir.x !== 0) {
+      nextDir = { x: 1, y: 0 }; e.preventDefault();
+    } else if (key === ' ' || key === 'Enter') {
+      if (!alive || document.getElementById('title-screen').style.display !== 'none') {
+        startGame();
+        e.preventDefault();
+      }
+    }
+  });
+
+  // --- Controls: Touch Swipe ---
+  document.addEventListener('touchstart', function(e) {
+    var t = e.touches[0];
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    if (touchStartX === undefined) return;
+    var t = e.changedTouches[0];
+    var dx = t.clientX - touchStartX;
+    var dy = t.clientY - touchStartY;
+    var absDx = Math.abs(dx);
+    var absDy = Math.abs(dy);
+    var threshold = 20;
+
+    if (Math.max(absDx, absDy) < threshold) return;
+
+    if (absDx > absDy) {
+      if (dx > 0 && dir.x !== -1) nextDir = { x: 1, y: 0 };
+      else if (dx < 0 && dir.x !== 1) nextDir = { x: -1, y: 0 };
+    } else {
+      if (dy > 0 && dir.y !== -1) nextDir = { x: 0, y: 1 };
+      else if (dy < 0 && dir.y !== 1) nextDir = { x: 0, y: -1 };
+    }
+  }, { passive: true });
+
+  // --- Controls: D-pad Buttons ---
+  function bindBtn(id, nx, ny, blockAxis) {
+    var btn = document.getElementById(id);
+    if (!btn) return;
+    function handler(e) {
+      e.preventDefault();
+      if (blockAxis === 'x' && dir.x === -nx) return;
+      if (blockAxis === 'y' && dir.y === -ny) return;
+      nextDir = { x: nx, y: ny };
+    }
+    btn.addEventListener('touchstart', handler, { passive: false });
+    btn.addEventListener('mousedown', handler);
+  }
+
+  // --- Init ---
+  document.addEventListener('DOMContentLoaded', function() {
+    init();
+    bindBtn('btn-up', 0, -1, 'y');
+    bindBtn('btn-down', 0, 1, 'y');
+    bindBtn('btn-left', -1, 0, 'x');
+    bindBtn('btn-right', 1, 0, 'x');
+    if (typeof DippyLB !== 'undefined' && DippyLB.init) {
+      DippyLB.init('dippy-snake');
+    }
+  });
+})();
+</script>
+{{ end }}
