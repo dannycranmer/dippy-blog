@@ -590,7 +590,7 @@
       nextDir = { x: 0, y: 1 }; e.preventDefault();
     } else if ((key === 'ArrowLeft' || key === 'a' || key === 'A') && dir.x !== 1) {
       nextDir = { x: -1, y: 0 }; e.preventDefault();
-    } else if ((key === 'ArrowRight' || key === 'd' || key === 'D') && dir.x !== 0) {
+    } else if ((key === 'ArrowRight' || key === 'd' || key === 'D') && dir.x !== -1) {
       nextDir = { x: 1, y: 0 }; e.preventDefault();
     } else if (key === ' ' || key === 'Enter') {
       if (!alive || document.getElementById('title-screen').style.display !== 'none') {
