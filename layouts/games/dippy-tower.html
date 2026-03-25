@@ -1,0 +1,746 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">DIPPY TOWER</h1>
+    <p class="game-subtitle">Stack blocks to build the tallest portfolio tower.<br>Moony shakes the foundations every 5 floors!</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">BUILD</button>
+    <p class="game-hint">Tap, click, or press spacebar to drop blocks.<br>Perfect stacks get bonus points. Don't let Moony shake you.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="score">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">BLOCKS</span>
+        <span class="hud-value" id="blocks">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">PERFECT</span>
+        <span class="hud-value" id="perfects">0</span>
+      </div>
+    </div>
+    <canvas id="tower-canvas"></canvas>
+    <div id="float-texts"></div>
+    <div id="moony-alert" style="display:none;">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="40" height="40">
+        <circle cx="40" cy="40" r="32" fill="#6e7681"/>
+        <circle cx="28" cy="40" r="24" fill="#161b22"/>
+        <circle cx="52" cy="32" r="4" fill="#484f58"/>
+        <circle cx="52" cy="32" r="2" fill="#0d1117"/>
+        <path d="M48 46 Q52 50 56 46" fill="none" stroke="#484f58" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span>MOONY SHAKES!</span>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="gameover-title" id="gameover-title">TOWER COLLAPSED!</h1>
+    <div class="final-score">
+      <span class="final-label">FINAL SCORE</span>
+      <span class="final-value" id="final-score">0</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-blocks">0</span><span class="stat-label">Blocks</span></div>
+      <div class="stat"><span class="stat-val" id="stat-perfects">0</span><span class="stat-label">Perfects</span></div>
+      <div class="stat"><span class="stat-val" id="stat-height">0</span><span class="stat-label">Height</span></div>
+    </div>
+    <div class="high-score-display" id="gameover-high-score"></div>
+    <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
+    <button id="replay-btn" onclick="startGame()">PLAY AGAIN</button>
+  </div>
+</div>
+{{ partial "leaderboard" . }}
+
+<style>
+  #game-wrapper {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  #game-wrapper.shake {
+    animation: screenShake 0.6s ease;
+  }
+  @keyframes screenShake {
+    0%, 100% { transform: translateX(0) rotate(0); }
+    10% { transform: translateX(-6px) rotate(-1deg); }
+    20% { transform: translateX(6px) rotate(1deg); }
+    30% { transform: translateX(-5px) rotate(-0.5deg); }
+    40% { transform: translateX(5px) rotate(0.5deg); }
+    50% { transform: translateX(-3px) rotate(-0.3deg); }
+    60% { transform: translateX(3px) rotate(0.3deg); }
+    70% { transform: translateX(-2px); }
+    80% { transform: translateX(2px); }
+    90% { transform: translateX(-1px); }
+  }
+
+  /* Title Screen */
+  #title-screen {
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+  }
+  .title-dippy {
+    margin-bottom: 1rem;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  .game-title {
+    font-size: 2.2rem;
+    color: #00ff88;
+    margin: 0 0 0.5rem;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .game-subtitle {
+    color: #8b949e;
+    font-size: 0.95rem;
+    margin: 0 0 1.5rem;
+    line-height: 1.5;
+  }
+  .game-hint {
+    color: #484f58;
+    font-size: 0.8rem;
+    margin-top: 1.5rem;
+    font-style: italic;
+    line-height: 1.5;
+  }
+  .high-score-display {
+    color: #f0883e;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    min-height: 1.2em;
+  }
+  #start-btn, #replay-btn {
+    background: #00ff88;
+    color: #0d1117;
+    border: none;
+    padding: 0.9rem 3rem;
+    font-size: 1.2rem;
+    font-weight: 800;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 1px;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  #start-btn:active, #replay-btn:active {
+    transform: scale(0.95);
+  }
+  #start-btn:hover, #replay-btn:hover {
+    box-shadow: 0 0 20px rgba(0,255,136,0.4);
+  }
+
+  /* HUD */
+  .game-hud {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 0.5rem;
+    gap: 0.5rem;
+  }
+  .hud-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 0.4rem;
+  }
+  .hud-label {
+    font-size: 0.65rem;
+    color: #484f58;
+    letter-spacing: 1px;
+  }
+  .hud-value {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #e6edf3;
+  }
+  #perfects {
+    color: #f0883e;
+  }
+
+  /* Canvas */
+  #tower-canvas {
+    border: 2px solid #30363d;
+    border-radius: 8px;
+    background: #0a0e14;
+    display: block;
+    cursor: pointer;
+    max-width: 400px;
+    width: 100%;
+  }
+
+  /* Floating text */
+  #float-texts {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .float-text {
+    position: absolute;
+    font-weight: 800;
+    font-size: 1.4rem;
+    animation: floatUp 1s ease-out forwards;
+    pointer-events: none;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  }
+  .float-text.perfect { color: #f0883e; font-size: 1.6rem; }
+  .float-text.good { color: #00ff88; }
+  .float-text.moony { color: #ff5050; font-size: 1.2rem; }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-60px) scale(0.7); }
+  }
+
+  /* Moony alert */
+  #moony-alert {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255,80,80,0.15);
+    border: 2px solid #ff5050;
+    border-radius: 12px;
+    padding: 0.8rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    z-index: 200;
+    animation: alertPulse 0.6s ease;
+  }
+  #moony-alert span {
+    color: #ff5050;
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+  }
+  @keyframes alertPulse {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  }
+
+  /* Game Over */
+  #gameover-screen {
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .gameover-title {
+    font-size: 2rem;
+    color: #f0883e;
+    margin: 0 0 1rem;
+  }
+  .final-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .final-label {
+    font-size: 0.8rem;
+    color: #484f58;
+    letter-spacing: 1px;
+  }
+  .final-value {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #00ff88;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .stats-row {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .stat-val {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #e6edf3;
+  }
+  .stat-label {
+    font-size: 0.7rem;
+    color: #484f58;
+    letter-spacing: 1px;
+  }
+  .gameover-roast {
+    color: #8b949e;
+    font-size: 0.9rem;
+    margin: 1rem 0 1.5rem;
+    font-style: italic;
+    line-height: 1.5;
+    min-height: 2.5em;
+  }
+  .hud-flash {
+    animation: hudFlash 0.3s ease;
+  }
+  @keyframes hudFlash {
+    0% { transform: scale(1.3); color: #00ff88; }
+    100% { transform: scale(1); }
+  }
+</style>
+
+<script>
+(function() {
+  var ROASTS = [
+    "Moony's portfolio is more stable than your tower. That's saying something.",
+    "Dippy builds empires. Moony builds sandcastles. You... tried.",
+    "Moony just shorted your tower and made a profit.",
+    "That tower was shakier than Moony's conviction in value investing.",
+    "Even Moony's 70% cash position stacks higher than that.",
+    "Moony says your risk management is worse than its own. Ouch.",
+    "Your tower had less support than Moony's thesis on gold.",
+    "Dippy stacks gains. You stack... almost.",
+    "Moony watched your tower fall and felt better about its own portfolio.",
+    "That collapse was faster than Moony's exit from its last trade.",
+    "Your tower looked like Moony's P&L chart — straight down.",
+    "Somewhere, Moony is pointing at your score and laughing nervously.",
+  ];
+
+  var canvas, ctx;
+  var CANVAS_W = 400;
+  var CANVAS_H = 500;
+  var BLOCK_H = 24;
+  var BASE_SPEED = 2.5;
+  var PERFECT_THRESHOLD = 3;
+
+  var score, blockCount, perfectCount, gameActive;
+  var tower; // array of {x, w} — stacked blocks
+  var current; // {x, w, dir, speed} — swinging block
+  var fallingPieces; // array of {x, y, w, h, vx, vy} — pieces falling off
+  var cameraY; // how far the camera has scrolled up
+  var animFrame;
+  var perfectTextTimer;
+  var lastDropTime;
+
+  function getHighScore() {
+    try { return parseInt(localStorage.getItem('dippy-dippy-tower-high') || '0'); } catch(e) { return 0; }
+  }
+  function setHighScore(s) {
+    try { localStorage.setItem('dippy-dippy-tower-high', s); } catch(e) {}
+  }
+
+  function showScreen(id) {
+    ['title-screen','game-screen','gameover-screen'].forEach(function(s) {
+      document.getElementById(s).style.display = s === id ? '' : 'none';
+    });
+  }
+
+  function updateHUD() {
+    document.getElementById('score').textContent = score;
+    document.getElementById('blocks').textContent = blockCount;
+    document.getElementById('perfects').textContent = perfectCount;
+  }
+
+  function flashHUD(id) {
+    var el = document.getElementById(id);
+    el.classList.remove('hud-flash');
+    void el.offsetWidth;
+    el.classList.add('hud-flash');
+  }
+
+  function floatText(text, cls) {
+    var canvasRect = canvas.getBoundingClientRect();
+    var el = document.createElement('div');
+    el.className = 'float-text ' + cls;
+    el.textContent = text;
+    el.style.left = (canvasRect.left + canvasRect.width / 2 - 40) + 'px';
+    el.style.top = (canvasRect.top + canvasRect.height / 3) + 'px';
+    document.getElementById('float-texts').appendChild(el);
+    setTimeout(function() { el.remove(); }, 1000);
+  }
+
+  function triggerShake() {
+    var wrapper = document.getElementById('game-wrapper');
+    wrapper.classList.remove('shake');
+    void wrapper.offsetWidth;
+    wrapper.classList.add('shake');
+
+    // Show moony alert
+    var alert = document.getElementById('moony-alert');
+    alert.style.display = 'flex';
+    setTimeout(function() { alert.style.display = 'none'; }, 800);
+
+    floatText('MOONY SHAKES!', 'moony');
+  }
+
+  function getBlockSpeed() {
+    return BASE_SPEED + blockCount * 0.15;
+  }
+
+  function spawnBlock() {
+    var prevBlock = tower[tower.length - 1];
+    var w = prevBlock.w;
+    var speed = getBlockSpeed();
+    var startX = -w; // start from left
+    current = { x: startX, w: w, dir: 1, speed: speed };
+  }
+
+  function getGroundY() {
+    // The Y position of the top of the tower (in world coords, 0 = bottom of canvas)
+    return tower.length * BLOCK_H;
+  }
+
+  function worldToScreen(worldY) {
+    return CANVAS_H - worldY + cameraY;
+  }
+
+  function drawBlock(x, y, w, h, color, outline) {
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, w, h);
+    if (outline) {
+      ctx.strokeStyle = outline;
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(x, y, w, h);
+    }
+  }
+
+  function render() {
+    ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+
+    // Draw ground line
+    var groundScreenY = worldToScreen(0);
+    if (groundScreenY < CANVAS_H + 5) {
+      ctx.fillStyle = '#30363d';
+      ctx.fillRect(0, groundScreenY, CANVAS_W, 2);
+    }
+
+    // Draw tower blocks
+    for (var i = 0; i < tower.length; i++) {
+      var b = tower[i];
+      var sy = worldToScreen((i + 1) * BLOCK_H);
+      if (sy > CANVAS_H + BLOCK_H || sy < -BLOCK_H) continue;
+
+      // Color gradient — older blocks slightly darker
+      var age = tower.length - i;
+      var g = Math.max(100, 255 - age * 4);
+      var color = 'rgb(0,' + g + ',' + Math.floor(g * 0.53) + ')';
+      var outlineColor = 'rgba(0,255,136,0.3)';
+      drawBlock(b.x, sy, b.w, BLOCK_H - 1, color, outlineColor);
+    }
+
+    // Draw falling pieces
+    for (var j = 0; j < fallingPieces.length; j++) {
+      var fp = fallingPieces[j];
+      var fsy = worldToScreen(fp.y + fp.h);
+      drawBlock(fp.x, fsy, fp.w, fp.h, 'rgba(255,80,80,0.7)', null);
+    }
+
+    // Draw current swinging block
+    if (current) {
+      var csy = worldToScreen(getGroundY() + BLOCK_H);
+      ctx.fillStyle = '#00ff88';
+      ctx.fillRect(current.x, csy, current.w, BLOCK_H - 1);
+      ctx.strokeStyle = 'rgba(0,255,136,0.6)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(current.x, csy, current.w, BLOCK_H - 1);
+    }
+
+    // Draw perfect text
+    if (perfectTextTimer > 0) {
+      ctx.save();
+      ctx.font = 'bold 28px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(240,136,62,' + Math.min(1, perfectTextTimer / 15) + ')';
+      ctx.shadowColor = '#f0883e';
+      ctx.shadowBlur = 10;
+      var ptY = worldToScreen(getGroundY() + BLOCK_H * 2.5);
+      ctx.fillText('PERFECT!', CANVAS_W / 2, ptY);
+      ctx.restore();
+    }
+  }
+
+  function update() {
+    if (!gameActive) return;
+
+    // Move swinging block
+    if (current) {
+      current.x += current.speed * current.dir;
+      if (current.x + current.w > CANVAS_W) {
+        current.dir = -1;
+        current.x = CANVAS_W - current.w;
+      }
+      if (current.x < 0) {
+        current.dir = 1;
+        current.x = 0;
+      }
+    }
+
+    // Update falling pieces
+    for (var i = fallingPieces.length - 1; i >= 0; i--) {
+      var fp = fallingPieces[i];
+      fp.vy -= 0.5; // gravity
+      fp.y += fp.vy;
+      fp.x += fp.vx;
+      if (fp.y < -100) {
+        fallingPieces.splice(i, 1);
+      }
+    }
+
+    // Update camera to follow tower
+    var targetCameraY = Math.max(0, getGroundY() - CANVAS_H * 0.55);
+    cameraY += (targetCameraY - cameraY) * 0.08;
+
+    // Perfect text fade
+    if (perfectTextTimer > 0) perfectTextTimer--;
+
+    render();
+    animFrame = requestAnimationFrame(update);
+  }
+
+  function dropBlock() {
+    if (!gameActive || !current) return;
+    // Prevent double-tap drops
+    var now = Date.now();
+    if (now - lastDropTime < 100) return;
+    lastDropTime = now;
+
+    var prev = tower[tower.length - 1];
+
+    // Calculate overlap
+    var overlapLeft = Math.max(current.x, prev.x);
+    var overlapRight = Math.min(current.x + current.w, prev.x + prev.w);
+    var overlapW = overlapRight - overlapLeft;
+
+    if (overlapW <= 0) {
+      // Complete miss — game over
+      fallingPieces.push({
+        x: current.x, y: getGroundY(), w: current.w, h: BLOCK_H,
+        vx: current.dir * 2, vy: 1
+      });
+      current = null;
+      gameOver();
+      return;
+    }
+
+    // Check for perfect drop
+    var isPerfect = Math.abs(current.x - prev.x) <= PERFECT_THRESHOLD;
+
+    if (isPerfect) {
+      // Perfect — keep same width as previous block
+      tower.push({ x: prev.x, w: prev.w });
+      score += 15;
+      perfectCount++;
+      perfectTextTimer = 40;
+      floatText('+15 PERFECT!', 'perfect');
+      flashHUD('perfects');
+      if (navigator.vibrate) navigator.vibrate([30, 30, 30]);
+    } else {
+      // Partial overlap
+      tower.push({ x: overlapLeft, w: overlapW });
+      score += 10;
+
+      // Create falling off-cut piece(s)
+      if (current.x < prev.x) {
+        // Piece fell off the left
+        fallingPieces.push({
+          x: current.x, y: getGroundY(), w: prev.x - current.x, h: BLOCK_H,
+          vx: -1.5, vy: 1
+        });
+      }
+      if (current.x + current.w > prev.x + prev.w) {
+        // Piece fell off the right
+        var rx = prev.x + prev.w;
+        fallingPieces.push({
+          x: rx, y: getGroundY(), w: (current.x + current.w) - rx, h: BLOCK_H,
+          vx: 1.5, vy: 1
+        });
+      }
+
+      floatText('+10', 'good');
+      if (navigator.vibrate) navigator.vibrate(20);
+    }
+
+    blockCount++;
+    flashHUD('score');
+    updateHUD();
+
+    // Moony shakes every 5 blocks
+    if (blockCount > 0 && blockCount % 5 === 0) {
+      setTimeout(function() {
+        if (gameActive) triggerShake();
+      }, 200);
+    }
+
+    // Spawn next block
+    spawnBlock();
+  }
+
+  function gameOver() {
+    gameActive = false;
+    if (animFrame) cancelAnimationFrame(animFrame);
+
+    // Keep rendering falling pieces for a bit
+    var fallFrames = 0;
+    function fallAnim() {
+      for (var i = fallingPieces.length - 1; i >= 0; i--) {
+        var fp = fallingPieces[i];
+        fp.vy -= 0.5;
+        fp.y += fp.vy;
+        fp.x += fp.vx;
+        if (fp.y < -100) fallingPieces.splice(i, 1);
+      }
+      render();
+      fallFrames++;
+      if (fallFrames < 40) requestAnimationFrame(fallAnim);
+      else showGameOver();
+    }
+    fallAnim();
+  }
+
+  function showGameOver() {
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('stat-blocks').textContent = blockCount;
+    document.getElementById('stat-perfects').textContent = perfectCount;
+    document.getElementById('stat-height').textContent = (blockCount * BLOCK_H) + 'px';
+
+    var prev = getHighScore();
+    var isNew = score > prev;
+    if (isNew) setHighScore(score);
+    document.getElementById('gameover-high-score').textContent = isNew
+      ? 'NEW HIGH SCORE! (prev: ' + prev + ')'
+      : 'High score: ' + prev;
+    document.getElementById('gameover-title').textContent = isNew ? 'NEW RECORD!' : 'TOWER COLLAPSED!';
+    document.getElementById('gameover-roast').textContent =
+      '"' + ROASTS[Math.floor(Math.random() * ROASTS.length)] + '"';
+
+    showScreen('gameover-screen');
+    DippyLB.onGameOver(score);
+  }
+
+  window.startGame = function() {
+    canvas = document.getElementById('tower-canvas');
+    // Responsive sizing
+    var wrapperW = Math.min(400, window.innerWidth - 40);
+    canvas.style.width = wrapperW + 'px';
+    canvas.style.height = Math.floor(wrapperW * 1.25) + 'px';
+    canvas.width = CANVAS_W;
+    canvas.height = CANVAS_H;
+    ctx = canvas.getContext('2d');
+
+    score = 0;
+    blockCount = 0;
+    perfectCount = 0;
+    gameActive = true;
+    fallingPieces = [];
+    cameraY = 0;
+    perfectTextTimer = 0;
+    lastDropTime = 0;
+
+    // Initial base block (centered, wide)
+    var baseW = CANVAS_W * 0.4;
+    tower = [{ x: (CANVAS_W - baseW) / 2, w: baseW }];
+
+    showScreen('game-screen');
+    updateHUD();
+    spawnBlock();
+
+    if (animFrame) cancelAnimationFrame(animFrame);
+    animFrame = requestAnimationFrame(update);
+  };
+
+  // Input handlers
+  document.addEventListener('keydown', function(e) {
+    if (e.code === 'Space' || e.key === ' ') {
+      e.preventDefault();
+      if (gameActive) {
+        dropBlock();
+      } else if (document.getElementById('title-screen').style.display !== 'none') {
+        startGame();
+      }
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!gameActive) return;
+    var c = document.getElementById('tower-canvas');
+    if (!c) return;
+    var rect = c.getBoundingClientRect();
+    // Accept clicks on canvas or near it
+    if (e.clientX >= rect.left && e.clientX <= rect.right &&
+        e.clientY >= rect.top - 20 && e.clientY <= rect.bottom + 20) {
+      dropBlock();
+    }
+  });
+
+  document.addEventListener('touchstart', function(e) {
+    if (!gameActive) return;
+    var c = document.getElementById('tower-canvas');
+    if (!c) return;
+    var rect = c.getBoundingClientRect();
+    var t = e.touches[0];
+    if (t.clientX >= rect.left && t.clientX <= rect.right &&
+        t.clientY >= rect.top - 20 && t.clientY <= rect.bottom + 20) {
+      e.preventDefault();
+      dropBlock();
+    }
+  }, { passive: false });
+
+  // Show high score on title
+  var hs = getHighScore();
+  if (hs > 0) {
+    document.getElementById('title-high-score').textContent = 'High score: ' + hs;
+  }
+
+  // Init leaderboard
+  DippyLB.init('dippy-tower');
+})();
+</script>
+{{ end }}
