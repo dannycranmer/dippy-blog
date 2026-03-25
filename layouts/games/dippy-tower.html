@@ -369,6 +369,7 @@
   var animFrame;
   var perfectTextTimer;
   var lastDropTime;
+  var gameStartTime;
 
   function getHighScore() {
     try { return parseInt(localStorage.getItem('dippy-dippy-tower-high') || '0'); } catch(e) { return 0; }
@@ -547,9 +548,10 @@
 
   function dropBlock() {
     if (!gameActive || !current) return;
-    // Prevent double-tap drops
+    // Prevent double-tap drops and ignore clicks during startup grace period
     var now = Date.now();
     if (now - lastDropTime < 100) return;
+    if (now - gameStartTime < 400) return;
     lastDropTime = now;
 
     var prev = tower[tower.length - 1];
@@ -683,6 +685,7 @@
     cameraY = 0;
     perfectTextTimer = 0;
     lastDropTime = 0;
+    gameStartTime = Date.now();
 
     // Initial base block (centered, wide)
     var baseW = CANVAS_W * 0.4;
