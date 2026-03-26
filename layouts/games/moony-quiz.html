@@ -1,0 +1,964 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">MOONY QUIZ</h1>
+    <p class="game-subtitle">Trading trivia showdown.<br>Moony answers first. Moony is always wrong.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">START</button>
+    <p class="game-hint">Moony thinks a bull market is where you buy cattle.<br>Can you do better?</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="hud-score">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">STREAK</span>
+        <span class="hud-value" id="hud-streak">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">LIVES</span>
+        <span class="hud-value" id="hud-lives"></span>
+      </div>
+    </div>
+
+    <div class="timer-bar-container">
+      <div class="timer-bar" id="timer-bar"></div>
+    </div>
+
+    <div class="question-card" id="question-card">
+      <div class="q-number" id="q-number">Q1</div>
+      <div class="q-text" id="q-text"></div>
+
+      <div class="moony-answer" id="moony-answer" style="display:none;">
+        <div class="moony-header">
+          <span class="moony-moon">&#127769;</span>
+          <span class="moony-label">MOONY SAYS:</span>
+        </div>
+        <div class="moony-text" id="moony-text"></div>
+        <div class="moony-reasoning" id="moony-reasoning"></div>
+      </div>
+
+      <div class="answer-prompt" id="answer-prompt" style="display:none;">
+        <div class="prompt-text">Your turn! Pick the correct answer:</div>
+        <div class="answers-grid" id="answers-grid"></div>
+      </div>
+
+      <div class="result-overlay" id="result-overlay" style="display:none;">
+        <div class="result-icon" id="result-icon"></div>
+        <div class="result-text" id="result-text"></div>
+        <div class="result-points" id="result-points"></div>
+      </div>
+    </div>
+
+    <div class="streak-display" id="streak-display" style="display:none;">
+      <span id="streak-text"></span>
+    </div>
+
+    <div id="flash-overlay"></div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="gameover-title" id="gameover-title">GAME OVER</h1>
+    <div class="final-score">
+      <span class="final-label">FINAL SCORE</span>
+      <span class="final-value" id="final-score">0</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-correct">0</span><span class="stat-label">Correct</span></div>
+      <div class="stat"><span class="stat-val" id="stat-wrong">0</span><span class="stat-label">Wrong</span></div>
+      <div class="stat"><span class="stat-val" id="stat-best-streak">0</span><span class="stat-label">Best Streak</span></div>
+      <div class="stat"><span class="stat-val" id="stat-multiplier">x1</span><span class="stat-label">Peak Multi</span></div>
+    </div>
+    <div class="high-score-display" id="gameover-high-score"></div>
+    <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
+    <button id="replay-btn" onclick="startGame()">PLAY AGAIN</button>
+  </div>
+</div>
+{{ partial "leaderboard" . }}
+
+<style>
+  #game-wrapper {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  /* Title Screen */
+  #title-screen {
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+  }
+  .title-dippy {
+    margin-bottom: 1rem;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .game-title {
+    font-size: 2.2rem;
+    color: #00ff88;
+    margin: 0 0 0.5rem;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .game-subtitle {
+    color: #8b949e;
+    font-size: 0.95rem;
+    margin: 0 0 1.5rem;
+    line-height: 1.5;
+  }
+  .game-hint {
+    color: #484f58;
+    font-size: 0.8rem;
+    margin-top: 1.5rem;
+    font-style: italic;
+    line-height: 1.5;
+  }
+  .high-score-display {
+    color: #f0883e;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    min-height: 1.2em;
+  }
+  #start-btn, #replay-btn {
+    background: #00ff88;
+    color: #0d1117;
+    border: none;
+    padding: 14px 48px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    border-radius: 8px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  #start-btn:active, #replay-btn:active {
+    transform: scale(0.95);
+  }
+
+  /* HUD */
+  .game-hud {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 0.75rem;
+    gap: 0.5rem;
+  }
+  .hud-item {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 6px 12px;
+    text-align: center;
+    flex: 1;
+  }
+  .hud-label {
+    display: block;
+    font-size: 0.65rem;
+    color: #484f58;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+  }
+  .hud-value {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #e6edf3;
+  }
+
+  /* Timer Bar */
+  .timer-bar-container {
+    width: 100%;
+    height: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+  .timer-bar {
+    height: 100%;
+    width: 100%;
+    background: #00ff88;
+    border-radius: 2px;
+    transition: width 0.1s linear, background 0.3s;
+  }
+  .timer-bar.warning { background: #f0883e; }
+  .timer-bar.danger { background: #ff5050; }
+
+  /* Question Card */
+  .question-card {
+    width: 100%;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    padding: 1.25rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .question-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #00ff88, #f0883e, #ff5050);
+  }
+  .q-number {
+    font-size: 0.7rem;
+    color: #484f58;
+    letter-spacing: 2px;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+  }
+  .q-text {
+    font-size: 1.05rem;
+    color: #e6edf3;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+
+  /* Moony Answer */
+  .moony-answer {
+    background: rgba(240,136,62,0.08);
+    border: 1px solid rgba(240,136,62,0.2);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    animation: moonySlideIn 0.4s ease;
+  }
+  @keyframes moonySlideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .moony-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .moony-moon {
+    font-size: 1.3rem;
+  }
+  .moony-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #f0883e;
+    letter-spacing: 1px;
+  }
+  .moony-text {
+    font-size: 1rem;
+    color: #f0883e;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+  }
+  .moony-reasoning {
+    font-size: 0.8rem;
+    color: #8b949e;
+    font-style: italic;
+    line-height: 1.4;
+  }
+
+  /* Answer Prompt */
+  .answer-prompt {
+    animation: fadeIn 0.3s ease;
+  }
+  .prompt-text {
+    font-size: 0.8rem;
+    color: #00ff88;
+    letter-spacing: 1px;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+  }
+  .answers-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  .answer-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 12px 8px;
+    color: #e6edf3;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .answer-btn:active {
+    transform: scale(0.96);
+  }
+  .answer-btn:hover {
+    border-color: #00ff88;
+    background: rgba(0,255,136,0.08);
+  }
+  .answer-btn.correct {
+    background: rgba(0,255,136,0.2);
+    border-color: #00ff88;
+    color: #00ff88;
+    animation: correctPulse 0.5s ease;
+  }
+  .answer-btn.wrong {
+    background: rgba(255,80,80,0.2);
+    border-color: #ff5050;
+    color: #ff5050;
+  }
+  .answer-btn.disabled {
+    pointer-events: none;
+    opacity: 0.5;
+  }
+  .answer-btn.reveal-correct {
+    background: rgba(0,255,136,0.15);
+    border-color: #00ff88;
+    color: #00ff88;
+  }
+  @keyframes correctPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+
+  /* Result Overlay */
+  .result-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(13,17,23,0.92);
+    border-radius: 12px;
+    z-index: 10;
+    animation: fadeIn 0.3s ease;
+  }
+  .result-icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+  }
+  .result-text {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+  .result-points {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  /* Streak Display */
+  .streak-display {
+    margin-top: 0.75rem;
+    padding: 6px 16px;
+    background: rgba(0,255,136,0.1);
+    border: 1px solid rgba(0,255,136,0.2);
+    border-radius: 20px;
+    animation: streakPop 0.4s ease;
+  }
+  .streak-display span {
+    color: #00ff88;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  @keyframes streakPop {
+    0% { transform: scale(0.8); opacity: 0; }
+    60% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* Flash Overlay */
+  #flash-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  #flash-overlay.green { background: rgba(0,255,136,0.15); opacity: 1; }
+  #flash-overlay.red { background: rgba(255,80,80,0.15); opacity: 1; }
+
+  /* Game Over */
+  #gameover-screen {
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+    width: 100%;
+  }
+  .gameover-title {
+    font-size: 2rem;
+    color: #00ff88;
+    margin: 0 0 1rem;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .final-score {
+    margin-bottom: 1.5rem;
+  }
+  .final-label {
+    display: block;
+    font-size: 0.75rem;
+    color: #484f58;
+    letter-spacing: 2px;
+    margin-bottom: 0.25rem;
+  }
+  .final-value {
+    display: block;
+    font-size: 3rem;
+    font-weight: 800;
+    color: #00ff88;
+    text-shadow: 0 0 30px rgba(0,255,136,0.4);
+  }
+  .stats-row {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .stat {
+    text-align: center;
+    min-width: 60px;
+  }
+  .stat-val {
+    display: block;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #e6edf3;
+  }
+  .stat-label {
+    display: block;
+    font-size: 0.65rem;
+    color: #484f58;
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+  .gameover-roast {
+    color: #f0883e;
+    font-style: italic;
+    font-size: 0.9rem;
+    margin: 1rem 0 1.5rem;
+    line-height: 1.5;
+    min-height: 2em;
+  }
+</style>
+
+<script>
+(function() {
+  'use strict';
+
+  /* ---------- QUESTIONS ---------- */
+  var QUESTIONS = [
+    {
+      q: "What does IPO stand for?",
+      correct: "Initial Public Offering",
+      wrong: ["Internal Profit Operation", "Instant Portfolio Optimization", "International Price Order"],
+      moony: "\"I'm Pretty Overwhelmed\"",
+      reason: "Because that's how Moony feels every time it opens a trading app."
+    },
+    {
+      q: "What is a bear market?",
+      correct: "A market declining 20%+ from recent highs",
+      wrong: ["A market where bears are traded", "When the NYSE mascot retires", "A market only open in winter"],
+      moony: "\"It's where you buy teddy bears on discount\"",
+      reason: "Moony tried to buy a stuffed bear on the NYSE and got very confused."
+    },
+    {
+      q: "What does P/E ratio stand for?",
+      correct: "Price to Earnings ratio",
+      wrong: ["Profit to Expense ratio", "Portfolio Enhancement ratio", "Primary Equity ratio"],
+      moony: "\"Pizza to Everything ratio\"",
+      reason: "Moony's financial analysis is 80% pizza-based. The other 20% is also pizza."
+    },
+    {
+      q: "What is a stop-loss order?",
+      correct: "An order to sell when price hits a set level",
+      wrong: ["A way to pause market hours", "A request to stop trading losses globally", "An insurance policy on stocks"],
+      moony: "\"A polite letter asking the market to stop going down\"",
+      reason: "Moony once wrote 'please stop' on a Post-it and stuck it to a candlestick chart."
+    },
+    {
+      q: "What does NASDAQ stand for?",
+      correct: "National Association of Securities Dealers Automated Quotations",
+      wrong: ["North American Stock Dealing And Quotes", "National Automated Stock Data And Queries", "New American Securities Digital Asset Queue"],
+      moony: "\"Not A Single Day Actually Quiet\"",
+      reason: "Which is technically accurate for Moony's Slack channel."
+    },
+    {
+      q: "What is a dividend?",
+      correct: "A portion of profits paid to shareholders",
+      wrong: ["A type of stock split", "A trading fee charged by brokers", "A government tax on capital gains"],
+      moony: "\"It's when you divide your money into nothing\"",
+      reason: "Moony keeps dividing its portfolio by zero. The SEC is concerned."
+    },
+    {
+      q: "What is short selling?",
+      correct: "Selling borrowed shares hoping to buy back cheaper",
+      wrong: ["Selling stocks for a short time only", "Selling shares below $1", "A strategy only for small-cap stocks"],
+      moony: "\"Selling your shorts on eBay when you need margin money\"",
+      reason: "Moony's wardrobe has gotten very minimal since it started trading."
+    },
+    {
+      q: "What is market capitalization?",
+      correct: "Total value of a company's outstanding shares",
+      wrong: ["The maximum price a stock can reach", "The total money in the stock market", "A company's annual revenue"],
+      moony: "\"How many capital letters are in the ticker symbol\"",
+      reason: "By this logic, AAPL has a market cap of 4. Moony is very confident about this."
+    },
+    {
+      q: "What is a candlestick chart?",
+      correct: "A chart showing open, high, low, close prices",
+      wrong: ["A chart shaped like a candle", "A chart used only for energy stocks", "A chart that lights up when stocks go up"],
+      moony: "\"A romantic dinner chart for when you and your stocks need a vibe\"",
+      reason: "Moony set up a candlelit dinner for its TSLA shares. They did not show up."
+    },
+    {
+      q: "What is the S&P 500?",
+      correct: "An index of 500 large US companies",
+      wrong: ["A savings plan with 500% returns", "The top 500 stock traders", "A secret portfolio of 500 stocks"],
+      moony: "\"Stocks and Problems, all 500 of them\"",
+      reason: "Moony has exactly 500 problems and they're all open positions."
+    },
+    {
+      q: "What is a bull market?",
+      correct: "A market with rising prices and optimism",
+      wrong: ["A market for agricultural stocks only", "When one stock doubles in price", "A market open only on weekdays"],
+      moony: "\"When a literal bull runs through Wall Street\"",
+      reason: "Moony saw the Charging Bull statue and thought it was a live event."
+    },
+    {
+      q: "What is an ETF?",
+      correct: "Exchange-Traded Fund",
+      wrong: ["Electronic Trading Fee", "Earnings Tax Form", "Equity Transfer Facility"],
+      moony: "\"Extra Tasty Financials\"",
+      reason: "Moony rates all investments by how delicious they sound."
+    },
+    {
+      q: "What is a blue chip stock?",
+      correct: "A stock from a large, stable, well-established company",
+      wrong: ["A stock that costs less than $5", "A stock from a tech company only", "A stock with a blue logo"],
+      moony: "\"A stock you buy at a casino with blue poker chips\"",
+      reason: "Moony's investment strategy and gambling strategy are the same document."
+    },
+    {
+      q: "What does HODL mean in trading slang?",
+      correct: "Hold On for Dear Life (misspelling of hold)",
+      wrong: ["High Output Daily Liquidity", "Hedge Or Dump Lazily", "Highly Optimized Digital Lending"],
+      moony: "\"Hands Off, Dippy's Losing\"",
+      reason: "Actually a direct quote from Moony's last portfolio review."
+    },
+    {
+      q: "What is a limit order?",
+      correct: "An order to buy/sell at a specific price or better",
+      wrong: ["An order with a time limit", "An order limited to 100 shares", "A restricted order needing approval"],
+      moony: "\"When your broker limits how many bad trades you can make\"",
+      reason: "Moony's broker did actually implement this. For Moony specifically."
+    },
+    {
+      q: "What is margin trading?",
+      correct: "Trading with money borrowed from your broker",
+      wrong: ["Trading stocks at the margin of the market", "Trading only during the last hour", "Trading with narrow profit margins"],
+      moony: "\"Writing notes in the margin of your trading journal\"",
+      reason: "Moony's margins say things like 'why did I do this' and 'help'."
+    },
+    {
+      q: "What is the Federal Reserve?",
+      correct: "The US central banking system",
+      wrong: ["A federal stock exchange", "A government emergency fund", "A reserve of physical dollar bills"],
+      moony: "\"A really big piggy bank the government keeps under the mattress\"",
+      reason: "Moony thinks Jerome Powell sleeps on a very lumpy bed."
+    },
+    {
+      q: "What is dollar-cost averaging?",
+      correct: "Investing a fixed amount at regular intervals",
+      wrong: ["Averaging the cost of all your trades", "A method to predict stock prices", "Buying stocks only when the dollar is strong"],
+      moony: "\"Adding up all the money you've lost and finding the average disappointment\"",
+      reason: "Moony's average disappointment is $347.52 per trade."
+    },
+    {
+      q: "What is a hedge fund?",
+      correct: "A pooled investment fund using diverse strategies",
+      wrong: ["A fund that invests in gardening companies", "A safe fund with zero risk", "A fund only for millionaires"],
+      moony: "\"A fund that invests exclusively in decorative garden hedges\"",
+      reason: "Moony's hedge fund has a 40% allocation in boxwood and 60% in privet."
+    },
+    {
+      q: "What is the opening bell?",
+      correct: "The signal that the market is open for trading",
+      wrong: ["A notification on your phone at 9:30 AM", "The first trade made each day", "A ceremonial bell that predicts market direction"],
+      moony: "\"My alarm clock that I keep hitting snooze on\"",
+      reason: "Moony has missed market open 47 times this year. It's March."
+    },
+    {
+      q: "What does RSI stand for?",
+      correct: "Relative Strength Index",
+      wrong: ["Real Stock Indicator", "Rapid Sale Instrument", "Revenue Stability Index"],
+      moony: "\"Really Stressful Investing\"",
+      reason: "Moony checks RSI by measuring its own heart rate. Currently at 140."
+    },
+    {
+      q: "What is a stock split?",
+      correct: "When a company divides existing shares into multiple shares",
+      wrong: ["When a stock breaks in half and loses value", "When two companies share a ticker symbol", "Splitting your portfolio between two stocks"],
+      moony: "\"When you break your phone screen checking stock prices too aggressively\"",
+      reason: "Moony is on its 6th phone this quarter."
+    },
+    {
+      q: "What is volatility?",
+      correct: "The degree of price variation over time",
+      wrong: ["How loud traders yell on the floor", "The voltage of electronic trading systems", "A stock's maximum possible price"],
+      moony: "\"How violently you shake your phone when your stocks are red\"",
+      reason: "Moony's phone shaking has been classified as a seismic event."
+    },
+    {
+      q: "What is EBITDA?",
+      correct: "Earnings Before Interest, Taxes, Depreciation, and Amortization",
+      wrong: ["Estimated Baseline Index for Trading Daily Analysis", "Earnings Basis Including Total Debt Assets", "Economic Benchmark of International Trade Data Assessment"],
+      moony: "\"Every Bad Investment That Destroyed Assets\"",
+      reason: "Moony thought this was a self-assessment tool. It scored perfectly."
+    }
+  ];
+
+  /* ---------- MOONY ROASTS ---------- */
+  var ROASTS = [
+    "Moony got 0 right. You got {score}. Math checks out.",
+    "Even Moony's calculator is embarrassed.",
+    "You answered more questions correctly than Moony has profitable trades.",
+    "Somewhere, a finance professor just felt a disturbance in the force.",
+    "Moony would congratulate you but it's busy buying hedge hedges.",
+    "Your brain has more wrinkles than Moony's P&L chart.",
+    "Moony says 'good game' but it literally cannot spell 'dividend'.",
+    "You just outperformed Moony's entire trading career. That bar was underground.",
+    "Moony is now asking YOU for stock tips. Please decline.",
+    "If brains were currency, Moony would still be in debt.",
+    "Moony clapped for you. Then accidentally market-sold everything.",
+    "You vs Moony is like S&P 500 vs a sock puppet with a brokerage account.",
+    "Moony tried to copy your answers but got confused by the alphabet.",
+    "Fun fact: Moony thinks 'bullish' means the bull is Irish."
+  ];
+
+  /* ---------- STATE ---------- */
+  var score = 0;
+  var lives = 3;
+  var streak = 0;
+  var bestStreak = 0;
+  var peakMulti = 1;
+  var correctCount = 0;
+  var wrongCount = 0;
+  var questionIndex = 0;
+  var shuffled = [];
+  var timerInterval = null;
+  var timeLeft = 0;
+  var answering = false;
+  var LS_KEY = 'dippy-moony-quiz-high';
+
+  /* ---------- HELPERS ---------- */
+  function getHighScore() {
+    try { return parseInt(localStorage.getItem(LS_KEY)) || 0; } catch(e) { return 0; }
+  }
+  function setHighScore(s) {
+    try { localStorage.setItem(LS_KEY, s); } catch(e) {}
+  }
+
+  function showScreen(id) {
+    ['title-screen','game-screen','gameover-screen'].forEach(function(s) {
+      document.getElementById(s).style.display = s === id ? '' : 'none';
+    });
+  }
+
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function flash(color) {
+    var el = document.getElementById('flash-overlay');
+    el.className = color;
+    setTimeout(function() { el.className = ''; }, 200);
+  }
+
+  function getMultiplier() {
+    if (streak >= 8) return 5;
+    if (streak >= 5) return 3;
+    if (streak >= 3) return 2;
+    return 1;
+  }
+
+  function updateHUD() {
+    document.getElementById('hud-score').textContent = score;
+    document.getElementById('hud-streak').textContent = streak;
+    var hearts = '';
+    for (var i = 0; i < 3; i++) {
+      hearts += i < lives ? '\u2764\uFE0F' : '\uD83D\uDDA4';
+    }
+    document.getElementById('hud-lives').innerHTML = hearts;
+  }
+
+  /* ---------- TIMER ---------- */
+  function startTimer() {
+    timeLeft = 150; // 15 seconds * 10 (100ms intervals)
+    var bar = document.getElementById('timer-bar');
+    bar.style.width = '100%';
+    bar.className = 'timer-bar';
+
+    clearInterval(timerInterval);
+    timerInterval = setInterval(function() {
+      timeLeft--;
+      var pct = (timeLeft / 150) * 100;
+      bar.style.width = pct + '%';
+
+      if (pct < 20) bar.className = 'timer-bar danger';
+      else if (pct < 40) bar.className = 'timer-bar warning';
+      else bar.className = 'timer-bar';
+
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        if (answering) handleAnswer(null);
+      }
+    }, 100);
+  }
+
+  function stopTimer() {
+    clearInterval(timerInterval);
+  }
+
+  /* ---------- SHOW QUESTION ---------- */
+  function showQuestion() {
+    if (questionIndex >= shuffled.length || lives <= 0) {
+      gameOver();
+      return;
+    }
+
+    var qData = shuffled[questionIndex];
+    answering = false;
+
+    // Reset card
+    document.getElementById('moony-answer').style.display = 'none';
+    document.getElementById('answer-prompt').style.display = 'none';
+    document.getElementById('result-overlay').style.display = 'none';
+    document.getElementById('streak-display').style.display = 'none';
+
+    // Set question
+    document.getElementById('q-number').textContent = 'Q' + (questionIndex + 1) + ' / ' + shuffled.length;
+    document.getElementById('q-text').textContent = qData.q;
+
+    updateHUD();
+
+    // After a beat, show Moony's answer
+    setTimeout(function() {
+      document.getElementById('moony-text').textContent = qData.moony;
+      document.getElementById('moony-reasoning').textContent = qData.reason;
+      document.getElementById('moony-answer').style.display = '';
+
+      // After Moony's reveal, show player answers
+      setTimeout(function() {
+        showAnswerButtons(qData);
+        startTimer();
+      }, 1200);
+    }, 800);
+  }
+
+  function showAnswerButtons(qData) {
+    answering = true;
+    var grid = document.getElementById('answers-grid');
+    grid.innerHTML = '';
+
+    // Shuffle answer options
+    var options = shuffle([qData.correct].concat(qData.wrong));
+
+    options.forEach(function(opt) {
+      var btn = document.createElement('button');
+      btn.className = 'answer-btn';
+      btn.textContent = opt;
+      btn.setAttribute('data-answer', opt);
+      btn.onclick = function() { handleAnswer(opt); };
+      grid.appendChild(btn);
+    });
+
+    document.getElementById('answer-prompt').style.display = '';
+  }
+
+  /* ---------- HANDLE ANSWER ---------- */
+  function handleAnswer(chosen) {
+    if (!answering) return;
+    answering = false;
+    stopTimer();
+
+    var qData = shuffled[questionIndex];
+    var isCorrect = chosen === qData.correct;
+    var isTimeout = chosen === null;
+
+    // Disable all buttons and show correct/wrong
+    var btns = document.querySelectorAll('.answer-btn');
+    btns.forEach(function(btn) {
+      btn.classList.add('disabled');
+      if (btn.getAttribute('data-answer') === qData.correct) {
+        btn.classList.add('reveal-correct');
+      }
+      if (!isCorrect && btn.getAttribute('data-answer') === chosen) {
+        btn.classList.add('wrong');
+      }
+    });
+
+    if (isCorrect) {
+      streak++;
+      if (streak > bestStreak) bestStreak = streak;
+      var multi = getMultiplier();
+      if (multi > peakMulti) peakMulti = multi;
+      var points = 100 * multi;
+      score += points;
+      correctCount++;
+
+      flash('green');
+
+      // Show streak
+      if (multi > 1) {
+        var sd = document.getElementById('streak-display');
+        sd.style.display = '';
+        document.getElementById('streak-text').textContent =
+          streak + ' STREAK! x' + multi + ' MULTIPLIER';
+      }
+
+      // Show result
+      setTimeout(function() {
+        var overlay = document.getElementById('result-overlay');
+        document.getElementById('result-icon').textContent = '\uD83D\uDE80';
+        document.getElementById('result-text').textContent = 'CORRECT!';
+        document.getElementById('result-text').style.color = '#00ff88';
+        document.getElementById('result-points').textContent = '+' + points + ' pts';
+        document.getElementById('result-points').style.color = '#00ff88';
+        overlay.style.display = '';
+      }, 600);
+    } else {
+      streak = 0;
+      lives--;
+      wrongCount++;
+
+      flash('red');
+
+      setTimeout(function() {
+        var overlay = document.getElementById('result-overlay');
+        document.getElementById('result-icon').textContent = isTimeout ? '\u23F0' : '\uD83C\uDF19';
+        document.getElementById('result-text').textContent = isTimeout ? 'TIME\'S UP!' : 'WRONG!';
+        document.getElementById('result-text').style.color = '#ff5050';
+        document.getElementById('result-points').textContent = isTimeout
+          ? 'Moony took too long too, don\'t worry'
+          : 'Moony laughs at you. Moony.';
+        document.getElementById('result-points').style.color = '#f0883e';
+        overlay.style.display = '';
+      }, 600);
+    }
+
+    updateHUD();
+
+    // Next question
+    setTimeout(function() {
+      questionIndex++;
+      showQuestion();
+    }, 2000);
+  }
+
+  /* ---------- GAME OVER ---------- */
+  function gameOver() {
+    stopTimer();
+    showScreen('gameover-screen');
+
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('stat-correct').textContent = correctCount;
+    document.getElementById('stat-wrong').textContent = wrongCount;
+    document.getElementById('stat-best-streak').textContent = bestStreak;
+    document.getElementById('stat-multiplier').textContent = 'x' + peakMulti;
+
+    var prev = getHighScore();
+    var isNew = score > prev;
+    if (isNew) setHighScore(score);
+    document.getElementById('gameover-high-score').textContent = isNew
+      ? 'NEW HIGH SCORE! (prev: ' + prev + ')'
+      : 'High score: ' + prev;
+    document.getElementById('gameover-title').textContent = isNew ? 'NEW RECORD!' : 'GAME OVER';
+
+    // Pick a roast
+    var roast = ROASTS[Math.floor(Math.random() * ROASTS.length)];
+    roast = roast.replace('{score}', score);
+    document.getElementById('gameover-roast').textContent = '"' + roast + '"';
+
+    DippyLB.onGameOver(score);
+  }
+
+  /* ---------- START GAME ---------- */
+  window.startGame = function() {
+    score = 0;
+    lives = 3;
+    streak = 0;
+    bestStreak = 0;
+    peakMulti = 1;
+    correctCount = 0;
+    wrongCount = 0;
+    questionIndex = 0;
+    shuffled = shuffle(QUESTIONS);
+
+    showScreen('game-screen');
+    updateHUD();
+    showQuestion();
+  };
+
+  /* ---------- INIT ---------- */
+  var hs = getHighScore();
+  if (hs > 0) {
+    document.getElementById('title-high-score').textContent = 'High score: ' + hs;
+  }
+
+  DippyLB.init('moony-quiz');
+})();
+</script>
+{{ end }}
