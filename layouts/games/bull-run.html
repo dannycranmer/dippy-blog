@@ -413,6 +413,7 @@
 
   function drawChart() {
     var w = gameArea ? gameArea.clientWidth : 400;
+    if (w === 0) w = 400;
     var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="260" viewBox="0 0 ' + w + ' 260">';
     svg += '<polyline points="';
     var step = w / 40;
@@ -755,14 +756,15 @@
     player.classList.remove('jumping', 'ducking');
     player.style.transform = 'translateY(0)';
 
-    // Init chart
-    initChart();
-    drawChart();
-
-    // Show game
+    // Show game first so gameArea has dimensions for drawChart
     titleScreen.style.display = 'none';
     gameoverScreen.style.display = 'none';
     gameScreen.style.display = 'block';
+
+    // Init chart (after game screen is visible)
+    initChart();
+    drawChart();
+
     gameState = 'playing';
 
     animFrame = requestAnimationFrame(gameLoop);
