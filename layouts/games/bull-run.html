@@ -1,0 +1,834 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">BULL RUN</h1>
+    <p class="game-subtitle">Ride the bull through the market!<br>Dodge bears, collect green candles &amp; coins.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">START</button>
+    <p class="game-hint">Tap / Space / Up to jump. Swipe down / Down to duck.<br>Bears are everywhere. Just like Moony predicted.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="hud-score">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">DISTANCE</span>
+        <span class="hud-value" id="hud-distance">0m</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">SPEED</span>
+        <span class="hud-value" id="hud-speed">1.0x</span>
+      </div>
+    </div>
+    <div id="game-area">
+      <div id="chart-bg"></div>
+      <div id="entities"></div>
+      <div id="particles"></div>
+      <div id="player">
+        <div id="player-bull">🐂</div>
+        <div id="player-dippy">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="32" height="32">
+            <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+            <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+            <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+            <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+            <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+          </svg>
+        </div>
+      </div>
+      <div id="ground"></div>
+      <div id="ticker-tape">
+        <span class="ticker-text" id="ticker-1"></span>
+        <span class="ticker-text" id="ticker-2"></span>
+      </div>
+    </div>
+    <div class="mobile-controls">
+      <button class="ctrl-btn" id="btn-duck">DUCK ↓</button>
+      <button class="ctrl-btn ctrl-jump" id="btn-jump">JUMP ↑</button>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="gameover-title" id="gameover-title">BEAR MARKET</h1>
+    <div class="final-score">
+      <span class="final-label">FINAL SCORE</span>
+      <span class="final-value" id="final-score">$0</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-distance">0m</span><span class="stat-label">Distance</span></div>
+      <div class="stat"><span class="stat-val" id="stat-candles">0</span><span class="stat-label">Candles</span></div>
+      <div class="stat"><span class="stat-val" id="stat-coins">0</span><span class="stat-label">Coins</span></div>
+      <div class="stat"><span class="stat-val" id="stat-speed">1.0x</span><span class="stat-label">Top Speed</span></div>
+    </div>
+    <div class="high-score-display" id="gameover-high-score"></div>
+    <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
+    <button id="replay-btn" onclick="startGame()">PLAY AGAIN</button>
+  </div>
+</div>
+{{ partial "leaderboard" . }}
+
+<style>
+  #game-wrapper {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Title Screen */
+  #title-screen { text-align: center; animation: fadeIn 0.5s ease; }
+  .title-dippy { margin-bottom: 1rem; animation: bounce 2s ease-in-out infinite; }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .game-title {
+    font-size: 2.4rem; color: #00ff88; margin: 0 0 0.5rem;
+    letter-spacing: 3px; text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .game-subtitle { color: #8b949e; font-size: 0.95rem; margin: 0 0 1.5rem; line-height: 1.5; }
+  .game-hint { color: #484f58; font-size: 0.8rem; margin-top: 1.5rem; font-style: italic; line-height: 1.5; }
+  .high-score-display { color: #f0883e; font-size: 0.9rem; margin-bottom: 1rem; min-height: 1.2em; }
+
+  #start-btn, #replay-btn {
+    background: #00ff88; color: #0d1117; border: none;
+    padding: 0.9rem 3rem; font-size: 1.2rem; font-weight: 800;
+    border-radius: 8px; cursor: pointer; font-family: inherit; letter-spacing: 1px;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  #start-btn:active, #replay-btn:active { transform: scale(0.95); }
+  #start-btn:hover, #replay-btn:hover { box-shadow: 0 0 20px rgba(0,255,136,0.4); }
+
+  /* HUD */
+  .game-hud {
+    display: flex; justify-content: space-between; width: 100%;
+    max-width: 400px; margin-bottom: 0.5rem; gap: 0.5rem;
+  }
+  .hud-item {
+    display: flex; flex-direction: column; align-items: center; flex: 1;
+    background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 0.3rem;
+  }
+  .hud-label { font-size: 0.6rem; color: #484f58; letter-spacing: 1px; }
+  .hud-value { font-size: 1rem; color: #00ff88; font-weight: 700; }
+
+  /* Game Area */
+  #game-area {
+    position: relative; width: 100%; max-width: 400px; height: 260px;
+    background: #0d1117; border: 2px solid #21262d; border-radius: 12px;
+    overflow: hidden;
+  }
+
+  /* Chart Background */
+  #chart-bg {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0; opacity: 0.15;
+  }
+
+  /* Ground */
+  #ground {
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 50px;
+    background: linear-gradient(0deg, #161b22 0%, #1a2332 100%);
+    border-top: 2px solid #21262d; z-index: 1;
+  }
+
+  /* Ticker Tape */
+  #ticker-tape {
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 18px;
+    background: #0d1117; border-top: 1px solid #30363d;
+    overflow: hidden; z-index: 2; display: flex;
+  }
+  .ticker-text {
+    display: inline-block; white-space: nowrap;
+    font-size: 10px; color: #00ff88; letter-spacing: 1px; line-height: 18px;
+    animation: tickerScroll 12s linear infinite;
+    padding-right: 40px;
+  }
+  @keyframes tickerScroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+  }
+
+  /* Player */
+  #player {
+    position: absolute; bottom: 50px; left: 60px;
+    width: 48px; height: 48px; z-index: 10;
+    transition: none;
+  }
+  #player.ducking {
+    transform: scaleY(0.5) translateY(24px);
+  }
+  #player-bull { font-size: 28px; line-height: 1; }
+  #player-dippy {
+    position: absolute; top: -18px; left: 10px;
+    animation: dippyRide 0.3s ease-in-out infinite alternate;
+  }
+  @keyframes dippyRide {
+    0% { transform: translateY(0) rotate(-3deg); }
+    100% { transform: translateY(-2px) rotate(3deg); }
+  }
+
+  /* Entities */
+  #entities { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; }
+  .entity {
+    position: absolute; transition: none;
+    will-change: transform;
+  }
+  .entity-bear {
+    font-size: 32px; bottom: 50px;
+  }
+  .entity-bear-high {
+    font-size: 28px; bottom: 90px;
+  }
+  .entity-red-candle {
+    bottom: 50px; width: 12px; height: 36px;
+    background: linear-gradient(0deg, #ff5050 0%, #cc2020 100%);
+    border-radius: 2px; border: 1px solid #ff5050;
+    box-shadow: 0 0 8px rgba(255,80,80,0.4);
+  }
+  .entity-red-candle::after {
+    content: ''; position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+    width: 2px; height: 8px; background: #ff5050;
+  }
+  .entity-green-candle {
+    bottom: 50px; width: 10px; height: 28px;
+    background: linear-gradient(0deg, #00ff88 0%, #00cc6e 100%);
+    border-radius: 2px; border: 1px solid #00ff88;
+    box-shadow: 0 0 10px rgba(0,255,136,0.5);
+    animation: candleGlow 1s ease-in-out infinite alternate;
+  }
+  .entity-green-candle::after {
+    content: ''; position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
+    width: 2px; height: 6px; background: #00ff88;
+  }
+  @keyframes candleGlow {
+    0% { box-shadow: 0 0 6px rgba(0,255,136,0.3); }
+    100% { box-shadow: 0 0 14px rgba(0,255,136,0.7); }
+  }
+  .entity-coin {
+    bottom: 80px; width: 24px; height: 24px;
+    background: radial-gradient(circle at 40% 35%, #ffd700, #f0883e);
+    border-radius: 50%; border: 2px solid #ffd700;
+    box-shadow: 0 0 10px rgba(255,215,0,0.5);
+    font-size: 12px; line-height: 24px; text-align: center;
+    color: #0d1117; font-weight: 800;
+    animation: coinSpin 0.8s linear infinite;
+  }
+  @keyframes coinSpin {
+    0% { transform: scaleX(1); }
+    25% { transform: scaleX(0.2); }
+    50% { transform: scaleX(1); }
+    75% { transform: scaleX(0.2); }
+    100% { transform: scaleX(1); }
+  }
+
+  /* Particles */
+  #particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 15; pointer-events: none; }
+  .particle {
+    position: absolute; border-radius: 50%; pointer-events: none;
+    animation: particleFly 0.6s ease-out forwards;
+  }
+  @keyframes particleFly {
+    0% { opacity: 1; transform: translate(0, 0) scale(1); }
+    100% { opacity: 0; transform: translate(var(--px), var(--py)) scale(0); }
+  }
+  .score-popup {
+    position: absolute; color: #00ff88; font-weight: 800; font-size: 16px;
+    pointer-events: none; z-index: 20;
+    animation: popUp 0.7s ease-out forwards;
+    text-shadow: 0 0 8px rgba(0,255,136,0.5);
+  }
+  .score-popup.coin-popup { color: #ffd700; }
+  @keyframes popUp {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-40px); }
+  }
+
+  /* Mobile controls */
+  .mobile-controls {
+    display: flex; gap: 0.5rem; margin-top: 0.5rem; width: 100%; max-width: 400px;
+  }
+  .ctrl-btn {
+    flex: 1; padding: 0.8rem; font-size: 1rem; font-weight: 700;
+    background: #161b22; color: #8b949e; border: 2px solid #30363d;
+    border-radius: 10px; cursor: pointer; font-family: inherit;
+    transition: transform 0.05s;
+  }
+  .ctrl-btn:active { transform: scale(0.95); border-color: #00ff88; color: #00ff88; }
+  .ctrl-jump { border-color: #00ff88; color: #00ff88; }
+
+  /* Game Over */
+  #gameover-screen { text-align: center; animation: fadeIn 0.5s ease; display: none; }
+  .gameover-title {
+    font-size: 2rem; color: #ff5050; margin: 0 0 1rem;
+    letter-spacing: 2px; text-shadow: 0 0 20px rgba(255,80,80,0.3);
+  }
+  .final-score { margin-bottom: 1rem; }
+  .final-label { display: block; font-size: 0.7rem; color: #484f58; letter-spacing: 2px; }
+  .final-value { display: block; font-size: 2.5rem; color: #00ff88; font-weight: 800; }
+  .stats-row { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+  .stat {
+    flex: 1; background: #161b22; border: 1px solid #30363d;
+    border-radius: 8px; padding: 0.5rem 0.3rem; text-align: center;
+  }
+  .stat-val { display: block; font-size: 1rem; color: #f0883e; font-weight: 700; }
+  .stat-label { display: block; font-size: 0.6rem; color: #484f58; letter-spacing: 1px; margin-top: 0.2rem; }
+  .gameover-roast {
+    color: #8b949e; font-size: 0.85rem; font-style: italic;
+    margin: 1rem 0; line-height: 1.4; padding: 0 0.5rem;
+  }
+</style>
+
+<script>
+(function() {
+  'use strict';
+
+  // === CONFIG ===
+  var GROUND_Y = 50;
+  var PLAYER_LEFT = 60;
+  var PLAYER_W = 40;
+  var PLAYER_H = 44;
+  var DUCK_H = 22;
+  var JUMP_DURATION = 550;
+  var JUMP_HEIGHT = 100;
+  var BASE_SPEED = 3;
+  var SPEED_INCREASE = 0.0004;
+  var SPAWN_INTERVAL_MIN = 800;
+  var SPAWN_INTERVAL_MAX = 2200;
+  var LS_KEY = 'dippy-bull-run-high';
+
+  // === STATE ===
+  var gameState = 'title'; // title, playing, over
+  var score = 0;
+  var distance = 0;
+  var speed = 1;
+  var maxSpeed = 1;
+  var candlesCollected = 0;
+  var coinsCollected = 0;
+  var isJumping = false;
+  var isDucking = false;
+  var jumpStartTime = 0;
+  var entities = [];
+  var animFrame = null;
+  var lastTime = 0;
+  var nextSpawnTime = 0;
+  var chartPoints = [];
+  var chartOffset = 0;
+
+  // === DOM REFS ===
+  var titleScreen = document.getElementById('title-screen');
+  var gameScreen = document.getElementById('game-screen');
+  var gameoverScreen = document.getElementById('gameover-screen');
+  var hudScore = document.getElementById('hud-score');
+  var hudDistance = document.getElementById('hud-distance');
+  var hudSpeed = document.getElementById('hud-speed');
+  var player = document.getElementById('player');
+  var entitiesEl = document.getElementById('entities');
+  var particlesEl = document.getElementById('particles');
+  var chartBg = document.getElementById('chart-bg');
+  var gameArea = document.getElementById('game-area');
+
+  // === ROASTS ===
+  var roasts = [
+    "Moony tried running once. It tripped over its own cash allocation.",
+    "That's still further than Moony's portfolio has gone in 6 months.",
+    "Even Moony could have dodged that bear. Actually, no it couldn't.",
+    "The bulls ran. The bears caught you. Moony just sat there.",
+    "You lasted longer than Moony's last trade thesis.",
+    "Moony's idea of a bull run is buying Treasury bonds.",
+    "The market waits for no one. Especially not Moony.",
+    "Still faster than Moony's order execution.",
+    "That bear was actually Moony in disguise.",
+    "Moony would have quit before the first obstacle.",
+    "You ran further than Moony's P&L chart this quarter.",
+    "Dippy doesn't stop. Moony never starts.",
+    "Moony just shorted your run. It finally made a profit.",
+    "Bear market? More like Moony's entire career."
+  ];
+
+  // === TICKER DATA ===
+  var tickers = ['AAPL +2.3%', 'NVDA +4.1%', 'TSLA -1.2%', 'MSFT +0.8%', 'SPY +1.5%',
+    'AMZN +3.2%', 'GOOGL +1.7%', 'META -0.5%', 'AMD +5.1%', 'NFLX +2.8%',
+    'DIS -0.9%', 'BA +1.1%', 'JPM +0.6%', 'V +1.4%', 'DIPPY +999%', 'MOONY -99%'];
+
+  function initTicker() {
+    var text = '';
+    for (var i = 0; i < 3; i++) {
+      for (var j = 0; j < tickers.length; j++) {
+        var t = tickers[j];
+        var color = t.indexOf('-') !== -1 ? '#ff5050' : '#00ff88';
+        text += '<span style="color:' + color + ';margin:0 12px;">' + t + '</span>';
+      }
+    }
+    document.getElementById('ticker-1').innerHTML = text;
+    document.getElementById('ticker-2').innerHTML = text;
+  }
+
+  // === CHART BACKGROUND ===
+  function initChart() {
+    chartPoints = [];
+    var y = 130;
+    for (var i = 0; i < 80; i++) {
+      y += (Math.random() - 0.48) * 15;
+      y = Math.max(30, Math.min(200, y));
+      chartPoints.push(y);
+    }
+    chartOffset = 0;
+  }
+
+  function drawChart() {
+    var w = gameArea ? gameArea.clientWidth : 400;
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="260" viewBox="0 0 ' + w + ' 260">';
+    svg += '<polyline points="';
+    var step = w / 40;
+    var startIdx = Math.floor(chartOffset / step) % chartPoints.length;
+    var offsetPx = chartOffset % step;
+    for (var i = 0; i <= 42; i++) {
+      var ci = (startIdx + i) % chartPoints.length;
+      var x = i * step - offsetPx;
+      svg += x.toFixed(1) + ',' + chartPoints[ci].toFixed(1) + ' ';
+    }
+    svg += '" fill="none" stroke="#00ff88" stroke-width="1.5" opacity="0.6"/>';
+    // Add some candle-style vertical marks
+    for (var k = 0; k <= 42; k += 4) {
+      var ck = (startIdx + k) % chartPoints.length;
+      var cx = k * step - offsetPx;
+      var cy = chartPoints[ck];
+      var ch = 8 + Math.random() * 12;
+      var cc = cy < chartPoints[(ck + 1) % chartPoints.length] ? '#ff5050' : '#00ff88';
+      svg += '<rect x="' + (cx - 2).toFixed(1) + '" y="' + (cy - ch / 2).toFixed(1) + '" width="4" height="' + ch.toFixed(1) + '" fill="' + cc + '" opacity="0.3"/>';
+    }
+    svg += '</svg>';
+    chartBg.innerHTML = svg;
+  }
+
+  // === HIGH SCORE ===
+  function getHigh() {
+    try { return parseInt(localStorage.getItem(LS_KEY)) || 0; } catch(e) { return 0; }
+  }
+  function setHigh(s) {
+    try { localStorage.setItem(LS_KEY, s); } catch(e) {}
+  }
+  function showHigh() {
+    var h = getHigh();
+    var el1 = document.getElementById('title-high-score');
+    var el2 = document.getElementById('gameover-high-score');
+    if (h > 0) {
+      var txt = 'HIGH SCORE: $' + h;
+      if (el1) el1.textContent = txt;
+      if (el2) el2.textContent = txt;
+    } else {
+      if (el1) el1.textContent = '';
+      if (el2) el2.textContent = '';
+    }
+  }
+
+  // === PARTICLES ===
+  function spawnParticles(x, y, color, count) {
+    for (var i = 0; i < count; i++) {
+      var p = document.createElement('div');
+      p.className = 'particle';
+      var size = 4 + Math.random() * 6;
+      var angle = Math.random() * Math.PI * 2;
+      var dist = 20 + Math.random() * 30;
+      p.style.cssText = 'left:' + x + 'px;top:' + y + 'px;width:' + size + 'px;height:' + size +
+        'px;background:' + color + ';--px:' + (Math.cos(angle) * dist).toFixed(0) +
+        'px;--py:' + (Math.sin(angle) * dist).toFixed(0) + 'px;';
+      particlesEl.appendChild(p);
+      setTimeout(function(el) { if (el.parentNode) el.parentNode.removeChild(el); }, 600, p);
+    }
+  }
+
+  function showScorePopup(x, y, text, isCoin) {
+    var el = document.createElement('div');
+    el.className = 'score-popup' + (isCoin ? ' coin-popup' : '');
+    el.textContent = text;
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    particlesEl.appendChild(el);
+    setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 700);
+  }
+
+  // === ENTITY SPAWNING ===
+  function spawnEntity() {
+    var areaW = gameArea ? gameArea.clientWidth : 400;
+    var r = Math.random();
+    var type, el;
+
+    if (r < 0.3) {
+      // Ground bear
+      type = 'bear';
+      el = document.createElement('div');
+      el.className = 'entity entity-bear';
+      el.textContent = '🐻';
+      el.style.left = areaW + 'px';
+    } else if (r < 0.42) {
+      // High bear (must duck)
+      type = 'bear-high';
+      el = document.createElement('div');
+      el.className = 'entity entity-bear-high';
+      el.textContent = '🐻';
+      el.style.left = areaW + 'px';
+    } else if (r < 0.55) {
+      // Red candle obstacle
+      type = 'red-candle';
+      el = document.createElement('div');
+      el.className = 'entity entity-red-candle';
+      el.style.left = areaW + 'px';
+    } else if (r < 0.8) {
+      // Green candle collectible ($1)
+      type = 'green-candle';
+      el = document.createElement('div');
+      el.className = 'entity entity-green-candle';
+      el.style.left = areaW + 'px';
+    } else {
+      // Gold coin ($5)
+      type = 'coin';
+      el = document.createElement('div');
+      el.className = 'entity entity-coin';
+      el.textContent = '$';
+      el.style.left = areaW + 'px';
+      // Vary coin height
+      var coinBottom = 70 + Math.random() * 50;
+      el.style.bottom = coinBottom + 'px';
+    }
+
+    entitiesEl.appendChild(el);
+    entities.push({ type: type, el: el, x: areaW, collected: false });
+  }
+
+  // === COLLISION ===
+  function getPlayerBox() {
+    var bottom = GROUND_Y;
+    var h = isDucking ? DUCK_H : PLAYER_H;
+    if (isJumping) {
+      var elapsed = Date.now() - jumpStartTime;
+      var t = elapsed / JUMP_DURATION;
+      if (t > 1) t = 1;
+      var jumpY = Math.sin(t * Math.PI) * JUMP_HEIGHT;
+      bottom = GROUND_Y + jumpY;
+    }
+    return { left: PLAYER_LEFT, right: PLAYER_LEFT + PLAYER_W, bottom: bottom, top: bottom + h };
+  }
+
+  function getEntityBox(ent) {
+    var el = ent.el;
+    var x = ent.x;
+    var box = { left: x, right: x, bottom: 0, top: 0 };
+
+    if (ent.type === 'bear') {
+      box.right = x + 32; box.bottom = GROUND_Y; box.top = GROUND_Y + 32;
+    } else if (ent.type === 'bear-high') {
+      box.right = x + 28; box.bottom = GROUND_Y + 40; box.top = GROUND_Y + 68;
+    } else if (ent.type === 'red-candle') {
+      box.right = x + 12; box.bottom = GROUND_Y; box.top = GROUND_Y + 36;
+    } else if (ent.type === 'green-candle') {
+      box.right = x + 10; box.bottom = GROUND_Y; box.top = GROUND_Y + 28;
+    } else if (ent.type === 'coin') {
+      var coinB = parseInt(el.style.bottom) || 80;
+      box.right = x + 24; box.bottom = coinB; box.top = coinB + 24;
+    }
+    return box;
+  }
+
+  function boxOverlap(a, b) {
+    return a.left < b.right && a.right > b.left && a.bottom < b.top && a.top > b.bottom;
+  }
+
+  // === JUMP / DUCK ===
+  function doJump() {
+    if (isJumping || gameState !== 'playing') return;
+    if (isDucking) { isDucking = false; player.classList.remove('ducking'); }
+    isJumping = true;
+    jumpStartTime = Date.now();
+  }
+
+  function doDuck(start) {
+    if (isJumping || gameState !== 'playing') return;
+    isDucking = start;
+    if (start) {
+      player.classList.add('ducking');
+    } else {
+      player.classList.remove('ducking');
+    }
+  }
+
+  // === GAME LOOP ===
+  function gameLoop(time) {
+    if (gameState !== 'playing') return;
+    if (!lastTime) { lastTime = time; animFrame = requestAnimationFrame(gameLoop); return; }
+
+    var dt = Math.min(time - lastTime, 50);
+    lastTime = time;
+
+    // Speed increases over time
+    speed = 1 + distance * SPEED_INCREASE;
+    if (speed > maxSpeed) maxSpeed = speed;
+    var pxPerMs = BASE_SPEED * speed;
+
+    // Update distance
+    distance += pxPerMs * dt * 0.05;
+
+    // Chart scroll
+    chartOffset += pxPerMs * dt * 0.3;
+    if (Math.floor(time / 200) !== Math.floor((time - dt) / 200)) {
+      drawChart();
+    }
+
+    // Spawn entities
+    if (time >= nextSpawnTime) {
+      spawnEntity();
+      var interval = SPAWN_INTERVAL_MIN + Math.random() * (SPAWN_INTERVAL_MAX - SPAWN_INTERVAL_MIN);
+      interval /= Math.sqrt(speed);
+      nextSpawnTime = time + interval;
+    }
+
+    // Move entities
+    var pBox = getPlayerBox();
+    var areaW = gameArea ? gameArea.clientWidth : 400;
+
+    for (var i = entities.length - 1; i >= 0; i--) {
+      var ent = entities[i];
+      ent.x -= pxPerMs * dt * 0.25;
+      ent.el.style.transform = 'translateX(' + ent.x.toFixed(1) + 'px)';
+      ent.el.style.left = '0';
+
+      // Off screen removal
+      if (ent.x < -60) {
+        if (ent.el.parentNode) ent.el.parentNode.removeChild(ent.el);
+        entities.splice(i, 1);
+        continue;
+      }
+
+      if (ent.collected) continue;
+
+      var eBox = getEntityBox(ent);
+      // Adjust eBox x for transform
+      eBox.left = ent.x;
+      eBox.right = ent.x + (eBox.right - eBox.left);
+
+      if (!boxOverlap(pBox, eBox)) continue;
+
+      if (ent.type === 'green-candle') {
+        ent.collected = true;
+        score += 1;
+        candlesCollected++;
+        ent.el.style.opacity = '0';
+        spawnParticles(ent.x + 5, 260 - GROUND_Y - 14, '#00ff88', 6);
+        showScorePopup(ent.x, 260 - GROUND_Y - 40, '+$1', false);
+      } else if (ent.type === 'coin') {
+        ent.collected = true;
+        score += 5;
+        coinsCollected++;
+        ent.el.style.opacity = '0';
+        var coinY = 260 - (parseInt(ent.el.style.bottom) || 80) - 12;
+        spawnParticles(ent.x + 12, coinY, '#ffd700', 8);
+        showScorePopup(ent.x, coinY - 20, '+$5', true);
+      } else {
+        // Hit obstacle - game over
+        gameOver();
+        return;
+      }
+    }
+
+    // Update player jump position
+    if (isJumping) {
+      var elapsed = Date.now() - jumpStartTime;
+      var t = elapsed / JUMP_DURATION;
+      if (t >= 1) { t = 1; isJumping = false; }
+      var jumpY = Math.sin(t * Math.PI) * JUMP_HEIGHT;
+      player.style.transform = 'translateY(' + (-jumpY).toFixed(1) + 'px)';
+    } else if (isDucking) {
+      player.style.transform = 'scaleY(0.5) translateY(24px)';
+    } else {
+      player.style.transform = 'translateY(0)';
+    }
+
+    // Update HUD
+    hudScore.textContent = '$' + score;
+    hudDistance.textContent = Math.floor(distance) + 'm';
+    hudSpeed.textContent = speed.toFixed(1) + 'x';
+
+    animFrame = requestAnimationFrame(gameLoop);
+  }
+
+  // === GAME OVER ===
+  function gameOver() {
+    gameState = 'over';
+    if (animFrame) cancelAnimationFrame(animFrame);
+
+    // Flash red
+    gameArea.style.borderColor = '#ff5050';
+    setTimeout(function() { gameArea.style.borderColor = '#21262d'; }, 300);
+
+    // Update high score
+    var high = getHigh();
+    var isNew = score > high;
+    if (isNew) setHigh(score);
+
+    // Show game over
+    gameScreen.style.display = 'none';
+    gameoverScreen.style.display = 'block';
+
+    document.getElementById('final-score').textContent = '$' + score;
+    document.getElementById('stat-distance').textContent = Math.floor(distance) + 'm';
+    document.getElementById('stat-candles').textContent = candlesCollected;
+    document.getElementById('stat-coins').textContent = coinsCollected;
+    document.getElementById('stat-speed').textContent = maxSpeed.toFixed(1) + 'x';
+
+    if (isNew && score > 0) {
+      document.getElementById('gameover-title').textContent = 'NEW HIGH SCORE!';
+      document.getElementById('gameover-title').style.color = '#ffd700';
+    } else {
+      document.getElementById('gameover-title').textContent = 'BEAR MARKET';
+      document.getElementById('gameover-title').style.color = '#ff5050';
+    }
+
+    showHigh();
+    document.getElementById('gameover-roast').textContent = '"' + roasts[Math.floor(Math.random() * roasts.length)] + '"';
+
+    // Leaderboard
+    if (typeof DippyLB !== 'undefined') {
+      DippyLB.onGameOver(score);
+    }
+  }
+
+  // === START GAME ===
+  window.startGame = function() {
+    // Reset state
+    score = 0;
+    distance = 0;
+    speed = 1;
+    maxSpeed = 1;
+    candlesCollected = 0;
+    coinsCollected = 0;
+    isJumping = false;
+    isDucking = false;
+    lastTime = 0;
+    nextSpawnTime = 0;
+
+    // Clear entities
+    for (var i = 0; i < entities.length; i++) {
+      if (entities[i].el.parentNode) entities[i].el.parentNode.removeChild(entities[i].el);
+    }
+    entities = [];
+
+    // Clear particles
+    particlesEl.innerHTML = '';
+
+    // Reset player
+    player.classList.remove('jumping', 'ducking');
+    player.style.transform = 'translateY(0)';
+
+    // Init chart
+    initChart();
+    drawChart();
+
+    // Show game
+    titleScreen.style.display = 'none';
+    gameoverScreen.style.display = 'none';
+    gameScreen.style.display = 'block';
+    gameState = 'playing';
+
+    animFrame = requestAnimationFrame(gameLoop);
+  };
+
+  // === INPUT HANDLING ===
+  document.addEventListener('keydown', function(e) {
+    if (e.code === 'Space' || e.code === 'ArrowUp') {
+      e.preventDefault();
+      if (gameState === 'title') { startGame(); return; }
+      doJump();
+    } else if (e.code === 'ArrowDown') {
+      e.preventDefault();
+      doDuck(true);
+    }
+  });
+
+  document.addEventListener('keyup', function(e) {
+    if (e.code === 'ArrowDown') {
+      doDuck(false);
+    }
+  });
+
+  // Mobile: buttons
+  var btnJump = document.getElementById('btn-jump');
+  var btnDuck = document.getElementById('btn-duck');
+
+  if (btnJump) {
+    btnJump.addEventListener('touchstart', function(e) { e.preventDefault(); doJump(); });
+    btnJump.addEventListener('mousedown', function(e) { e.preventDefault(); doJump(); });
+  }
+  if (btnDuck) {
+    btnDuck.addEventListener('touchstart', function(e) { e.preventDefault(); doDuck(true); });
+    btnDuck.addEventListener('touchend', function(e) { e.preventDefault(); doDuck(false); });
+    btnDuck.addEventListener('mousedown', function(e) { e.preventDefault(); doDuck(true); });
+    btnDuck.addEventListener('mouseup', function(e) { e.preventDefault(); doDuck(false); });
+  }
+
+  // Touch: tap game area to jump, swipe down to duck
+  var touchStartY = 0;
+  if (gameArea) {
+    gameArea.addEventListener('touchstart', function(e) {
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    gameArea.addEventListener('touchend', function(e) {
+      var dy = e.changedTouches[0].clientY - touchStartY;
+      if (dy > 30) {
+        // Swipe down — duck briefly
+        doDuck(true);
+        setTimeout(function() { doDuck(false); }, 400);
+      } else {
+        doJump();
+      }
+    }, { passive: true });
+  }
+
+  // === INIT ===
+  showHigh();
+  initTicker();
+  initChart();
+  drawChart();
+
+  if (typeof DippyLB !== 'undefined') {
+    DippyLB.init('bull-run');
+  }
+})();
+</script>
+{{ end }}
