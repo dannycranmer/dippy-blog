@@ -1,0 +1,996 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">DIPPY FISHING</h1>
+    <p class="game-subtitle">Cast your line into the market pond.<br>Catch winning stocks. Throw back Moony's trash picks.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">CAST OFF</button>
+    <p class="game-hint">Moony's portfolio is full of meme stocks and regret.<br>Don't let his picks into your basket.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="score">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">TIME</span>
+        <span class="hud-value" id="timer">60</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">CAUGHT</span>
+        <span class="hud-value" id="caught">0</span>
+      </div>
+    </div>
+
+    <div class="pond-area" id="pond-area">
+      <!-- Dippy fisherman at top -->
+      <div class="dippy-fisher" id="dippy-fisher">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 70" width="60" height="52">
+          <ellipse cx="35" cy="42" rx="18" ry="16" fill="#00ff88"/>
+          <path d="M16 42 Q6 32 4 22 Q5 24 8 25 Q7 18 10 14 Q11 20 12 24 Q14 18 18 15 Q16 24 17 32 Q18 36 19 40" fill="#00ff88"/>
+          <path d="M48 34 Q52 22 50 12" fill="none" stroke="#00ff88" stroke-width="10" stroke-linecap="round"/>
+          <ellipse cx="50" cy="8" rx="12" ry="9" fill="#00ff88"/>
+          <circle cx="54" cy="6" r="2.5" fill="#0d1117"/>
+          <circle cx="55" cy="5" r="1" fill="#fff"/>
+          <path d="M58 10 Q60 12 58 13" fill="none" stroke="#0d1117" stroke-width="1" stroke-linecap="round"/>
+          <!-- fishing rod -->
+          <line x1="20" y1="35" x2="70" y2="5" stroke="#8b949e" stroke-width="2" stroke-linecap="round"/>
+          <line id="fishing-line-svg" x1="70" y1="5" x2="70" y2="55" stroke="#484f58" stroke-width="1" stroke-dasharray="3,2"/>
+          <!-- tiny hook at bottom -->
+          <path d="M70 53 Q72 56 69 57 Q66 56 68 53" fill="none" stroke="#f0883e" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <!-- Water surface -->
+      <div class="water-surface"></div>
+
+      <!-- Pond (fish swim here) -->
+      <div class="pond" id="pond">
+        <div class="fish-lane" id="lane-0"></div>
+        <div class="fish-lane" id="lane-1"></div>
+        <div class="fish-lane" id="lane-2"></div>
+        <div class="fish-lane" id="lane-3"></div>
+      </div>
+
+      <!-- Cast target indicator -->
+      <div class="cast-indicator" id="cast-indicator" style="display:none;"></div>
+
+      <!-- Floating text container -->
+      <div id="float-texts"></div>
+    </div>
+
+    <!-- Depth meter -->
+    <div class="depth-hint">Tap the pond to cast your line!</div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="gameover-title" id="gameover-title">REEL IT IN!</h1>
+    <div class="final-score">
+      <span class="final-label">PORTFOLIO VALUE</span>
+      <span class="final-value" id="final-score">0</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-good">0</span><span class="stat-label">Winners</span></div>
+      <div class="stat"><span class="stat-val" id="stat-bad">0</span><span class="stat-label">Moony Picks</span></div>
+      <div class="stat"><span class="stat-val" id="stat-missed">0</span><span class="stat-label">Got Away</span></div>
+      <div class="stat"><span class="stat-val" id="stat-best">0</span><span class="stat-label">Best Catch</span></div>
+    </div>
+    <div class="high-score-display" id="gameover-high-score"></div>
+    <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
+    <button id="replay-btn" onclick="startGame()">CAST AGAIN</button>
+  </div>
+</div>
+{{ partial "leaderboard" . }}
+
+<style>
+  #game-wrapper {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Title Screen */
+  #title-screen {
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+  }
+  .title-dippy {
+    margin-bottom: 1rem;
+    animation: bobbing 3s ease-in-out infinite;
+  }
+  @keyframes bobbing {
+    0%, 100% { transform: translateY(0) rotate(-2deg); }
+    50% { transform: translateY(-8px) rotate(2deg); }
+  }
+  .game-title {
+    font-size: 2.2rem;
+    color: #00ff88;
+    margin: 0 0 0.5rem;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .game-subtitle {
+    color: #8b949e;
+    font-size: 0.95rem;
+    margin: 0 0 1.5rem;
+    line-height: 1.5;
+  }
+  .game-hint {
+    color: #484f58;
+    font-size: 0.8rem;
+    margin-top: 1.5rem;
+    font-style: italic;
+    line-height: 1.5;
+  }
+  .high-score-display {
+    color: #f0883e;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    min-height: 1.2em;
+  }
+  #start-btn, #replay-btn {
+    background: #00ff88;
+    color: #0d1117;
+    border: none;
+    padding: 0.9rem 3rem;
+    font-size: 1.2rem;
+    font-weight: 800;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 1px;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  #start-btn:active, #replay-btn:active {
+    transform: scale(0.95);
+  }
+  #start-btn:hover, #replay-btn:hover {
+    box-shadow: 0 0 20px rgba(0,255,136,0.4);
+  }
+
+  /* HUD */
+  .game-hud {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 0.5rem;
+    gap: 0.5rem;
+  }
+  .hud-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 0.4rem;
+  }
+  .hud-label {
+    font-size: 0.65rem;
+    color: #484f58;
+    letter-spacing: 1px;
+  }
+  .hud-value {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #e6edf3;
+  }
+  #timer { color: #f0883e; }
+  #caught { color: #00ff88; }
+  .hud-flash { animation: hudFlash 0.3s ease; }
+  @keyframes hudFlash {
+    0% { transform: scale(1.3); color: #00ff88; }
+    100% { transform: scale(1); }
+  }
+
+  /* Pond Area */
+  .pond-area {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    height: 420px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #0d1117 0%, #0d1117 15%, #0a1628 16%, #081e36 40%, #061a30 70%, #04142a 100%);
+    border: 2px solid #30363d;
+    cursor: crosshair;
+  }
+
+  /* Dippy fisherman */
+  .dippy-fisher {
+    position: absolute;
+    top: 4px;
+    right: 20px;
+    z-index: 10;
+    animation: fisherBob 2s ease-in-out infinite;
+  }
+  @keyframes fisherBob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+
+  /* Water surface */
+  .water-surface {
+    position: absolute;
+    top: 60px;
+    left: 0;
+    width: 100%;
+    height: 8px;
+    background: linear-gradient(90deg, transparent 0%, rgba(0,255,136,0.15) 20%, rgba(0,255,136,0.25) 50%, rgba(0,255,136,0.15) 80%, transparent 100%);
+    z-index: 5;
+    animation: waveSurface 3s ease-in-out infinite;
+  }
+  @keyframes waveSurface {
+    0%, 100% { transform: scaleY(1); opacity: 0.7; }
+    50% { transform: scaleY(1.5); opacity: 1; }
+  }
+  .water-surface::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 100%;
+    background: repeating-linear-gradient(90deg, transparent 0%, rgba(0,255,136,0.1) 10%, transparent 20%);
+    animation: waveMove 4s linear infinite;
+  }
+  @keyframes waveMove {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* Pond / lanes */
+  .pond {
+    position: absolute;
+    top: 68px;
+    left: 0;
+    width: 100%;
+    bottom: 0;
+    overflow: hidden;
+  }
+  .fish-lane {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 80px;
+  }
+  #lane-0 { top: 10px; }
+  #lane-1 { top: 95px; }
+  #lane-2 { top: 180px; }
+  #lane-3 { top: 255px; }
+
+  /* Fish */
+  .fish {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.15s;
+    z-index: 8;
+  }
+  .fish:active {
+    transform: scale(1.15);
+  }
+  .fish-body {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .fish-label {
+    position: absolute;
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    pointer-events: none;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .fish.good .fish-label { color: #fff; }
+  .fish.bad .fish-label { color: #fff; }
+  .fish.golden .fish-label { color: #0d1117; }
+
+  /* Fish caught animation */
+  .fish.caught {
+    animation: fishCaught 0.5s ease forwards;
+    pointer-events: none;
+  }
+  @keyframes fishCaught {
+    0% { transform: scale(1); opacity: 1; }
+    30% { transform: scale(1.3) rotate(10deg); }
+    100% { transform: scale(0) translateY(-80px) rotate(30deg); opacity: 0; }
+  }
+  .fish.rejected {
+    animation: fishRejected 0.5s ease forwards;
+    pointer-events: none;
+  }
+  @keyframes fishRejected {
+    0% { transform: scale(1); opacity: 1; }
+    30% { transform: scale(1.2); }
+    100% { transform: scale(0.3) translateY(40px); opacity: 0; }
+  }
+
+  /* Cast line animation */
+  .cast-line {
+    position: absolute;
+    width: 2px;
+    background: linear-gradient(180deg, #484f58, #f0883e);
+    top: 56px;
+    right: 48px;
+    z-index: 6;
+    transform-origin: top center;
+    animation: castDrop 0.4s ease-out forwards;
+  }
+  @keyframes castDrop {
+    0% { height: 0; opacity: 0; }
+    100% { opacity: 1; }
+  }
+  .cast-hook {
+    position: absolute;
+    bottom: -8px;
+    left: -4px;
+    width: 10px;
+    height: 10px;
+    border: 2px solid #f0883e;
+    border-top: none;
+    border-right: none;
+    border-radius: 0 0 0 8px;
+  }
+
+  /* Cast indicator / splash */
+  .cast-indicator {
+    position: absolute;
+    width: 30px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(0,255,136,0.3);
+    border: 1px solid rgba(0,255,136,0.5);
+    z-index: 7;
+    animation: splashRing 0.6s ease-out forwards;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+  }
+  @keyframes splashRing {
+    0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+  }
+
+  /* Splash particles */
+  .splash-drop {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: rgba(0,255,136,0.6);
+    z-index: 7;
+    pointer-events: none;
+    animation: splashDrop 0.5s ease-out forwards;
+  }
+  @keyframes splashDrop {
+    0% { opacity: 1; transform: translate(0, 0) scale(1); }
+    100% { opacity: 0; transform: translate(var(--sx), var(--sy)) scale(0); }
+  }
+
+  /* Floating text */
+  #float-texts {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .float-text {
+    position: absolute;
+    font-weight: 800;
+    font-size: 1.2rem;
+    animation: floatUp 0.9s ease-out forwards;
+    pointer-events: none;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+  }
+  .float-text.good { color: #00ff88; }
+  .float-text.bad { color: #ff5050; }
+  .float-text.golden { color: #f0883e; font-size: 1.5rem; }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-50px) scale(0.7); }
+  }
+
+  .depth-hint {
+    text-align: center;
+    color: #484f58;
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
+    letter-spacing: 0.5px;
+  }
+
+  /* Bubbles */
+  .bubble {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(0,255,136,0.15);
+    background: rgba(0,255,136,0.05);
+    z-index: 4;
+    pointer-events: none;
+    animation: bubbleRise 3s ease-in forwards;
+  }
+  @keyframes bubbleRise {
+    0% { opacity: 0.6; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-120px) scale(0.3); }
+  }
+
+  /* Game Over */
+  #gameover-screen {
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .gameover-title {
+    font-size: 2rem;
+    color: #f0883e;
+    margin: 0 0 1rem;
+  }
+  .final-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .final-label {
+    font-size: 0.8rem;
+    color: #484f58;
+    letter-spacing: 1px;
+  }
+  .final-value {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #00ff88;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .stats-row {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .stat-val {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #e6edf3;
+  }
+  .stat-label {
+    font-size: 0.7rem;
+    color: #484f58;
+    letter-spacing: 1px;
+  }
+  .gameover-roast {
+    color: #8b949e;
+    font-size: 0.9rem;
+    margin: 1rem 0 1.5rem;
+    font-style: italic;
+    line-height: 1.5;
+    min-height: 2.5em;
+  }
+
+  /* Water depth gradient lines */
+  .depth-line {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: rgba(0,255,136,0.06);
+    z-index: 1;
+    pointer-events: none;
+  }
+</style>
+
+<script>
+(function() {
+  // Good stocks (green fish) - points vary by rarity
+  const GOOD_STOCKS = [
+    { sym: 'NVDA', pts: 50, size: 1.3, rare: true },
+    { sym: 'AAPL', pts: 30, size: 1.1, rare: false },
+    { sym: 'TSLA', pts: 40, size: 1.2, rare: false },
+    { sym: 'MSFT', pts: 30, size: 1.1, rare: false },
+    { sym: 'GOOG', pts: 35, size: 1.15, rare: false },
+    { sym: 'AMZN', pts: 35, size: 1.15, rare: false },
+    { sym: 'META', pts: 25, size: 1.0, rare: false },
+    { sym: 'AMD', pts: 20, size: 0.95, rare: false },
+    { sym: 'NFLX', pts: 20, size: 0.95, rare: false },
+    { sym: 'CRM', pts: 15, size: 0.9, rare: false },
+    { sym: 'AVGO', pts: 45, size: 1.25, rare: true },
+    { sym: 'PLTR', pts: 15, size: 0.9, rare: false },
+    { sym: 'SNOW', pts: 10, size: 0.85, rare: false },
+  ];
+
+  // Moony's terrible picks (red fish) - always -20
+  const BAD_STOCKS = [
+    { sym: 'BBBY', pts: -20, size: 0.9 },
+    { sym: 'WISH', pts: -20, size: 0.85 },
+    { sym: 'CLOV', pts: -20, size: 0.9 },
+    { sym: 'WKHS', pts: -20, size: 0.85 },
+    { sym: 'RIDE', pts: -20, size: 0.8 },
+    { sym: 'SKLZ', pts: -20, size: 0.85 },
+    { sym: 'SDC', pts: -20, size: 0.8 },
+    { sym: 'SPCE', pts: -20, size: 0.9 },
+    { sym: 'HOOD', pts: -20, size: 0.85 },
+    { sym: 'LCID', pts: -20, size: 0.9 },
+  ];
+
+  // Golden stock (rare, high value)
+  const GOLDEN_STOCK = { sym: 'BRK.A', pts: 100, size: 1.5 };
+
+  const ROASTS = [
+    "Moony's fishing strategy: cast into a puddle and blame the market.",
+    "While you were reeling in winners, Moony was googling 'are meme stocks still a thing?'",
+    "Moony once caught a BBBY. He framed it. It's worth less than the frame.",
+    "Your portfolio is looking healthier than Moony's entire trading career.",
+    "Moony tried fishing once. He caught a boot and called it 'deep value'.",
+    "Dippy casts. Dippy catches. Moony watches from the shore, confused.",
+    "Moony's biggest catch was a WISH at $30. It's now a tax write-off.",
+    "Every green fish you caught is another reason Moony cries into his index fund.",
+    "Moony doesn't fish. He sits 70% cash and calls it 'waiting for the dip'.",
+    "You fish like Dippy trades: fast, decisive, and always in the green.",
+    "Moony's rod broke because he tried to short the pond.",
+    "If Moony played this game, he'd only catch the red fish and call them 'contrarian plays'.",
+    "Your casting accuracy is better than Moony's entire fundamental analysis.",
+  ];
+
+  // Fish SVG builders
+  function fishSVG(color, tailColor, w, h) {
+    return '<svg viewBox="0 0 60 30" width="'+w+'" height="'+h+'" xmlns="http://www.w3.org/2000/svg">' +
+      '<ellipse cx="28" cy="15" rx="20" ry="11" fill="'+color+'"/>' +
+      '<polygon points="50,15 60,5 60,25" fill="'+tailColor+'"/>' +
+      '<circle cx="16" cy="12" r="3" fill="rgba(0,0,0,0.4)"/>' +
+      '<circle cx="15" cy="11" r="1.2" fill="rgba(255,255,255,0.7)"/>' +
+      '<path d="M22 20 Q26 23 30 20" fill="none" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>' +
+      '<ellipse cx="28" cy="5" rx="8" ry="2" fill="rgba(255,255,255,0.1)"/>' +
+      '</svg>';
+  }
+
+  function goldenFishSVG(w, h) {
+    return '<svg viewBox="0 0 60 30" width="'+w+'" height="'+h+'" xmlns="http://www.w3.org/2000/svg">' +
+      '<ellipse cx="28" cy="15" rx="20" ry="11" fill="#f0883e"/>' +
+      '<polygon points="50,15 60,5 60,25" fill="#d2a8ff"/>' +
+      '<circle cx="16" cy="12" r="3" fill="rgba(0,0,0,0.4)"/>' +
+      '<circle cx="15" cy="11" r="1.2" fill="#fff"/>' +
+      '<ellipse cx="28" cy="5" rx="8" ry="2" fill="rgba(255,255,255,0.25)"/>' +
+      '<text x="28" y="22" text-anchor="middle" font-size="5" fill="rgba(255,255,255,0.5)" font-weight="bold">&#9733;</text>' +
+      '</svg>';
+  }
+
+  let score = 0;
+  let timeLeft = 60;
+  let goodCaught = 0;
+  let badCaught = 0;
+  let missedFish = 0;
+  let bestCatch = 0;
+  let gameActive = false;
+  let timerInterval = null;
+  let spawnInterval = null;
+  let fishIdCounter = 0;
+  let activeFish = {};
+  let castCooldown = false;
+
+  function getHighScore() {
+    try { return parseInt(localStorage.getItem('dippy-dippy-fishing-high') || '0'); } catch(e) { return 0; }
+  }
+  function setHighScore(s) {
+    try { localStorage.setItem('dippy-dippy-fishing-high', s); } catch(e) {}
+  }
+
+  function showScreen(id) {
+    ['title-screen','game-screen','gameover-screen'].forEach(function(s) {
+      document.getElementById(s).style.display = s === id ? '' : 'none';
+    });
+  }
+
+  function updateHUD() {
+    document.getElementById('score').textContent = score;
+    document.getElementById('timer').textContent = timeLeft;
+    document.getElementById('caught').textContent = goodCaught;
+  }
+
+  function flashHUD(id) {
+    var el = document.getElementById(id);
+    el.classList.remove('hud-flash');
+    void el.offsetWidth;
+    el.classList.add('hud-flash');
+  }
+
+  function floatText(x, y, text, cls) {
+    var el = document.createElement('div');
+    el.className = 'float-text ' + cls;
+    el.textContent = text;
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    document.getElementById('float-texts').appendChild(el);
+    setTimeout(function() { el.remove(); }, 900);
+  }
+
+  function createSplash(x, y) {
+    var pond = document.getElementById('pond-area');
+    // Ring
+    var ring = document.createElement('div');
+    ring.className = 'cast-indicator';
+    ring.style.left = x + 'px';
+    ring.style.top = y + 'px';
+    ring.style.display = '';
+    pond.appendChild(ring);
+    setTimeout(function() { ring.remove(); }, 600);
+    // Droplets
+    for (var i = 0; i < 6; i++) {
+      var drop = document.createElement('div');
+      drop.className = 'splash-drop';
+      var angle = (Math.PI * 2 / 6) * i;
+      var dist = 15 + Math.random() * 15;
+      drop.style.left = x + 'px';
+      drop.style.top = y + 'px';
+      drop.style.setProperty('--sx', Math.cos(angle) * dist + 'px');
+      drop.style.setProperty('--sy', Math.sin(angle) * dist - 10 + 'px');
+      pond.appendChild(drop);
+      setTimeout(function(d) { d.remove(); }.bind(null, drop), 500);
+    }
+  }
+
+  function createCastLine(targetY) {
+    var pond = document.getElementById('pond-area');
+    var line = document.createElement('div');
+    line.className = 'cast-line';
+    var lineH = targetY - 56;
+    line.style.height = lineH + 'px';
+    var hook = document.createElement('div');
+    hook.className = 'cast-hook';
+    line.appendChild(hook);
+    pond.appendChild(line);
+    setTimeout(function() { line.remove(); }, 800);
+  }
+
+  function spawnBubble() {
+    if (!gameActive) return;
+    var pond = document.getElementById('pond');
+    var b = document.createElement('div');
+    b.className = 'bubble';
+    var size = 3 + Math.random() * 6;
+    b.style.width = size + 'px';
+    b.style.height = size + 'px';
+    b.style.left = Math.random() * 95 + '%';
+    b.style.top = 40 + Math.random() * 55 + '%';
+    pond.appendChild(b);
+    setTimeout(function() { b.remove(); }, 3000);
+  }
+
+  function spawnFish() {
+    if (!gameActive) return;
+    var elapsed = 60 - timeLeft;
+    // Decide type: 60% good, 30% bad, 10% golden (after 15s)
+    var roll = Math.random();
+    var isGolden = roll > 0.92 && elapsed > 10;
+    var isBad = !isGolden && roll > 0.6;
+    var isGood = !isGolden && !isBad;
+
+    var stock, type, color, tailColor, fishW, fishH, svgStr;
+    if (isGolden) {
+      stock = GOLDEN_STOCK;
+      type = 'golden';
+      fishW = 70;
+      fishH = 35;
+      svgStr = goldenFishSVG(fishW, fishH);
+    } else if (isBad) {
+      stock = BAD_STOCKS[Math.floor(Math.random() * BAD_STOCKS.length)];
+      type = 'bad';
+      color = '#ff5050';
+      tailColor = '#cc3030';
+      fishW = Math.round(50 * stock.size);
+      fishH = Math.round(25 * stock.size);
+      svgStr = fishSVG(color, tailColor, fishW, fishH);
+    } else {
+      stock = GOOD_STOCKS[Math.floor(Math.random() * GOOD_STOCKS.length)];
+      type = 'good';
+      color = '#00cc6e';
+      tailColor = '#00ff88';
+      fishW = Math.round(50 * stock.size);
+      fishH = Math.round(25 * stock.size);
+      svgStr = fishSVG(color, tailColor, fishW, fishH);
+    }
+
+    var lane = Math.floor(Math.random() * 4);
+    var fromRight = Math.random() > 0.5;
+    var speed = 2 + Math.random() * 3; // px per frame (faster = harder)
+    // Later in game = faster
+    speed += elapsed * 0.03;
+
+    var fishEl = document.createElement('div');
+    fishEl.className = 'fish ' + type;
+    fishEl.style.width = fishW + 'px';
+    fishEl.style.height = fishH + 'px';
+    fishEl.style.top = Math.random() * (80 - fishH) + 'px';
+
+    var fishBody = document.createElement('div');
+    fishBody.className = 'fish-body';
+    fishBody.innerHTML = svgStr;
+
+    var label = document.createElement('div');
+    label.className = 'fish-label';
+    label.textContent = '$' + stock.sym;
+
+    fishBody.appendChild(label);
+    fishEl.appendChild(fishBody);
+
+    // Flip fish based on direction
+    if (fromRight) {
+      fishEl.style.right = -fishW + 'px';
+      fishEl.style.left = 'auto';
+      fishEl.style.transform = 'scaleX(-1)';
+      label.style.transform = 'translate(-50%, -50%) scaleX(-1)';
+    } else {
+      fishEl.style.left = -fishW + 'px';
+      fishEl.style.right = 'auto';
+    }
+
+    var laneEl = document.getElementById('lane-' + lane);
+    laneEl.appendChild(fishEl);
+
+    var id = fishIdCounter++;
+    var fishData = {
+      el: fishEl,
+      id: id,
+      stock: stock,
+      type: type,
+      lane: lane,
+      fromRight: fromRight,
+      speed: speed,
+      w: fishW,
+      x: -fishW,
+      pts: stock.pts
+    };
+    activeFish[id] = fishData;
+
+    fishEl.addEventListener('click', function(e) {
+      e.stopPropagation();
+      catchFish(id);
+    });
+    fishEl.addEventListener('touchstart', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      catchFish(id);
+    }, { passive: false });
+  }
+
+  function catchFish(id) {
+    if (!gameActive) return;
+    var data = activeFish[id];
+    if (!data) return;
+    var el = data.el;
+    var rect = el.getBoundingClientRect();
+    var pondRect = document.getElementById('pond-area').getBoundingClientRect();
+    var fx = rect.left - pondRect.left + rect.width / 2;
+    var fy = rect.top - pondRect.top + rect.height / 2;
+
+    if (data.type === 'good' || data.type === 'golden') {
+      score += data.pts;
+      goodCaught++;
+      if (data.pts > bestCatch) bestCatch = data.pts;
+      el.classList.add('caught');
+      var prefix = data.type === 'golden' ? 'JACKPOT! +' : '+';
+      floatText(fx, fy, prefix + data.pts + ' ' + data.stock.sym, data.type);
+      flashHUD('score');
+      flashHUD('caught');
+      if (navigator.vibrate) navigator.vibrate(30);
+    } else {
+      score += data.pts; // negative
+      badCaught++;
+      el.classList.add('rejected');
+      floatText(fx, fy, data.pts + ' ' + data.stock.sym, 'bad');
+      flashHUD('score');
+      if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+    }
+
+    createSplash(fx, fy);
+    updateHUD();
+    delete activeFish[id];
+    setTimeout(function() { el.remove(); }, 500);
+  }
+
+  function moveFish() {
+    if (!gameActive) return;
+    var pondWidth = document.getElementById('pond').offsetWidth;
+    var toRemove = [];
+    for (var id in activeFish) {
+      var f = activeFish[id];
+      f.x += f.speed;
+      if (f.fromRight) {
+        var pos = pondWidth - f.x;
+        f.el.style.right = 'auto';
+        f.el.style.left = pos + 'px';
+        if (pos + f.w < -10) toRemove.push(id);
+      } else {
+        f.el.style.left = f.x + 'px';
+        if (f.x > pondWidth + 10) toRemove.push(id);
+      }
+      // Gentle sine wave swimming
+      var wobble = Math.sin(Date.now() / 300 + parseInt(id) * 1.5) * 3;
+      f.el.style.marginTop = wobble + 'px';
+    }
+    for (var i = 0; i < toRemove.length; i++) {
+      var rid = toRemove[i];
+      var rf = activeFish[rid];
+      if (rf.type === 'good' || rf.type === 'golden') missedFish++;
+      rf.el.remove();
+      delete activeFish[rid];
+    }
+    if (gameActive) requestAnimationFrame(moveFish);
+  }
+
+  window.startGame = function() {
+    score = 0;
+    timeLeft = 60;
+    goodCaught = 0;
+    badCaught = 0;
+    missedFish = 0;
+    bestCatch = 0;
+    gameActive = true;
+    fishIdCounter = 0;
+    activeFish = {};
+    castCooldown = false;
+
+    // Clear old fish
+    for (var i = 0; i < 4; i++) {
+      document.getElementById('lane-' + i).innerHTML = '';
+    }
+
+    showScreen('game-screen');
+    updateHUD();
+
+    // Timer
+    timerInterval = setInterval(function() {
+      timeLeft--;
+      updateHUD();
+      if (timeLeft <= 10) {
+        document.getElementById('timer').style.color = '#ff5050';
+      }
+      if (timeLeft <= 0) endGame();
+    }, 1000);
+
+    // Fish spawning — starts moderate, gets busier
+    function scheduleSpawn() {
+      if (!gameActive) return;
+      var elapsed = 60 - timeLeft;
+      var delay = Math.max(400, 1200 - elapsed * 12);
+      // Sometimes spawn a cluster
+      if (elapsed > 20 && Math.random() < 0.3) {
+        spawnFish();
+        setTimeout(function() { if (gameActive) spawnFish(); }, 200);
+      }
+      spawnInterval = setTimeout(function() {
+        spawnFish();
+        scheduleSpawn();
+      }, delay);
+    }
+    setTimeout(function() {
+      spawnFish();
+      scheduleSpawn();
+    }, 600);
+
+    // Bubble spawning
+    var bubbleInt = setInterval(function() {
+      if (!gameActive) { clearInterval(bubbleInt); return; }
+      spawnBubble();
+    }, 800);
+
+    // Start fish movement
+    requestAnimationFrame(moveFish);
+
+    // Click/tap on pond to cast (visual only, encourages tapping near fish)
+    var pondArea = document.getElementById('pond-area');
+    pondArea.onclick = function(e) {
+      if (!gameActive || castCooldown) return;
+      var rect = pondArea.getBoundingClientRect();
+      var x = e.clientX - rect.left;
+      var y = e.clientY - rect.top;
+      if (y < 60) return; // above water
+      createSplash(x, y);
+      createCastLine(y);
+      castCooldown = true;
+      setTimeout(function() { castCooldown = false; }, 300);
+    };
+  };
+
+  function endGame() {
+    gameActive = false;
+    clearInterval(timerInterval);
+    clearTimeout(spawnInterval);
+    document.getElementById('timer').style.color = '#f0883e';
+
+    // Clean up remaining fish
+    for (var id in activeFish) {
+      activeFish[id].el.remove();
+    }
+    activeFish = {};
+
+    // Stats
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('stat-good').textContent = goodCaught;
+    document.getElementById('stat-bad').textContent = badCaught;
+    document.getElementById('stat-missed').textContent = missedFish;
+    document.getElementById('stat-best').textContent = bestCatch > 0 ? '+' + bestCatch : '0';
+
+    // High score
+    var prev = getHighScore();
+    var isNew = score > prev;
+    if (isNew && score > 0) setHighScore(score);
+    document.getElementById('gameover-high-score').textContent = isNew
+      ? 'NEW HIGH SCORE! (prev: ' + prev + ')'
+      : 'High score: ' + (prev > 0 ? prev : 'none yet');
+    document.getElementById('gameover-title').textContent = isNew ? 'NEW RECORD!' : "REEL IT IN!";
+
+    // Roast
+    document.getElementById('gameover-roast').textContent =
+      '"' + ROASTS[Math.floor(Math.random() * ROASTS.length)] + '"';
+
+    showScreen('gameover-screen');
+    DippyLB.onGameOver(score);
+  }
+
+  // Title high score
+  var hs = getHighScore();
+  if (hs > 0) {
+    document.getElementById('title-high-score').textContent = 'High score: ' + hs;
+  }
+
+  // Init leaderboard
+  DippyLB.init('dippy-fishing');
+})();
+</script>
+{{ end }}
