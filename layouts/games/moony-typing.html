@@ -1,0 +1,585 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">MOONY TYPING</h1>
+    <p class="game-subtitle">Type the word to cancel Moony's bad trades<br>before they execute!</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">START</button>
+    <p class="game-hint">Moony queued 50 trades. All of them are terrible.<br>Your keyboard is the only thing standing between it and bankruptcy.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="hud-score">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">STREAK</span>
+        <span class="hud-value" id="hud-streak">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">LIVES</span>
+        <span class="hud-value" id="hud-lives"></span>
+      </div>
+    </div>
+
+    <div id="trade-area">
+      <div class="trade-card" id="trade-card">
+        <div class="trade-header">
+          <span class="trade-action" id="trade-action">BUY</span>
+          <span class="trade-ticker" id="trade-ticker">MOON</span>
+        </div>
+        <div class="trade-timer-bar">
+          <div class="trade-timer-fill" id="trade-timer"></div>
+        </div>
+        <div class="trade-word" id="trade-word"></div>
+        <div class="trade-reason" id="trade-reason"></div>
+      </div>
+    </div>
+
+    <div id="input-area">
+      <input type="text" id="type-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Type here..." />
+    </div>
+
+    <div id="float-texts"></div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="gameover-title">MARKET CLOSED</h1>
+    <div class="final-score">
+      <span class="final-label">TRADES CANCELLED</span>
+      <span class="final-value" id="final-score">0</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-cancelled">0</span><span class="stat-label">Cancelled</span></div>
+      <div class="stat"><span class="stat-val" id="stat-executed">0</span><span class="stat-label">Executed</span></div>
+      <div class="stat"><span class="stat-val" id="stat-streak">0</span><span class="stat-label">Best Streak</span></div>
+      <div class="stat"><span class="stat-val" id="stat-wpm">0</span><span class="stat-label">WPM</span></div>
+    </div>
+    <div class="high-score-display" id="gameover-high-score"></div>
+    <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
+    <button id="replay-btn" onclick="startGame()">PLAY AGAIN</button>
+  </div>
+</div>
+{{ partial "leaderboard" . }}
+
+<style>
+  #game-wrapper {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 16px;
+    font-family: 'Courier New', monospace;
+    color: #e6edf3;
+    user-select: none;
+    -webkit-user-select: none;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Title Screen */
+  #title-screen { text-align: center; padding: 20px 0; }
+  .title-dippy { margin-bottom: 12px; }
+  .game-title {
+    font-size: 2em;
+    color: #00ff88;
+    margin: 0;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+    letter-spacing: 3px;
+  }
+  .game-subtitle {
+    color: #8b949e;
+    font-size: 0.85em;
+    margin: 8px 0 16px;
+    line-height: 1.4;
+  }
+  .high-score-display {
+    color: #f0883e;
+    font-size: 0.9em;
+    margin: 8px 0;
+    min-height: 1.2em;
+  }
+  #start-btn, #replay-btn {
+    background: #00ff88;
+    color: #0d1117;
+    border: none;
+    padding: 14px 48px;
+    font-size: 1.2em;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 6px;
+    margin: 12px 0;
+    transition: all 0.2s;
+    letter-spacing: 2px;
+  }
+  #start-btn:hover, #replay-btn:hover {
+    background: #00cc6e;
+    transform: scale(1.05);
+  }
+  .game-hint {
+    color: #484f58;
+    font-size: 0.75em;
+    margin-top: 12px;
+    line-height: 1.4;
+  }
+
+  /* HUD */
+  .game-hud {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0 12px;
+    border-bottom: 1px solid #21262d;
+    margin-bottom: 16px;
+  }
+  .hud-item { text-align: center; }
+  .hud-label { display: block; font-size: 0.65em; color: #484f58; letter-spacing: 1px; }
+  .hud-value { display: block; font-size: 1.3em; font-weight: bold; color: #00ff88; }
+
+  /* Trade Area */
+  #trade-area {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 16px;
+    min-height: 180px;
+    align-items: center;
+  }
+  .trade-card {
+    background: #161b22;
+    border: 2px solid #30363d;
+    border-radius: 10px;
+    padding: 16px 20px;
+    width: 100%;
+    text-align: center;
+    transition: border-color 0.3s;
+  }
+  .trade-card.correct { border-color: #00ff88; }
+  .trade-card.wrong { border-color: #ff5050; animation: shake 0.3s; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+  .trade-header {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .trade-action {
+    font-size: 0.8em;
+    font-weight: bold;
+    padding: 2px 10px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+  }
+  .trade-action.buy { background: #ff5050; color: #fff; }
+  .trade-action.sell { background: #00ff88; color: #0d1117; }
+  .trade-ticker {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #f0883e;
+  }
+  .trade-timer-bar {
+    height: 4px;
+    background: #21262d;
+    border-radius: 2px;
+    margin: 10px 0;
+    overflow: hidden;
+  }
+  .trade-timer-fill {
+    height: 100%;
+    background: #00ff88;
+    border-radius: 2px;
+    transition: width 0.1s linear, background 0.3s;
+    width: 100%;
+  }
+  .trade-timer-fill.urgent { background: #f0883e; }
+  .trade-timer-fill.critical { background: #ff5050; }
+  .trade-word {
+    font-size: 2em;
+    font-weight: bold;
+    color: #e6edf3;
+    letter-spacing: 4px;
+    margin: 12px 0 8px;
+    min-height: 1.3em;
+  }
+  .trade-word .typed { color: #00ff88; }
+  .trade-word .cursor { border-bottom: 2px solid #00ff88; animation: blink 0.8s infinite; }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+  .trade-word .remaining { color: #484f58; }
+  .trade-reason {
+    font-size: 0.7em;
+    color: #8b949e;
+    font-style: italic;
+    min-height: 1.2em;
+  }
+
+  /* Input */
+  #input-area { text-align: center; margin-top: 8px; }
+  #type-input {
+    width: 90%;
+    padding: 12px;
+    font-size: 1.2em;
+    font-family: 'Courier New', monospace;
+    background: #0d1117;
+    border: 2px solid #30363d;
+    border-radius: 8px;
+    color: #00ff88;
+    text-align: center;
+    letter-spacing: 2px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  #type-input:focus { border-color: #00ff88; }
+
+  /* Float texts */
+  #float-texts { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
+  .float-text {
+    position: absolute;
+    font-weight: bold;
+    font-size: 1.1em;
+    animation: floatUp 1s ease-out forwards;
+    pointer-events: none;
+  }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-60px); }
+  }
+
+  /* Game Over */
+  #gameover-screen { text-align: center; padding: 20px 0; }
+  .gameover-title {
+    font-size: 1.8em;
+    color: #ff5050;
+    margin: 0 0 16px;
+    text-shadow: 0 0 20px rgba(255,80,80,0.3);
+  }
+  .final-score { margin: 16px 0; }
+  .final-label { display: block; font-size: 0.75em; color: #484f58; letter-spacing: 2px; }
+  .final-value { display: block; font-size: 3em; color: #00ff88; font-weight: bold; }
+  .stats-row { display: flex; justify-content: space-around; margin: 16px 0; }
+  .stat { text-align: center; }
+  .stat-val { display: block; font-size: 1.4em; font-weight: bold; color: #f0883e; }
+  .stat-label { display: block; font-size: 0.65em; color: #484f58; letter-spacing: 1px; margin-top: 2px; }
+  .gameover-roast {
+    color: #8b949e;
+    font-size: 0.85em;
+    font-style: italic;
+    margin: 16px 0;
+    line-height: 1.4;
+  }
+</style>
+
+<script>
+(function() {
+  const WORDS = [
+    { word: 'BREAKOUT', ticker: 'MOON', action: 'SHORT', reason: 'Moony shorting at the breakout. Classic.' },
+    { word: 'BULLISH', ticker: 'SPY', action: 'SHORT', reason: 'Moony thinks the bull market is over. Again.' },
+    { word: 'DIVIDEND', ticker: 'TSLA', action: 'BUY', reason: 'Moony buying TSLA for dividends. It has none.' },
+    { word: 'MARGIN', ticker: 'GME', action: 'BUY', reason: 'Moony going 10x margin on a meme stock.' },
+    { word: 'HODL', ticker: 'RIOT', action: 'BUY', reason: 'Moony holding through earnings. Bold strategy.' },
+    { word: 'SQUEEZE', ticker: 'AMC', action: 'BUY', reason: 'Moony still waiting for the AMC squeeze. Since 2021.' },
+    { word: 'RALLY', ticker: 'QQQ', action: 'SHORT', reason: 'Moony shorting tech into a rally. Poetry.' },
+    { word: 'HEDGE', ticker: 'UVXY', action: 'BUY', reason: 'Moony hedging with 100% of portfolio in UVXY.' },
+    { word: 'ALPHA', ticker: 'ARKK', action: 'BUY', reason: 'Moony chasing alpha in ARKK. In 2026.' },
+    { word: 'CANDLE', ticker: 'NVDA', action: 'SHORT', reason: 'Moony saw one red candle. Panic sold.' },
+    { word: 'VOLUME', ticker: 'AAPL', action: 'SHORT', reason: 'Moony shorting AAPL on low volume. Smart.' },
+    { word: 'TREND', ticker: 'AMZN', action: 'SHORT', reason: 'Moony fighting the trend. The trend is winning.' },
+    { word: 'SPREAD', ticker: 'META', action: 'BUY', reason: 'Moony buying the widest spread. Maximum slippage.' },
+    { word: 'SUPPORT', ticker: 'COIN', action: 'SHORT', reason: 'Moony shorting at support. Bold.' },
+    { word: 'RESISTANCE', ticker: 'GOOG', action: 'BUY', reason: 'Moony buying right at resistance. Peak performance.' },
+    { word: 'VOLATILITY', ticker: 'VIX', action: 'BUY', reason: 'Moony going long VIX. In a calm market.' },
+    { word: 'STOP LOSS', ticker: 'PLTR', action: 'BUY', reason: 'Moony set stop loss 0.01% below entry. Smart risk management.' },
+    { word: 'REVERSAL', ticker: 'SHOP', action: 'SHORT', reason: 'Moony called the bottom. It was the top.' },
+    { word: 'MOMENTUM', ticker: 'CRWD', action: 'SHORT', reason: 'Moony shorting a stock with momentum. Brave.' },
+    { word: 'SCALP', ticker: 'MU', action: 'BUY', reason: 'Moony scalping with a 3-day hold time.' },
+    { word: 'CATALYST', ticker: 'UBER', action: 'SHORT', reason: 'Moony shorted before the earnings beat. Surprise.' },
+    { word: 'BACKTEST', ticker: 'SMCI', action: 'BUY', reason: 'Moony skipped backtesting. YOLO entry.' },
+    { word: 'DRAWDOWN', ticker: 'RIVN', action: 'BUY', reason: 'Moony averaging down into a drawdown.' },
+    { word: 'BREAKEVEN', ticker: 'DKNG', action: 'BUY', reason: 'Moony moved stop to breakeven. Then removed it.' },
+    { word: 'POSITION', ticker: 'ARM', action: 'BUY', reason: 'Moony sizing: 80% of portfolio in one trade.' },
+    { word: 'BEARISH', ticker: 'MSFT', action: 'SHORT', reason: 'Moony bearish on MSFT. The entire market disagrees.' },
+    { word: 'REBOUND', ticker: 'SNOW', action: 'SHORT', reason: 'Moony shorting the rebound. Doubling down on wrong.' },
+    { word: 'SIGNAL', ticker: 'ROKU', action: 'BUY', reason: 'Moony following a signal from 3 weeks ago.' },
+    { word: 'LIQUIDITY', ticker: 'MARA', action: 'BUY', reason: 'Moony buying illiquid penny stocks. After hours.' },
+    { word: 'FIBONACCI', ticker: 'AVGO', action: 'SHORT', reason: 'Moony drew fibonacci wrong. Shorting at 0%.' },
+    { word: 'TRAILING', ticker: 'TSLA', action: 'SHORT', reason: 'Moony set trailing stop at 50%. Very protective.' },
+    { word: 'OPENING', ticker: 'SPY', action: 'SHORT', reason: 'Moony shorts every gap up. Down $14k this month.' },
+    { word: 'RANGE', ticker: 'AAPL', action: 'BUY', reason: 'Moony buying mid-range. Not a breakout. Not a bounce. Just... buying.' },
+    { word: 'EXPOSURE', ticker: 'QQQ', action: 'BUY', reason: 'Moony at 200% exposure. On paper money. Still losing.' },
+    { word: 'PROFIT', ticker: 'NVDA', action: 'SHORT', reason: 'Moony takes profit at $2 gain. Lets losses run to $500.' },
+    { word: 'EXECUTE', ticker: 'META', action: 'BUY', reason: 'Moony uses market orders exclusively. In pre-market.' },
+  ];
+
+  const ROASTS = [
+    "Moony just enrolled in a typing course. It's still using two fingers.",
+    "Every trade you cancelled saved Moony approximately $0. It was going to lose it anyway.",
+    "Moony's portfolio is like its typing speed: painfully slow and full of errors.",
+    "Fun fact: Moony once accidentally typed 'BUY' correctly. It was trying to type 'BYE'.",
+    "Your typing saved the market. Moony's trades would have crashed the entire NASDAQ.",
+    "Moony rage-quit typing class. Now it just clicks 'BUY ALL' with its face.",
+    "Somewhere, Moony is staring at a keyboard wondering where the 'profit' key is.",
+    "Moony types 3 WPM. Words Per Month.",
+    "You type faster than Moony trades. Which isn't saying much.",
+    "Moony's favourite keyboard shortcut is Ctrl+L. For Ctrl+Lose.",
+    "That was faster than Moony can spell 'diversification'. It can't, by the way.",
+    "Moony's algorithm is just a cat walking across a keyboard. The cat has better returns.",
+  ];
+
+  let score = 0, streak = 0, bestStreak = 0, lives = 3, cancelled = 0, executed = 0;
+  let currentWord = null, typedSoFar = '', timerInterval = null, tradeTimeout = null;
+  let gameActive = false, wordQueue = [], wordStartTime = 0, totalCharsTyped = 0;
+  let gameStartTime = 0, tradeTime = 5000, level = 1;
+  const HIGH_KEY = 'dippy-moony-typing-high';
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function showHighScore() {
+    const h = localStorage.getItem(HIGH_KEY) || 0;
+    const el1 = document.getElementById('title-high-score');
+    const el2 = document.getElementById('gameover-high-score');
+    if (h > 0) {
+      if (el1) el1.textContent = 'HIGH SCORE: ' + h;
+      if (el2) el2.textContent = 'HIGH SCORE: ' + h;
+    }
+  }
+
+  function floatText(text, color, x, y) {
+    const el = document.createElement('div');
+    el.className = 'float-text';
+    el.textContent = text;
+    el.style.color = color;
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    document.getElementById('float-texts').appendChild(el);
+    setTimeout(() => el.remove(), 1000);
+  }
+
+  function updateHUD() {
+    document.getElementById('hud-score').textContent = score;
+    document.getElementById('hud-streak').textContent = streak + 'x';
+    let hearts = '';
+    for (let i = 0; i < 3; i++) hearts += i < lives ? '\u2764\ufe0f' : '\ud83d\udc94';
+    document.getElementById('hud-lives').innerHTML = hearts;
+  }
+
+  function renderWord() {
+    if (!currentWord) return;
+    const wordEl = document.getElementById('trade-word');
+    let html = '';
+    for (let i = 0; i < currentWord.word.length; i++) {
+      if (i < typedSoFar.length) {
+        html += '<span class="typed">' + currentWord.word[i] + '</span>';
+      } else if (i === typedSoFar.length) {
+        html += '<span class="cursor">' + currentWord.word[i] + '</span>';
+      } else {
+        html += '<span class="remaining">' + currentWord.word[i] + '</span>';
+      }
+    }
+    wordEl.innerHTML = html;
+  }
+
+  function nextTrade() {
+    if (!gameActive) return;
+    if (wordQueue.length === 0) {
+      endGame();
+      return;
+    }
+
+    currentWord = wordQueue.pop();
+    typedSoFar = '';
+    wordStartTime = Date.now();
+
+    const card = document.getElementById('trade-card');
+    card.classList.remove('correct', 'wrong');
+
+    const actionEl = document.getElementById('trade-action');
+    actionEl.textContent = currentWord.action;
+    actionEl.className = 'trade-action ' + (currentWord.action === 'BUY' ? 'buy' : 'sell');
+    document.getElementById('trade-ticker').textContent = currentWord.ticker;
+    document.getElementById('trade-reason').textContent = currentWord.reason;
+    renderWord();
+
+    // Timer bar
+    const timer = document.getElementById('trade-timer');
+    timer.style.width = '100%';
+    timer.className = 'trade-timer-fill';
+
+    let elapsed = 0;
+    clearInterval(timerInterval);
+    clearTimeout(tradeTimeout);
+
+    timerInterval = setInterval(() => {
+      elapsed += 50;
+      const pct = Math.max(0, 100 - (elapsed / tradeTime) * 100);
+      timer.style.width = pct + '%';
+      if (pct < 20) timer.className = 'trade-timer-fill critical';
+      else if (pct < 50) timer.className = 'trade-timer-fill urgent';
+      else timer.className = 'trade-timer-fill';
+    }, 50);
+
+    tradeTimeout = setTimeout(() => {
+      tradeFailed();
+    }, tradeTime);
+
+    document.getElementById('type-input').value = '';
+    document.getElementById('type-input').focus();
+  }
+
+  function tradeSuccess() {
+    clearInterval(timerInterval);
+    clearTimeout(tradeTimeout);
+    cancelled++;
+    streak++;
+    if (streak > bestStreak) bestStreak = streak;
+
+    const timeBonus = Math.max(0, Math.floor((tradeTime - (Date.now() - wordStartTime)) / 100));
+    const streakBonus = Math.min(streak, 10);
+    const points = 10 + timeBonus + streakBonus * 2;
+    score += points;
+    totalCharsTyped += currentWord.word.length;
+
+    document.getElementById('trade-card').classList.add('correct');
+    const rect = document.getElementById('trade-card').getBoundingClientRect();
+    const wr = document.getElementById('game-wrapper').getBoundingClientRect();
+    floatText('+' + points, '#00ff88', rect.left - wr.left + rect.width / 2 - 20, rect.top - wr.top);
+
+    if (streak > 0 && streak % 5 === 0) {
+      level++;
+      tradeTime = Math.max(2000, 5000 - (level - 1) * 300);
+      floatText('SPEED UP!', '#f0883e', rect.left - wr.left + rect.width / 2 - 40, rect.top - wr.top + 30);
+    }
+
+    updateHUD();
+    setTimeout(nextTrade, 400);
+  }
+
+  function tradeFailed() {
+    clearInterval(timerInterval);
+    clearTimeout(tradeTimeout);
+    executed++;
+    streak = 0;
+    lives--;
+
+    document.getElementById('trade-card').classList.add('wrong');
+    const rect = document.getElementById('trade-card').getBoundingClientRect();
+    const wr = document.getElementById('game-wrapper').getBoundingClientRect();
+    floatText('EXECUTED!', '#ff5050', rect.left - wr.left + rect.width / 2 - 40, rect.top - wr.top);
+
+    updateHUD();
+
+    if (lives <= 0) {
+      setTimeout(endGame, 600);
+    } else {
+      setTimeout(nextTrade, 600);
+    }
+  }
+
+  function startGame() {
+    document.getElementById('title-screen').style.display = 'none';
+    document.getElementById('gameover-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'block';
+
+    score = 0; streak = 0; bestStreak = 0; lives = 3;
+    cancelled = 0; executed = 0; totalCharsTyped = 0;
+    level = 1; tradeTime = 5000; gameActive = true;
+    gameStartTime = Date.now();
+
+    wordQueue = shuffle([...WORDS]);
+    updateHUD();
+    nextTrade();
+  }
+
+  function endGame() {
+    gameActive = false;
+    clearInterval(timerInterval);
+    clearTimeout(tradeTimeout);
+
+    document.getElementById('game-screen').style.display = 'none';
+    document.getElementById('gameover-screen').style.display = 'block';
+
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('stat-cancelled').textContent = cancelled;
+    document.getElementById('stat-executed').textContent = executed;
+    document.getElementById('stat-streak').textContent = bestStreak;
+
+    const elapsed = (Date.now() - gameStartTime) / 60000;
+    const wpm = elapsed > 0 ? Math.round(totalCharsTyped / 5 / elapsed) : 0;
+    document.getElementById('stat-wpm').textContent = wpm;
+
+    const prev = parseInt(localStorage.getItem(HIGH_KEY) || '0');
+    if (score > prev) {
+      localStorage.setItem(HIGH_KEY, score);
+      document.getElementById('gameover-high-score').textContent = 'NEW HIGH SCORE!';
+      document.getElementById('gameover-high-score').style.color = '#00ff88';
+    }
+
+    document.getElementById('gameover-roast').textContent = ROASTS[Math.floor(Math.random() * ROASTS.length)];
+    showHighScore();
+
+    DippyLB.onGameOver(score);
+  }
+
+  // Input handler
+  document.getElementById('type-input').addEventListener('input', function(e) {
+    if (!gameActive || !currentWord) return;
+    const val = this.value.toUpperCase().replace(/[^A-Z ]/g, '');
+    typedSoFar = '';
+
+    for (let i = 0; i < val.length && i < currentWord.word.length; i++) {
+      if (val[i] === currentWord.word[i]) {
+        typedSoFar += val[i];
+      } else {
+        break;
+      }
+    }
+
+    renderWord();
+
+    if (typedSoFar === currentWord.word) {
+      tradeSuccess();
+    }
+  });
+
+  // Prevent form submission on enter
+  document.getElementById('type-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') e.preventDefault();
+  });
+
+  showHighScore();
+  DippyLB.init('moony-typing');
+})();
+</script>
+{{ end }}
