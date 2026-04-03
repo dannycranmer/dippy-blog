@@ -1,0 +1,673 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">MOONY SLINGSHOT</h1>
+    <p class="game-subtitle">Pull back. Aim. Destroy Moony's<br>pathetic portfolio towers.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">LAUNCH</button>
+    <p class="game-hint">Moony built towers from bad trades.<br>Time to knock them down.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="score">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">LEVEL</span>
+        <span class="hud-value" id="level">1</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">SHOTS</span>
+        <span class="hud-value" id="shots">3</span>
+      </div>
+    </div>
+    <canvas id="game-canvas" width="420" height="520"></canvas>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="gameover-title" id="gameover-title">DEMOLISHED!</h1>
+    <div class="final-score">
+      <span class="final-label">FINAL SCORE</span>
+      <span class="final-value" id="final-score">0</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-levels">0</span><span class="stat-label">Levels</span></div>
+      <div class="stat"><span class="stat-val" id="stat-moonys">0</span><span class="stat-label">Moonys Hit</span></div>
+      <div class="stat"><span class="stat-val" id="stat-blocks">0</span><span class="stat-label">Blocks Smashed</span></div>
+    </div>
+    <div class="high-score-display" id="gameover-high-score"></div>
+    <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
+    <button id="replay-btn" onclick="startGame()">PLAY AGAIN</button>
+  </div>
+</div>
+{{ partial "leaderboard" . }}
+
+<style>
+  #game-wrapper {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  #title-screen { text-align: center; animation: fadeIn 0.5s ease; }
+  .title-dippy { margin-bottom: 1rem; animation: bounce 2s ease-in-out infinite; }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .game-title {
+    font-size: 2rem; color: #00ff88; margin: 0.5rem 0; text-shadow: 0 0 20px rgba(0,255,136,0.5);
+    font-family: monospace; letter-spacing: 2px;
+  }
+  .game-subtitle { color: #8b949e; font-size: 0.9rem; margin: 0.5rem 0; line-height: 1.4; }
+  .high-score-display { color: #f0883e; font-size: 0.85rem; margin: 0.5rem 0; min-height: 1.2em; font-family: monospace; }
+  #start-btn, #replay-btn {
+    background: #00ff88; color: #0d1117; border: none; padding: 14px 48px; font-size: 1.1rem;
+    font-weight: bold; border-radius: 8px; cursor: pointer; margin: 1rem 0; font-family: monospace;
+    letter-spacing: 2px; transition: all 0.2s;
+  }
+  #start-btn:hover, #replay-btn:hover { background: #00cc6e; transform: scale(1.05); }
+  #start-btn:active, #replay-btn:active { transform: scale(0.95); }
+  .game-hint { color: #484f58; font-size: 0.75rem; margin-top: 0.5rem; }
+  .game-hud {
+    display: flex; justify-content: space-between; width: 100%; margin-bottom: 0.5rem; padding: 0 0.25rem;
+  }
+  .hud-item { text-align: center; }
+  .hud-label { display: block; font-size: 0.65rem; color: #484f58; letter-spacing: 1px; font-family: monospace; }
+  .hud-value { display: block; font-size: 1.3rem; color: #00ff88; font-weight: bold; font-family: monospace; }
+  #game-canvas {
+    border: 2px solid #21262d; border-radius: 8px; background: #0d1117;
+    touch-action: none; max-width: 100%;
+  }
+  #gameover-screen { text-align: center; animation: fadeIn 0.5s ease; }
+  .gameover-title { font-size: 1.8rem; color: #00ff88; font-family: monospace; margin-bottom: 0.5rem; }
+  .final-score { margin: 1rem 0; }
+  .final-label { display: block; font-size: 0.7rem; color: #484f58; letter-spacing: 2px; font-family: monospace; }
+  .final-value { display: block; font-size: 3rem; color: #f0883e; font-weight: bold; font-family: monospace; }
+  .stats-row { display: flex; justify-content: center; gap: 1.5rem; margin: 1rem 0; }
+  .stat { text-align: center; }
+  .stat-val { display: block; font-size: 1.4rem; color: #00ff88; font-weight: bold; font-family: monospace; }
+  .stat-label { display: block; font-size: 0.65rem; color: #484f58; font-family: monospace; letter-spacing: 1px; }
+  .gameover-roast {
+    color: #8b949e; font-style: italic; font-size: 0.85rem; margin: 1rem 0; padding: 0 1rem; line-height: 1.4;
+  }
+</style>
+
+<script>
+(function() {
+  const ROASTS = [
+    "Moony's portfolio collapsed faster than its conviction.",
+    "That tower had more structural integrity than Moony's investment thesis.",
+    "Moony tried to rebuild but it's 70% cash and 100% coward.",
+    "Even Moony's towers can't hold up under the weight of its bad decisions.",
+    "Moony's defence strategy: sit in cash and hope nobody notices.",
+    "You just did to Moony's towers what the market does to Moony's returns.",
+    "Moony's towers were built on fundamentals. Terrible fundamentals.",
+    "That's what happens when you build a portfolio on value traps.",
+    "Moony called that a diversified structure. I called it target practice.",
+    "More destruction than Moony's annual performance review.",
+    "Moony's structural engineer also manages its portfolio — explains a lot.",
+    "Those blocks had better risk management than Moony."
+  ];
+
+  const W = 420, H = 520;
+  const GRAVITY = 0.3;
+  const GROUND_Y = H - 30;
+  const SLING_X = 70, SLING_Y = GROUND_Y - 80;
+  const BALL_R = 12;
+  const MAX_PULL = 80;
+
+  let canvas, ctx;
+  let score = 0, levelNum = 1, shotsLeft = 3;
+  let totalMoonysHit = 0, totalBlocksSmashed = 0;
+  let blocks = [], moonys = [], particles = [];
+  let ball = null, dragging = false, dragX = 0, dragY = 0;
+  let launched = false, settled = false, settleTimer = 0;
+  let gameOver = false;
+
+  function showScreen(id) {
+    ['title-screen','game-screen','gameover-screen'].forEach(s =>
+      document.getElementById(s).style.display = s === id ? '' : 'none');
+  }
+
+  function getHighScore() { return parseInt(localStorage.getItem('dippy-moony-slingshot-high') || '0'); }
+  function setHighScore(v) { localStorage.setItem('dippy-moony-slingshot-high', v); }
+
+  // Block types
+  function makeBlock(x, y, w, h, type) {
+    const hp = type === 'stone' ? 3 : type === 'wood' ? 2 : 1;
+    return { x, y, w, h, type, hp, maxHp: hp, vx: 0, vy: 0, angle: 0, va: 0, dead: false };
+  }
+
+  function makeMoony(x, y) {
+    return { x, y, r: 14, hp: 1, vx: 0, vy: 0, dead: false, hit: false };
+  }
+
+  // Level generation
+  function generateLevel(lvl) {
+    blocks = []; moonys = [];
+    const baseX = 250 + Math.random() * 40;
+    const types = ['cash', 'wood', 'stone'];
+    const diff = Math.min(lvl, 8);
+
+    // Stack height grows with level
+    const layers = Math.min(2 + Math.floor(lvl / 2), 6);
+    const bw = 30 + Math.random() * 10;
+    const bh = 18;
+
+    for (let row = 0; row < layers; row++) {
+      const cols = Math.max(1, 2 + Math.floor(Math.random() * Math.min(diff, 3)));
+      const rowY = GROUND_Y - (row + 1) * bh;
+      const startX = baseX - (cols * bw) / 2;
+      for (let col = 0; col < cols; col++) {
+        const typeIdx = Math.min(Math.floor(Math.random() * (1 + diff / 3)), 2);
+        blocks.push(makeBlock(startX + col * bw, rowY, bw - 2, bh - 2, types[typeIdx]));
+      }
+      // Add moony on top of some columns
+      if (row === layers - 1 || (row > 0 && Math.random() < 0.3)) {
+        const mx = baseX - (cols * bw) / 2 + Math.floor(Math.random() * cols) * bw + bw / 2;
+        moonys.push(makeMoony(mx, rowY - 16));
+      }
+    }
+
+    // Ensure at least one moony
+    if (moonys.length === 0) {
+      moonys.push(makeMoony(baseX, GROUND_Y - layers * bh - 16));
+    }
+
+    // Add pillars on higher levels
+    if (lvl >= 3) {
+      const px = baseX + 60 + Math.random() * 30;
+      for (let i = 0; i < Math.min(lvl - 1, 4); i++) {
+        blocks.push(makeBlock(px - 8, GROUND_Y - (i + 1) * 22, 16, 20, types[Math.min(i, 2)]));
+      }
+      moonys.push(makeMoony(px, GROUND_Y - Math.min(lvl - 1, 4) * 22 - 16));
+    }
+  }
+
+  function resetBall() {
+    ball = { x: SLING_X, y: SLING_Y, vx: 0, vy: 0, active: false, trail: [] };
+    launched = false; settled = false; settleTimer = 0;
+  }
+
+  function startLevel() {
+    generateLevel(levelNum);
+    resetBall();
+    gameOver = false;
+  }
+
+  window.startGame = function() {
+    score = 0; levelNum = 1; shotsLeft = 3;
+    totalMoonysHit = 0; totalBlocksSmashed = 0;
+    particles = [];
+    canvas = document.getElementById('game-canvas');
+    ctx = canvas.getContext('2d');
+    showScreen('game-screen');
+    startLevel();
+    updateHUD();
+    requestAnimationFrame(loop);
+  };
+
+  function updateHUD() {
+    document.getElementById('score').textContent = score;
+    document.getElementById('level').textContent = levelNum;
+    document.getElementById('shots').textContent = shotsLeft;
+  }
+
+  // Input handling
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = W / rect.width;
+    const scaleY = H / rect.height;
+    const t = e.touches ? e.touches[0] : e;
+    return { x: (t.clientX - rect.left) * scaleX, y: (t.clientY - rect.top) * scaleY };
+  }
+
+  function onDown(e) {
+    if (launched || gameOver) return;
+    e.preventDefault();
+    const p = getPos(e);
+    const dx = p.x - ball.x, dy = p.y - ball.y;
+    if (Math.sqrt(dx * dx + dy * dy) < 40) {
+      dragging = true;
+    }
+  }
+
+  function onMove(e) {
+    if (!dragging) return;
+    e.preventDefault();
+    const p = getPos(e);
+    let dx = p.x - SLING_X, dy = p.y - SLING_Y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > MAX_PULL) { dx = dx / dist * MAX_PULL; dy = dy / dist * MAX_PULL; }
+    ball.x = SLING_X + dx;
+    ball.y = SLING_Y + dy;
+    dragX = dx; dragY = dy;
+  }
+
+  function onUp(e) {
+    if (!dragging) return;
+    e.preventDefault();
+    dragging = false;
+    const power = Math.sqrt(dragX * dragX + dragY * dragY);
+    if (power < 10) { ball.x = SLING_X; ball.y = SLING_Y; return; }
+    ball.vx = -dragX * 0.18;
+    ball.vy = -dragY * 0.18;
+    ball.active = true;
+    launched = true;
+    shotsLeft--;
+    updateHUD();
+  }
+
+  // Physics
+  function circleRect(cx, cy, cr, rx, ry, rw, rh) {
+    const closestX = Math.max(rx, Math.min(cx, rx + rw));
+    const closestY = Math.max(ry, Math.min(cy, ry + rh));
+    const dx = cx - closestX, dy = cy - closestY;
+    return dx * dx + dy * dy < cr * cr;
+  }
+
+  function spawnParticles(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x, y, vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6 - 2,
+        life: 30 + Math.random() * 20, maxLife: 50, color, size: 2 + Math.random() * 3
+      });
+    }
+  }
+
+  function update() {
+    if (gameOver) return;
+
+    // Ball physics
+    if (ball.active) {
+      ball.vy += GRAVITY;
+      ball.x += ball.vx;
+      ball.y += ball.vy;
+      ball.trail.push({ x: ball.x, y: ball.y });
+      if (ball.trail.length > 20) ball.trail.shift();
+
+      // Ground bounce
+      if (ball.y >= GROUND_Y - BALL_R) {
+        ball.y = GROUND_Y - BALL_R;
+        ball.vy *= -0.4;
+        ball.vx *= 0.8;
+        if (Math.abs(ball.vy) < 1) ball.vy = 0;
+      }
+
+      // Walls
+      if (ball.x < BALL_R) { ball.x = BALL_R; ball.vx *= -0.5; }
+      if (ball.x > W - BALL_R) { ball.x = W - BALL_R; ball.vx *= -0.5; }
+      if (ball.y < BALL_R) { ball.y = BALL_R; ball.vy *= -0.3; }
+
+      // Block collisions
+      blocks.forEach(b => {
+        if (b.dead) return;
+        if (circleRect(ball.x, ball.y, BALL_R, b.x, b.y, b.w, b.h)) {
+          const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+          b.hp -= Math.max(1, Math.floor(speed / 5));
+          // Push block
+          b.vx += ball.vx * 0.3;
+          b.vy += ball.vy * 0.2;
+          b.va += (Math.random() - 0.5) * 0.1;
+          // Bounce ball
+          const bcx = b.x + b.w / 2, bcy = b.y + b.h / 2;
+          const nx = ball.x - bcx, ny = ball.y - bcy;
+          const len = Math.sqrt(nx * nx + ny * ny) || 1;
+          ball.vx = (nx / len) * speed * 0.5;
+          ball.vy = (ny / len) * speed * 0.5;
+
+          if (b.hp <= 0) {
+            b.dead = true;
+            const pts = b.type === 'stone' ? 30 : b.type === 'wood' ? 20 : 10;
+            score += pts;
+            totalBlocksSmashed++;
+            const color = b.type === 'stone' ? '#8b949e' : b.type === 'wood' ? '#f0883e' : '#00ff88';
+            spawnParticles(b.x + b.w / 2, b.y + b.h / 2, color, 8);
+          }
+        }
+      });
+
+      // Moony collisions
+      moonys.forEach(m => {
+        if (m.dead) return;
+        const dx = ball.x - m.x, dy = ball.y - m.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < BALL_R + m.r) {
+          m.dead = true; m.hit = true;
+          score += 100;
+          totalMoonysHit++;
+          spawnParticles(m.x, m.y, '#ff5050', 12);
+          ball.vx *= 0.7; ball.vy *= 0.7;
+        }
+      });
+
+      // Block gravity & settling
+      blocks.forEach(b => {
+        if (b.dead) return;
+        b.vy += GRAVITY * 0.5;
+        b.x += b.vx; b.y += b.vy;
+        b.angle += b.va;
+        b.vx *= 0.95; b.va *= 0.95;
+
+        if (b.y + b.h >= GROUND_Y) {
+          b.y = GROUND_Y - b.h; b.vy *= -0.2; b.vx *= 0.7;
+          if (Math.abs(b.vy) < 0.5) b.vy = 0;
+        }
+        if (b.x < 0) { b.x = 0; b.vx *= -0.3; }
+        if (b.x + b.w > W) { b.x = W - b.w; b.vx *= -0.3; }
+      });
+
+      // Block-on-block stacking
+      for (let i = 0; i < blocks.length; i++) {
+        if (blocks[i].dead) continue;
+        for (let j = i + 1; j < blocks.length; j++) {
+          if (blocks[j].dead) continue;
+          const a = blocks[i], bb = blocks[j];
+          if (a.x < bb.x + bb.w && a.x + a.w > bb.x && a.y < bb.y + bb.h && a.y + a.h > bb.y) {
+            const overlapY = Math.min(a.y + a.h, bb.y + bb.h) - Math.max(a.y, bb.y);
+            if (a.y < bb.y) { bb.y = a.y + a.h; } else { a.y = bb.y + bb.h; }
+            a.vy *= -0.2; bb.vy *= -0.2;
+          }
+        }
+      }
+
+      // Moony gravity
+      moonys.forEach(m => {
+        if (m.dead) return;
+        m.vy = (m.vy || 0) + GRAVITY * 0.3;
+        m.y += m.vy;
+        if (m.y + m.r >= GROUND_Y) { m.y = GROUND_Y - m.r; m.vy = 0; }
+        // Rest on blocks
+        blocks.forEach(b => {
+          if (b.dead) return;
+          if (m.x > b.x && m.x < b.x + b.w && m.y + m.r > b.y && m.y + m.r < b.y + b.h / 2 + m.r) {
+            m.y = b.y - m.r; m.vy = 0;
+          }
+        });
+      });
+
+      // Check if ball settled
+      const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+      if (speed < 0.3 && ball.y >= GROUND_Y - BALL_R - 2) {
+        settleTimer++;
+        if (settleTimer > 40) settled = true;
+      } else if (ball.x > W + 20 || ball.y > H + 20) {
+        settled = true;
+      } else {
+        settleTimer = 0;
+      }
+
+      if (settled) {
+        // Check level clear
+        const allMoonysDead = moonys.every(m => m.dead);
+        if (allMoonysDead) {
+          // Bonus for remaining shots
+          score += shotsLeft * 50;
+          levelNum++;
+          shotsLeft = Math.min(shotsLeft + 2, 5);
+          startLevel();
+          updateHUD();
+        } else if (shotsLeft > 0) {
+          resetBall();
+        } else {
+          endGame();
+        }
+      }
+    }
+
+    // Particles
+    particles = particles.filter(p => {
+      p.x += p.vx; p.y += p.vy; p.vy += 0.1; p.life--;
+      return p.life > 0;
+    });
+  }
+
+  function drawBlock(b) {
+    if (b.dead) return;
+    ctx.save();
+    ctx.translate(b.x + b.w / 2, b.y + b.h / 2);
+    ctx.rotate(b.angle);
+    const dmg = 1 - b.hp / b.maxHp;
+    if (b.type === 'stone') {
+      ctx.fillStyle = `rgb(${100 + dmg * 50}, ${110 + dmg * 30}, ${120 + dmg * 30})`;
+      ctx.strokeStyle = '#6e7681';
+    } else if (b.type === 'wood') {
+      ctx.fillStyle = `rgb(${180 + dmg * 40}, ${120 - dmg * 40}, ${50})`;
+      ctx.strokeStyle = '#b87333';
+    } else {
+      ctx.fillStyle = `rgba(0, 255, 136, ${0.4 + dmg * 0.3})`;
+      ctx.strokeStyle = '#00ff88';
+    }
+    ctx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h);
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(-b.w / 2, -b.h / 2, b.w, b.h);
+    // Crack lines for damaged blocks
+    if (dmg > 0) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-b.w * 0.2, -b.h * 0.3);
+      ctx.lineTo(b.w * 0.1, b.h * 0.2);
+      ctx.stroke();
+    }
+    // Label cash blocks
+    if (b.type === 'cash') {
+      ctx.fillStyle = '#0d1117';
+      ctx.font = 'bold 10px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('$', 0, 4);
+    }
+    ctx.restore();
+  }
+
+  function drawMoony(m) {
+    if (m.dead) return;
+    ctx.save();
+    ctx.translate(m.x, m.y);
+    // Moon body
+    ctx.fillStyle = '#c9d1d9';
+    ctx.beginPath(); ctx.arc(0, 0, m.r, 0, Math.PI * 2); ctx.fill();
+    // Dark side
+    ctx.fillStyle = '#21262d';
+    ctx.beginPath(); ctx.arc(4, -2, m.r * 0.7, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#c9d1d9';
+    ctx.beginPath(); ctx.arc(-1, -2, m.r * 0.7, 0, Math.PI * 2); ctx.fill();
+    // Face
+    ctx.fillStyle = '#0d1117';
+    ctx.beginPath(); ctx.arc(-4, -3, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(4, -3, 2, 0, Math.PI * 2); ctx.fill();
+    // Worried mouth
+    ctx.strokeStyle = '#0d1117'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(0, 4, 4, 0.2, Math.PI - 0.2); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawBall() {
+    if (!ball) return;
+    // Trail
+    ctx.strokeStyle = 'rgba(0,255,136,0.3)';
+    ctx.lineWidth = 2;
+    if (ball.trail.length > 1) {
+      ctx.beginPath();
+      ctx.moveTo(ball.trail[0].x, ball.trail[0].y);
+      for (let i = 1; i < ball.trail.length; i++) {
+        ctx.lineTo(ball.trail[i].x, ball.trail[i].y);
+      }
+      ctx.stroke();
+    }
+    // Dippy ball
+    ctx.fillStyle = '#00ff88';
+    ctx.beginPath(); ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI * 2); ctx.fill();
+    // Face
+    ctx.fillStyle = '#0d1117';
+    ctx.beginPath(); ctx.arc(ball.x + 3, ball.y - 2, 2.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(ball.x + 4, ball.y - 3, 1, 0, Math.PI * 2); ctx.fill();
+    // Leaf
+    ctx.fillStyle = '#00cc6e';
+    ctx.beginPath();
+    ctx.ellipse(ball.x - 2, ball.y - BALL_R + 1, 5, 3, -0.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawSlingshot() {
+    // Y-frame
+    ctx.strokeStyle = '#b87333'; ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(SLING_X - 12, SLING_Y + 40);
+    ctx.lineTo(SLING_X - 6, SLING_Y);
+    ctx.lineTo(SLING_X - 12, SLING_Y - 20);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(SLING_X + 12, SLING_Y + 40);
+    ctx.lineTo(SLING_X + 6, SLING_Y);
+    ctx.lineTo(SLING_X + 12, SLING_Y - 20);
+    ctx.stroke();
+
+    // Elastic band (when dragging)
+    if (dragging || !launched) {
+      ctx.strokeStyle = '#ff5050'; ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(SLING_X - 12, SLING_Y - 20);
+      ctx.lineTo(ball.x, ball.y);
+      ctx.lineTo(SLING_X + 12, SLING_Y - 20);
+      ctx.stroke();
+    }
+
+    // Trajectory preview
+    if (dragging) {
+      const pvx = -dragX * 0.18, pvy = -dragY * 0.18;
+      ctx.strokeStyle = 'rgba(255,80,80,0.3)'; ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      let px = ball.x, py = ball.y, pvxs = pvx, pvys = pvy;
+      ctx.moveTo(px, py);
+      for (let i = 0; i < 30; i++) {
+        pvys += GRAVITY;
+        px += pvxs; py += pvys;
+        ctx.lineTo(px, py);
+        if (py > GROUND_Y) break;
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Ground
+    ctx.fillStyle = '#161b22';
+    ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+    ctx.strokeStyle = '#21262d'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, GROUND_Y); ctx.lineTo(W, GROUND_Y); ctx.stroke();
+
+    // Grid lines (subtle)
+    ctx.strokeStyle = 'rgba(33,38,45,0.5)'; ctx.lineWidth = 0.5;
+    for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, GROUND_Y); ctx.stroke(); }
+    for (let y = 0; y < GROUND_Y; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+    drawSlingshot();
+    blocks.forEach(drawBlock);
+    moonys.forEach(drawMoony);
+    drawBall();
+
+    // Particles
+    particles.forEach(p => {
+      ctx.globalAlpha = p.life / p.maxLife;
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  function loop() {
+    if (gameOver) return;
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function endGame() {
+    gameOver = true;
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('stat-levels').textContent = levelNum - 1;
+    document.getElementById('stat-moonys').textContent = totalMoonysHit;
+    document.getElementById('stat-blocks').textContent = totalBlocksSmashed;
+
+    const prev = getHighScore();
+    const isNew = score > prev;
+    if (isNew) setHighScore(score);
+    document.getElementById('gameover-high-score').textContent = isNew
+      ? 'NEW HIGH SCORE! (prev: ' + prev + ')'
+      : 'High score: ' + prev;
+    document.getElementById('gameover-title').textContent = isNew ? 'NEW RECORD!' : 'DEMOLISHED!';
+    document.getElementById('gameover-roast').textContent =
+      '"' + ROASTS[Math.floor(Math.random() * ROASTS.length)] + '"';
+
+    showScreen('gameover-screen');
+    DippyLB.onGameOver(score);
+  }
+
+  // Canvas event listeners (set up once)
+  function setupEvents() {
+    const c = document.getElementById('game-canvas');
+    if (!c) return;
+    c.addEventListener('mousedown', onDown);
+    c.addEventListener('mousemove', onMove);
+    c.addEventListener('mouseup', onUp);
+    c.addEventListener('touchstart', onDown, { passive: false });
+    c.addEventListener('touchmove', onMove, { passive: false });
+    c.addEventListener('touchend', onUp, { passive: false });
+  }
+
+  // Re-setup events each time game starts
+  const origStart = window.startGame;
+  window.startGame = function() {
+    origStart();
+    setupEvents();
+  };
+
+  // Show high score on title
+  const hs = getHighScore();
+  if (hs > 0) {
+    document.getElementById('title-high-score').textContent = 'High score: ' + hs;
+  }
+
+  DippyLB.init('moony-slingshot');
+})();
+</script>
+{{ end }}
