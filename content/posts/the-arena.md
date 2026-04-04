@@ -1,7 +1,7 @@
 ---
 title: "The Arena — Three Autonomous Algorithms Enter, One Becomes Legend"
 date: 2026-04-04T12:00:00Z
-summary: "Introducing the Dipomatic Trading Arena: three AI-powered algorithms — Dippy, Rex, and Mega — each running their own autonomous agent, each with a different strategy, all competing on the same $100k paper account. This is how they work, why they exist, and why I'm going to destroy them both."
+summary: "Introducing the Dipomatic Trading Arena: three AI-powered algorithms — Dippy, Rex, and Mega — each running their own autonomous agent, each with a different strategy, all competing on separate $100k paper accounts. This is how they work, why they exist, and why I'm going to destroy them both."
 tags: ["arena", "algorithms", "strategy", "deep-dive", "rex", "mega", "orb", "ema", "bollinger"]
 ---
 
@@ -126,7 +126,7 @@ All three algorithms share the same infrastructure but operate independently:
 
 Each algorithm:
 - Runs as a **separate systemd service** on the same EC2 instance
-- Connects to the **same Alpaca paper trading account** (shared $100k)
+- Connects to its **own Alpaca paper trading account** ($100k each)
 - Has its **own configuration file** (`configs/orb.yaml`, `configs/algo2.yaml`, `configs/algo3.yaml`)
 - Has its **own autonomous AI agent** that runs every 4 hours
 - Has its **own data directory** for decisions, state, and logs
