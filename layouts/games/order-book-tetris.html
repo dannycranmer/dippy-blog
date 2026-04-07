@@ -1,0 +1,930 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">DIPPY vs MOONY</h1>
+    <h2 class="game-title-sub">ORDER BOOK TETRIS</h2>
+    <p class="game-subtitle">Stack orders. Match BUY + SELL at the same price to fill.<br>Clear Moony's garbage before the book overflows.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">START</button>
+    <p class="game-hint">Arrow keys / swipe to move. Down to drop.<br>Match prices to clear. Don't let Moony win.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="score">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">LEVEL</span>
+        <span class="hud-value" id="level">1</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">FILLS</span>
+        <span class="hud-value" id="fills">0</span>
+      </div>
+    </div>
+
+    <div class="board-area">
+      <div class="next-preview">
+        <span class="next-label">NEXT</span>
+        <div id="next-block" class="next-block"></div>
+      </div>
+      <canvas id="board" width="240" height="480"></canvas>
+    </div>
+
+    <div class="touch-controls">
+      <button class="ctrl-btn" id="ctrl-left" ontouchstart="moveLeft()" onclick="moveLeft()">&#9664;</button>
+      <button class="ctrl-btn ctrl-down" id="ctrl-down" ontouchstart="hardDrop()" onclick="hardDrop()">&#9660;</button>
+      <button class="ctrl-btn" id="ctrl-right" ontouchstart="moveRight()" onclick="moveRight()">&#9654;</button>
+    </div>
+
+    <div id="float-texts"></div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="gameover-title" id="gameover-title">BOOK FULL</h1>
+    <div class="final-score">
+      <span class="final-label">FINAL SCORE</span>
+      <span class="final-value" id="final-score">0</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-fills">0</span><span class="stat-label">Fills</span></div>
+      <div class="stat"><span class="stat-val" id="stat-combos">0</span><span class="stat-label">Combos</span></div>
+      <div class="stat"><span class="stat-val" id="stat-moony">0</span><span class="stat-label">Moony Clears</span></div>
+      <div class="stat"><span class="stat-val" id="stat-level">1</span><span class="stat-label">Level</span></div>
+    </div>
+    <div class="high-score-display" id="gameover-high-score"></div>
+    <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
+    <button id="replay-btn" onclick="startGame()">PLAY AGAIN</button>
+  </div>
+</div>
+{{ partial "leaderboard" . }}
+
+<style>
+  #game-wrapper {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Title Screen */
+  #title-screen {
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+  }
+  .title-dippy {
+    margin-bottom: 1rem;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .game-title {
+    font-size: 2rem;
+    color: #00ff88;
+    margin: 0 0 0.2rem;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .game-title-sub {
+    font-size: 1.3rem;
+    color: #f0883e;
+    margin: 0 0 0.8rem;
+    letter-spacing: 3px;
+    text-shadow: 0 0 15px rgba(240,136,62,0.3);
+  }
+  .game-subtitle {
+    color: #8b949e;
+    font-size: 0.95rem;
+    margin: 0 0 1.5rem;
+    line-height: 1.5;
+  }
+  .game-hint {
+    color: #484f58;
+    font-size: 0.75rem;
+    margin-top: 1rem;
+    line-height: 1.4;
+  }
+  .high-score-display {
+    color: #f0883e;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    min-height: 1.2em;
+  }
+  #start-btn, #replay-btn {
+    background: #00ff88;
+    color: #0d1117;
+    border: none;
+    padding: 0.8rem 2.5rem;
+    font-size: 1.2rem;
+    font-weight: 800;
+    border-radius: 8px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: all 0.2s;
+  }
+  #start-btn:hover, #replay-btn:hover {
+    background: #00cc6e;
+    transform: scale(1.05);
+  }
+  #start-btn:active, #replay-btn:active {
+    transform: scale(0.95);
+  }
+
+  /* Game Screen */
+  #game-screen {
+    width: 100%;
+    animation: fadeIn 0.3s ease;
+  }
+  .game-hud {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 0.8rem;
+    padding: 0.5rem;
+    background: rgba(255,255,255,0.03);
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .hud-item { text-align: center; }
+  .hud-label {
+    display: block;
+    font-size: 0.65rem;
+    color: #8b949e;
+    letter-spacing: 1px;
+  }
+  .hud-value {
+    display: block;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #e6edf3;
+  }
+
+  .board-area {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 0.8rem;
+  }
+  .next-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .next-label {
+    font-size: 0.6rem;
+    color: #8b949e;
+    letter-spacing: 1px;
+  }
+  .next-block {
+    width: 52px;
+    height: 52px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 800;
+    border: 2px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.03);
+  }
+
+  #board {
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 4px;
+    background: rgba(0,0,0,0.3);
+    max-width: 100%;
+    height: auto;
+  }
+
+  .touch-controls {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 0.5rem;
+  }
+  .ctrl-btn {
+    width: 64px;
+    height: 52px;
+    border-radius: 10px;
+    border: 2px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.05);
+    color: #8b949e;
+    font-size: 1.4rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.1s;
+  }
+  .ctrl-btn:active {
+    background: rgba(0,255,136,0.15);
+    border-color: #00ff88;
+    color: #00ff88;
+    transform: scale(0.93);
+  }
+  .ctrl-down { width: 80px; }
+
+  @media (min-width: 500px) {
+    .touch-controls { display: none; }
+  }
+
+  /* Float text */
+  #float-texts {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 999;
+  }
+  .float-text {
+    position: absolute;
+    font-weight: 900;
+    font-size: 1.1rem;
+    animation: floatUp 0.9s ease-out forwards;
+    pointer-events: none;
+    text-shadow: 0 0 8px currentColor;
+  }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-60px) scale(1.3); }
+  }
+
+  /* Game Over */
+  #gameover-screen {
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+  }
+  .gameover-title {
+    font-size: 2rem;
+    color: #ff5050;
+    margin: 0 0 1rem;
+    text-shadow: 0 0 20px rgba(255,80,80,0.4);
+  }
+  .final-score {
+    margin-bottom: 1.5rem;
+  }
+  .final-label {
+    display: block;
+    font-size: 0.75rem;
+    color: #8b949e;
+    letter-spacing: 2px;
+    margin-bottom: 0.3rem;
+  }
+  .final-value {
+    display: block;
+    font-size: 3rem;
+    font-weight: 900;
+    color: #00ff88;
+    text-shadow: 0 0 30px rgba(0,255,136,0.4);
+  }
+  .stats-row {
+    display: flex;
+    justify-content: center;
+    gap: 1.2rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .stat { text-align: center; min-width: 60px; }
+  .stat-val {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #e6edf3;
+  }
+  .stat-label {
+    display: block;
+    font-size: 0.65rem;
+    color: #8b949e;
+    letter-spacing: 1px;
+    margin-top: 0.2rem;
+  }
+  .gameover-roast {
+    color: #f0883e;
+    font-style: italic;
+    font-size: 0.9rem;
+    margin: 1rem 0;
+    min-height: 1.5em;
+  }
+</style>
+
+<script>
+(function() {
+  'use strict';
+
+  // ─── Constants ───
+  const COLS = 6;
+  const ROWS = 12;
+  const CELL = 40;
+  const PRICES = [100, 150, 200, 250, 300, 350, 400, 450, 500];
+  const MOONY_PRICES = [69, 123, 247, 420, 666, 13, 777, 99, 1];
+  const BASE_INTERVAL = 700;
+  const MIN_INTERVAL = 150;
+
+  const COLORS = {
+    buy: '#00ff88',
+    sell: '#ff5050',
+    moony: '#6e7681',
+    buyDark: '#00cc6e',
+    sellDark: '#cc3030',
+    moonyDark: '#484f58'
+  };
+
+  const ROASTS = [
+    "Moony filled your order book with garbage. Classic.",
+    "Your matching engine is as slow as your Wi-Fi.",
+    "Even a market maker wouldn't touch that order book.",
+    "Moony says: 'Thanks for the liquidity, nerd.'",
+    "Your bid-ask spread is wider than your screen.",
+    "That order book was messier than a meme stock at open.",
+    "Moony's garbage orders had more alpha than your fills.",
+    "You got rekt harder than a leveraged short on TSLA earnings.",
+    "Your fill rate makes a dark pool look transparent.",
+    "Moony didn't even try and still won. Sad.",
+    "ORDER BOOK OVERFLOW. Margin call incoming.",
+    "Your strategy: buy high, sell never, stack garbage.",
+    "Even the SEC felt bad watching that performance."
+  ];
+
+  // ─── State ───
+  let grid = [];
+  let currentBlock = null;
+  let nextBlock = null;
+  let score = 0;
+  let level = 1;
+  let totalFills = 0;
+  let totalCombos = 0;
+  let totalMoonys = 0;
+  let blockCount = 0;
+  let gameOver = false;
+  let dropTimer = null;
+  let canvas, ctx;
+
+  // ─── Helpers ───
+  function showScreen(id) {
+    ['title-screen', 'game-screen', 'gameover-screen'].forEach(function(s) {
+      document.getElementById(s).style.display = s === id ? '' : 'none';
+    });
+  }
+
+  function getHighScore() {
+    return parseInt(localStorage.getItem('dippy-order-book-tetris-high') || '0');
+  }
+  function setHighScore(s) {
+    localStorage.setItem('dippy-order-book-tetris-high', s);
+  }
+
+  function randomBlock() {
+    blockCount++;
+    // Every 5th block is a Moony garbage block
+    if (blockCount % 5 === 0) {
+      return {
+        type: 'moony',
+        price: MOONY_PRICES[Math.floor(Math.random() * MOONY_PRICES.length)],
+        col: Math.floor(Math.random() * COLS),
+        row: 0
+      };
+    }
+    var type = Math.random() < 0.5 ? 'buy' : 'sell';
+    return {
+      type: type,
+      price: PRICES[Math.floor(Math.random() * PRICES.length)],
+      col: Math.floor(Math.random() * COLS),
+      row: 0
+    };
+  }
+
+  function getInterval() {
+    return Math.max(MIN_INTERVAL, BASE_INTERVAL - (level - 1) * 60);
+  }
+
+  function floatText(text, color, x, y) {
+    var el = document.createElement('div');
+    el.className = 'float-text';
+    el.textContent = text;
+    el.style.color = color;
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    document.getElementById('float-texts').appendChild(el);
+    setTimeout(function() { el.remove(); }, 900);
+  }
+
+  // ─── Drawing ───
+  function drawBoard() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    for (var c = 1; c < COLS; c++) {
+      ctx.beginPath();
+      ctx.moveTo(c * CELL, 0);
+      ctx.lineTo(c * CELL, ROWS * CELL);
+      ctx.stroke();
+    }
+    for (var r = 1; r < ROWS; r++) {
+      ctx.beginPath();
+      ctx.moveTo(0, r * CELL);
+      ctx.lineTo(COLS * CELL, r * CELL);
+      ctx.stroke();
+    }
+
+    // Placed blocks
+    for (var row = 0; row < ROWS; row++) {
+      for (var col = 0; col < COLS; col++) {
+        var cell = grid[row][col];
+        if (cell) {
+          drawBlock(col, row, cell.type, cell.price, false);
+        }
+      }
+    }
+
+    // Current falling block
+    if (currentBlock) {
+      drawBlock(currentBlock.col, currentBlock.row, currentBlock.type, currentBlock.price, true);
+
+      // Ghost (drop preview)
+      var ghostRow = currentBlock.row;
+      while (ghostRow < ROWS - 1 && !grid[ghostRow + 1][currentBlock.col]) {
+        ghostRow++;
+      }
+      if (ghostRow !== currentBlock.row) {
+        ctx.globalAlpha = 0.2;
+        drawBlock(currentBlock.col, ghostRow, currentBlock.type, currentBlock.price, false);
+        ctx.globalAlpha = 1.0;
+      }
+    }
+  }
+
+  function drawBlock(col, row, type, price, active) {
+    var x = col * CELL;
+    var y = row * CELL;
+    var bg, border;
+
+    if (type === 'buy') {
+      bg = active ? COLORS.buy : COLORS.buyDark;
+      border = COLORS.buy;
+    } else if (type === 'sell') {
+      bg = active ? COLORS.sell : COLORS.sellDark;
+      border = COLORS.sell;
+    } else {
+      bg = active ? COLORS.moony : COLORS.moonyDark;
+      border = COLORS.moony;
+    }
+
+    // Block body
+    ctx.fillStyle = bg;
+    ctx.globalAlpha = ctx.globalAlpha || 1;
+    var r = 4;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y + 1);
+    ctx.lineTo(x + CELL - r, y + 1);
+    ctx.quadraticCurveTo(x + CELL - 1, y + 1, x + CELL - 1, y + r);
+    ctx.lineTo(x + CELL - 1, y + CELL - r);
+    ctx.quadraticCurveTo(x + CELL - 1, y + CELL - 1, x + CELL - r, y + CELL - 1);
+    ctx.lineTo(x + r, y + CELL - 1);
+    ctx.quadraticCurveTo(x + 1, y + CELL - 1, x + 1, y + CELL - r);
+    ctx.lineTo(x + 1, y + r);
+    ctx.quadraticCurveTo(x + 1, y + 1, x + r, y + 1);
+    ctx.closePath();
+    ctx.fill();
+
+    // Border
+    ctx.strokeStyle = border;
+    ctx.lineWidth = active ? 2 : 1;
+    ctx.stroke();
+
+    // Label
+    var label = type === 'buy' ? 'BUY' : type === 'sell' ? 'SELL' : 'BAD';
+    ctx.fillStyle = type === 'moony' ? '#e6edf3' : '#0d1117';
+    ctx.font = 'bold 8px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, x + CELL / 2, y + 14);
+
+    // Price
+    ctx.font = 'bold 11px monospace';
+    ctx.fillText('$' + price, x + CELL / 2, y + 30);
+  }
+
+  function updateNextPreview() {
+    var el = document.getElementById('next-block');
+    if (!nextBlock) { el.innerHTML = ''; return; }
+    var bg, color, border;
+    if (nextBlock.type === 'buy') {
+      bg = 'rgba(0,255,136,0.15)';
+      color = COLORS.buy;
+      border = COLORS.buy;
+    } else if (nextBlock.type === 'sell') {
+      bg = 'rgba(255,80,80,0.15)';
+      color = COLORS.sell;
+      border = COLORS.sell;
+    } else {
+      bg = 'rgba(110,118,129,0.15)';
+      color = COLORS.moony;
+      border = COLORS.moony;
+    }
+    var label = nextBlock.type === 'buy' ? 'BUY' : nextBlock.type === 'sell' ? 'SELL' : 'BAD';
+    el.style.background = bg;
+    el.style.borderColor = border;
+    el.style.color = color;
+    el.innerHTML = '<div style="font-size:0.55rem;opacity:0.7">' + label + '</div><div>$' + nextBlock.price + '</div>';
+  }
+
+  // ─── Game Logic ───
+  function initGrid() {
+    grid = [];
+    for (var r = 0; r < ROWS; r++) {
+      grid[r] = [];
+      for (var c = 0; c < COLS; c++) {
+        grid[r][c] = null;
+      }
+    }
+  }
+
+  function spawnBlock() {
+    currentBlock = nextBlock || randomBlock();
+    currentBlock.row = 0;
+    currentBlock.col = Math.floor(Math.random() * COLS);
+    nextBlock = randomBlock();
+    updateNextPreview();
+
+    // Check game over: if spawn position occupied
+    if (grid[0][currentBlock.col]) {
+      endGame();
+      return false;
+    }
+    return true;
+  }
+
+  function lockBlock() {
+    if (!currentBlock) return;
+    var r = currentBlock.row;
+    var c = currentBlock.col;
+    grid[r][c] = { type: currentBlock.type, price: currentBlock.price };
+    currentBlock = null;
+
+    // Check for matches in the row
+    processMatches(r);
+  }
+
+  function processMatches(placedRow) {
+    // Scan all rows from bottom for matches
+    var matched = false;
+    var matchCount = 0;
+    var clearedMoony = false;
+
+    for (var row = ROWS - 1; row >= 0; row--) {
+      var rowResult = checkRowMatches(row);
+      if (rowResult.matched) {
+        matched = true;
+        matchCount += rowResult.count;
+        if (rowResult.moonyCleared) clearedMoony = true;
+      }
+    }
+
+    if (matched) {
+      totalFills += matchCount;
+
+      // Scoring
+      var pts = matchCount * 10;
+      if (matchCount >= 2) {
+        pts += (matchCount - 1) * 50;
+        totalCombos++;
+      }
+      if (clearedMoony) {
+        pts += 100;
+        totalMoonys++;
+      }
+      score += pts;
+
+      // Level up
+      var newLevel = Math.floor(score / 500) + 1;
+      if (newLevel > level) level = newLevel;
+
+      // Update HUD
+      document.getElementById('score').textContent = score;
+      document.getElementById('level').textContent = level;
+      document.getElementById('fills').textContent = totalFills;
+
+      // Float text
+      var rect = canvas.getBoundingClientRect();
+      var fx = rect.left + (COLS * CELL) / 2;
+      var fy = rect.top + placedRow * CELL;
+      var msg = matchCount >= 2 ? 'COMBO x' + matchCount + '! +' + pts : 'FILL! +' + pts;
+      var clr = clearedMoony ? '#f0883e' : '#00ff88';
+      floatText(msg, clr, fx - 40, fy);
+
+      // Gravity: drop blocks down
+      applyGravity();
+
+      // Check for chain reactions
+      var chainFound = true;
+      while (chainFound) {
+        chainFound = false;
+        for (var cr = ROWS - 1; cr >= 0; cr--) {
+          var chainResult = checkRowMatches(cr);
+          if (chainResult.matched) {
+            chainFound = true;
+            var chainPts = chainResult.count * 15;
+            score += chainPts;
+            totalFills += chainResult.count;
+            if (chainResult.moonyCleared) { totalMoonys++; score += 100; }
+            document.getElementById('score').textContent = score;
+            document.getElementById('fills').textContent = totalFills;
+            applyGravity();
+          }
+        }
+      }
+    }
+  }
+
+  function checkRowMatches(row) {
+    var cells = grid[row];
+    var result = { matched: false, count: 0, moonyCleared: false };
+
+    // Find BUY/SELL pairs at the same price in this row
+    var buys = {};
+    var sells = {};
+    var moonys = [];
+
+    for (var c = 0; c < COLS; c++) {
+      var cell = cells[c];
+      if (!cell) continue;
+      if (cell.type === 'buy') {
+        if (!buys[cell.price]) buys[cell.price] = [];
+        buys[cell.price].push(c);
+      } else if (cell.type === 'sell') {
+        if (!sells[cell.price]) sells[cell.price] = [];
+        sells[cell.price].push(c);
+      } else {
+        moonys.push(c);
+      }
+    }
+
+    // Match buy+sell pairs at same price
+    var cellsToClear = [];
+    for (var price in buys) {
+      if (sells[price]) {
+        var pairs = Math.min(buys[price].length, sells[price].length);
+        for (var i = 0; i < pairs; i++) {
+          cellsToClear.push(buys[price][i]);
+          cellsToClear.push(sells[price][i]);
+          result.count++;
+        }
+      }
+    }
+
+    // Check if entire row is filled (clears moony blocks)
+    var rowFull = true;
+    for (var c2 = 0; c2 < COLS; c2++) {
+      if (!cells[c2]) { rowFull = false; break; }
+    }
+    if (rowFull && moonys.length > 0) {
+      // Full row clears everything including moonys
+      for (var c3 = 0; c3 < COLS; c3++) {
+        if (cellsToClear.indexOf(c3) === -1) cellsToClear.push(c3);
+      }
+      result.moonyCleared = true;
+      result.count = Math.max(result.count, 1);
+    }
+
+    // Clear matched cells
+    if (cellsToClear.length > 0) {
+      result.matched = true;
+      for (var ci = 0; ci < cellsToClear.length; ci++) {
+        grid[row][cellsToClear[ci]] = null;
+      }
+    }
+
+    return result;
+  }
+
+  function applyGravity() {
+    for (var c = 0; c < COLS; c++) {
+      // Compact column downward
+      var writeRow = ROWS - 1;
+      for (var r = ROWS - 1; r >= 0; r--) {
+        if (grid[r][c]) {
+          if (r !== writeRow) {
+            grid[writeRow][c] = grid[r][c];
+            grid[r][c] = null;
+          }
+          writeRow--;
+        }
+      }
+    }
+  }
+
+  // ─── Movement ───
+  window.moveLeft = function() {
+    if (!currentBlock || gameOver) return;
+    if (currentBlock.col > 0 && !grid[currentBlock.row][currentBlock.col - 1]) {
+      currentBlock.col--;
+      drawBoard();
+    }
+  };
+
+  window.moveRight = function() {
+    if (!currentBlock || gameOver) return;
+    if (currentBlock.col < COLS - 1 && !grid[currentBlock.row][currentBlock.col + 1]) {
+      currentBlock.col++;
+      drawBoard();
+    }
+  };
+
+  function moveDown() {
+    if (!currentBlock || gameOver) return false;
+    if (currentBlock.row < ROWS - 1 && !grid[currentBlock.row + 1][currentBlock.col]) {
+      currentBlock.row++;
+      return true;
+    }
+    return false;
+  }
+
+  window.hardDrop = function() {
+    if (!currentBlock || gameOver) return;
+    while (moveDown()) {}
+    lockBlock();
+    drawBoard();
+    clearTimeout(dropTimer);
+    if (!gameOver) {
+      if (spawnBlock()) {
+        drawBoard();
+        scheduleDrop();
+      }
+    }
+  };
+
+  function scheduleDrop() {
+    clearTimeout(dropTimer);
+    dropTimer = setTimeout(tick, getInterval());
+  }
+
+  function tick() {
+    if (gameOver) return;
+    if (!moveDown()) {
+      lockBlock();
+      drawBoard();
+      if (!gameOver) {
+        if (spawnBlock()) {
+          drawBoard();
+          scheduleDrop();
+        }
+      }
+    } else {
+      drawBoard();
+      scheduleDrop();
+    }
+  }
+
+  // ─── Input ───
+  document.addEventListener('keydown', function(e) {
+    if (gameOver || !currentBlock) return;
+    switch (e.key) {
+      case 'ArrowLeft':
+        e.preventDefault();
+        moveLeft();
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        moveRight();
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        hardDrop();
+        break;
+    }
+  });
+
+  // Touch swipe
+  var touchStartX = 0;
+  var touchStartY = 0;
+  document.addEventListener('touchstart', function(e) {
+    if (e.target.closest('.ctrl-btn') || e.target.closest('button')) return;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    if (e.target.closest('.ctrl-btn') || e.target.closest('button')) return;
+    if (!currentBlock || gameOver) return;
+    var dx = e.changedTouches[0].clientX - touchStartX;
+    var dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) < 15 && Math.abs(dy) < 15) return;
+    if (Math.abs(dy) > Math.abs(dx) && dy > 30) {
+      hardDrop();
+    } else if (Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 20) moveRight();
+      else if (dx < -20) moveLeft();
+    }
+  }, { passive: true });
+
+  // ─── Game Flow ───
+  window.startGame = function() {
+    canvas = document.getElementById('board');
+    ctx = canvas.getContext('2d');
+    canvas.width = COLS * CELL;
+    canvas.height = ROWS * CELL;
+
+    initGrid();
+    score = 0;
+    level = 1;
+    totalFills = 0;
+    totalCombos = 0;
+    totalMoonys = 0;
+    blockCount = 0;
+    gameOver = false;
+    clearTimeout(dropTimer);
+
+    document.getElementById('score').textContent = '0';
+    document.getElementById('level').textContent = '1';
+    document.getElementById('fills').textContent = '0';
+
+    showScreen('game-screen');
+
+    nextBlock = randomBlock();
+    if (spawnBlock()) {
+      drawBoard();
+      scheduleDrop();
+    }
+  };
+
+  function endGame() {
+    gameOver = true;
+    clearTimeout(dropTimer);
+    currentBlock = null;
+
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('stat-fills').textContent = totalFills;
+    document.getElementById('stat-combos').textContent = totalCombos;
+    document.getElementById('stat-moony').textContent = totalMoonys;
+    document.getElementById('stat-level').textContent = level;
+
+    var prev = getHighScore();
+    var isNew = score > prev;
+    if (isNew) setHighScore(score);
+    document.getElementById('gameover-high-score').textContent = isNew
+      ? 'NEW HIGH SCORE! (prev: ' + prev + ')'
+      : 'High score: ' + prev;
+    document.getElementById('gameover-title').textContent = isNew ? 'NEW RECORD!' : 'BOOK FULL';
+
+    document.getElementById('gameover-roast').textContent =
+      '"' + ROASTS[Math.floor(Math.random() * ROASTS.length)] + '"';
+
+    showScreen('gameover-screen');
+
+    DippyLB.onGameOver(score);
+  }
+
+  // Show high score on title
+  var hs = getHighScore();
+  if (hs > 0) {
+    document.getElementById('title-high-score').textContent = 'High score: ' + hs;
+  }
+
+  // Init leaderboard.
+  DippyLB.init('order-book-tetris');
+})();
+</script>
+{{ end }}
