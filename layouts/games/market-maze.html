@@ -1,0 +1,699 @@
+{{ define "main" }}
+<div id="game-wrapper">
+
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">MARKET MAZE</h1>
+    <p class="game-subtitle">Navigate the trading floor. Dodge Moony.<br>Find the exit. Don't get caught.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">START</button>
+    <p class="game-hint">Arrow keys or swipe to move.<br>Collect coins. Escape the maze.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">LEVEL</span>
+        <span class="hud-value" id="hud-level">1</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">COINS</span>
+        <span class="hud-value" id="hud-coins">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">TIME</span>
+        <span class="hud-value" id="hud-timer">0.0</span>
+      </div>
+    </div>
+    <div id="maze-container"></div>
+    <div id="mobile-controls">
+      <button class="ctrl-btn" id="ctrl-up" ontouchstart="movePlayer(0,-1);event.preventDefault();" onclick="movePlayer(0,-1)">&#9650;</button>
+      <div class="ctrl-row">
+        <button class="ctrl-btn" id="ctrl-left" ontouchstart="movePlayer(-1,0);event.preventDefault();" onclick="movePlayer(-1,0)">&#9664;</button>
+        <button class="ctrl-btn" id="ctrl-down" ontouchstart="movePlayer(0,1);event.preventDefault();" onclick="movePlayer(0,1)">&#9660;</button>
+        <button class="ctrl-btn" id="ctrl-right" ontouchstart="movePlayer(1,0);event.preventDefault();" onclick="movePlayer(1,0)">&#9654;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="gameover-title" id="gameover-title">BUSTED</h1>
+    <div class="final-score">
+      <span class="final-label">FINAL SCORE</span>
+      <span class="final-value" id="final-score">0</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-level">1</span><span class="stat-label">Level</span></div>
+      <div class="stat"><span class="stat-val" id="stat-coins">0</span><span class="stat-label">Coins</span></div>
+      <div class="stat"><span class="stat-val" id="stat-time">0s</span><span class="stat-label">Time</span></div>
+    </div>
+    <div class="high-score-display" id="gameover-high-score"></div>
+    <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
+    <button id="replay-btn" onclick="startGame()">PLAY AGAIN</button>
+  </div>
+
+</div>
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  #game-wrapper {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 12px;
+    font-family: 'Courier New', monospace;
+    color: #e6edf3;
+    min-height: 100vh;
+    background: #0d1117;
+    user-select: none;
+    -webkit-user-select: none;
+    overflow: hidden;
+  }
+
+  /* Title Screen */
+  #title-screen { text-align: center; padding-top: 30px; }
+  .title-dippy { margin-bottom: 16px; }
+  .game-title {
+    font-size: 2.2em;
+    color: #00ff88;
+    text-shadow: 0 0 20px rgba(0,255,136,0.4);
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+  }
+  .game-subtitle {
+    color: #8b949e;
+    font-size: 0.85em;
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+  .high-score-display {
+    color: #f0883e;
+    font-size: 0.9em;
+    margin-bottom: 12px;
+    min-height: 1.2em;
+  }
+  #start-btn, #replay-btn {
+    background: #00ff88;
+    color: #0d1117;
+    border: none;
+    padding: 14px 48px;
+    font-size: 1.2em;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+    border-radius: 8px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: all 0.2s;
+    margin-bottom: 16px;
+  }
+  #start-btn:hover, #replay-btn:hover {
+    background: #00cc6e;
+    transform: scale(1.05);
+  }
+  .game-hint {
+    color: #484f58;
+    font-size: 0.75em;
+    line-height: 1.5;
+    margin-top: 4px;
+  }
+
+  /* HUD */
+  .game-hud {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    padding: 6px 0;
+  }
+  .hud-item { text-align: center; flex: 1; }
+  .hud-label { display: block; font-size: 0.65em; color: #8b949e; letter-spacing: 1px; }
+  .hud-value { display: block; font-size: 1.3em; font-weight: bold; color: #00ff88; }
+
+  /* Maze */
+  #maze-container {
+    display: grid;
+    gap: 0;
+    margin: 0 auto;
+    background: #0d1117;
+    border: 2px solid #00ff88;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .maze-cell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #161b22;
+    font-size: 14px;
+    border: 0 solid #30363d;
+  }
+  .maze-cell.wall-top    { border-top: 2px solid #30363d; }
+  .maze-cell.wall-right  { border-right: 2px solid #30363d; }
+  .maze-cell.wall-bottom { border-bottom: 2px solid #30363d; }
+  .maze-cell.wall-left   { border-left: 2px solid #30363d; }
+
+  .maze-cell .entity {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-size: inherit;
+    z-index: 2;
+    transition: none;
+  }
+  .maze-cell .coin {
+    color: #f0883e;
+    font-weight: bold;
+    font-size: 0.9em;
+    z-index: 1;
+  }
+  .maze-cell.exit-cell {
+    background: rgba(0,255,136,0.1);
+  }
+  .maze-cell.player-cell {
+    background: rgba(0,255,136,0.15);
+  }
+  .maze-cell.moony-cell {
+    background: rgba(255,80,80,0.15);
+  }
+
+  /* Mobile Controls */
+  #mobile-controls {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .ctrl-row {
+    display: flex;
+    gap: 4px;
+  }
+  .ctrl-btn {
+    width: 56px;
+    height: 56px;
+    background: #21262d;
+    color: #8b949e;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    font-size: 1.4em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ctrl-btn:active { background: #00ff88; color: #0d1117; }
+
+  /* Game Over */
+  #gameover-screen { text-align: center; padding-top: 40px; }
+  .gameover-title {
+    font-size: 2em;
+    color: #ff5050;
+    text-shadow: 0 0 20px rgba(255,80,80,0.4);
+    margin-bottom: 16px;
+  }
+  .final-score { margin-bottom: 16px; }
+  .final-label { display: block; color: #8b949e; font-size: 0.75em; letter-spacing: 1px; }
+  .final-value { display: block; font-size: 2.5em; font-weight: bold; color: #00ff88; }
+  .stats-row {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 16px;
+  }
+  .stat { text-align: center; }
+  .stat-val { display: block; font-size: 1.4em; font-weight: bold; color: #f0883e; }
+  .stat-label { display: block; font-size: 0.7em; color: #8b949e; }
+  .gameover-roast {
+    color: #8b949e;
+    font-size: 0.85em;
+    font-style: italic;
+    margin: 12px 0 16px;
+    min-height: 1.5em;
+  }
+
+  /* Level complete flash */
+  .level-flash {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2em;
+    font-weight: bold;
+    color: #00ff88;
+    text-shadow: 0 0 30px rgba(0,255,136,0.6);
+    z-index: 100;
+    pointer-events: none;
+    animation: flashIn 1s ease-out forwards;
+  }
+  @keyframes flashIn {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+  }
+
+  @media (min-width: 500px) {
+    #mobile-controls { display: none; }
+  }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  'use strict';
+
+  // ---- Constants ----
+  var BASE_SIZE = 13;
+  var SIZE_STEP = 2;
+  var MAX_SIZE = 25;
+  var BASE_MOONY_INTERVAL = 600;
+  var MOONY_SPEEDUP = 20;
+  var MIN_MOONY_INTERVAL = 150;
+  var COIN_COUNT_BASE = 8;
+  var LS_KEY = 'dippy-market-maze-high';
+
+  var ROASTS = [
+    "Moony caught you holding bags again.",
+    "You trade like you navigate. Poorly.",
+    "Even a dead cat bounce would have escaped that.",
+    "Moony sends regards from the trading floor.",
+    "Your exit strategy needs an exit strategy.",
+    "Congratulations, you played yourself.",
+    "Moony's portfolio outperformed your legs.",
+    "This is why you DCA, not YOLO through mazes.",
+    "Caught at the top. Classic retail move.",
+    "Your stop-loss? Your legs. Both failed.",
+    "Paper hands, paper legs.",
+    "Moony was cash gang the whole time. Still faster.",
+    "The market always wins. Especially Moony."
+  ];
+
+  // ---- State ----
+  var maze, cols, rows, player, moony, exitPos, coins;
+  var level, totalCoins, startTime, timerInterval, moonyInterval, moonyTimer;
+  var gameActive = false;
+  var highScore = parseInt(localStorage.getItem(LS_KEY)) || 0;
+
+  // ---- Screens ----
+  var titleScreen = document.getElementById('title-screen');
+  var gameScreen = document.getElementById('game-screen');
+  var gameoverScreen = document.getElementById('gameover-screen');
+  var mazeContainer = document.getElementById('maze-container');
+
+  function showScreen(s) {
+    titleScreen.style.display = 'none';
+    gameScreen.style.display = 'none';
+    gameoverScreen.style.display = 'none';
+    s.style.display = '';
+  }
+
+  function updateHighScoreDisplay() {
+    var el1 = document.getElementById('title-high-score');
+    var el2 = document.getElementById('gameover-high-score');
+    var text = highScore > 0 ? ('HIGH SCORE: ' + highScore) : '';
+    if (el1) el1.textContent = text;
+    if (el2) el2.textContent = text;
+  }
+  updateHighScoreDisplay();
+
+  // ---- Maze Generation (Recursive Backtracking) ----
+  // Each cell: { top: bool, right: bool, bottom: bool, left: bool, visited: bool }
+  function generateMaze(w, h) {
+    var grid = [];
+    for (var y = 0; y < h; y++) {
+      grid[y] = [];
+      for (var x = 0; x < w; x++) {
+        grid[y][x] = { top: true, right: true, bottom: true, left: true, visited: false };
+      }
+    }
+
+    var stack = [];
+    var cx = 0, cy = 0;
+    grid[cy][cx].visited = true;
+    stack.push([cx, cy]);
+
+    var dirs = [[0,-1,'top','bottom'],[1,0,'right','left'],[0,1,'bottom','top'],[-1,0,'left','right']];
+
+    while (stack.length > 0) {
+      var neighbors = [];
+      for (var d = 0; d < dirs.length; d++) {
+        var nx = cx + dirs[d][0], ny = cy + dirs[d][1];
+        if (nx >= 0 && nx < w && ny >= 0 && ny < h && !grid[ny][nx].visited) {
+          neighbors.push(d);
+        }
+      }
+      if (neighbors.length > 0) {
+        var pick = neighbors[Math.floor(Math.random() * neighbors.length)];
+        var dir = dirs[pick];
+        var nx2 = cx + dir[0], ny2 = cy + dir[1];
+        grid[cy][cx][dir[2]] = false;
+        grid[ny2][nx2][dir[3]] = false;
+        grid[ny2][nx2].visited = true;
+        stack.push([cx, cy]);
+        cx = nx2; cy = ny2;
+      } else {
+        var prev = stack.pop();
+        cx = prev[0]; cy = prev[1];
+      }
+    }
+    return grid;
+  }
+
+  // ---- BFS Pathfinding ----
+  function bfs(grid, sx, sy, tx, ty, w, h) {
+    if (sx === tx && sy === ty) return null;
+    var visited = [];
+    for (var y = 0; y < h; y++) { visited[y] = []; for (var x = 0; x < w; x++) visited[y][x] = false; }
+    var queue = [[sx, sy, null]];
+    visited[sy][sx] = true;
+    var dirs = [[0,-1,'top'],[1,0,'right'],[0,1,'bottom'],[-1,0,'left']];
+
+    while (queue.length > 0) {
+      var cur = queue.shift();
+      var cx2 = cur[0], cy2 = cur[1], firstStep = cur[2];
+      for (var d = 0; d < dirs.length; d++) {
+        var dir = dirs[d];
+        if (grid[cy2][cx2][dir[2]]) continue; // wall blocks
+        var nx = cx2 + dir[0], ny = cy2 + dir[1];
+        if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+        if (visited[ny][nx]) continue;
+        visited[ny][nx] = true;
+        var step = firstStep || { x: nx, y: ny };
+        if (nx === tx && ny === ty) return step;
+        queue.push([nx, ny, step]);
+      }
+    }
+    return null;
+  }
+
+  // ---- Place Coins ----
+  function placeCoins(grid, w, h, count) {
+    var placed = [];
+    var attempts = 0;
+    while (placed.length < count && attempts < 500) {
+      attempts++;
+      var cx3 = Math.floor(Math.random() * w);
+      var cy3 = Math.floor(Math.random() * h);
+      // not on player start, exit, or moony start
+      if (cx3 === 0 && cy3 === 0) continue;
+      if (cx3 === w - 1 && cy3 === h - 1) continue;
+      if (cx3 === Math.floor(w / 2) && cy3 === Math.floor(h / 2)) continue;
+      var dup = false;
+      for (var i = 0; i < placed.length; i++) {
+        if (placed[i].x === cx3 && placed[i].y === cy3) { dup = true; break; }
+      }
+      if (!dup) placed.push({ x: cx3, y: cy3 });
+    }
+    return placed;
+  }
+
+  // ---- Render Maze ----
+  function renderMaze() {
+    mazeContainer.innerHTML = '';
+    var cellSize = Math.floor(Math.min(396, window.innerWidth - 36) / cols);
+    mazeContainer.style.gridTemplateColumns = 'repeat(' + cols + ', ' + cellSize + 'px)';
+    mazeContainer.style.gridTemplateRows = 'repeat(' + rows + ', ' + cellSize + 'px)';
+    mazeContainer.style.width = (cellSize * cols) + 'px';
+    mazeContainer.style.fontSize = Math.max(10, Math.floor(cellSize * 0.6)) + 'px';
+
+    for (var y = 0; y < rows; y++) {
+      for (var x = 0; x < cols; x++) {
+        var cell = document.createElement('div');
+        cell.className = 'maze-cell';
+        cell.id = 'cell-' + x + '-' + y;
+        var m = maze[y][x];
+        if (m.top) cell.classList.add('wall-top');
+        if (m.right) cell.classList.add('wall-right');
+        if (m.bottom) cell.classList.add('wall-bottom');
+        if (m.left) cell.classList.add('wall-left');
+
+        // Exit
+        if (x === exitPos.x && y === exitPos.y) {
+          cell.classList.add('exit-cell');
+          cell.innerHTML = '<span class="entity">&#x1F4B0;</span>';
+        }
+        mazeContainer.appendChild(cell);
+      }
+    }
+    renderEntities();
+  }
+
+  function renderEntities() {
+    // Clear previous entity markers
+    var prevPlayer = document.querySelector('.player-cell');
+    if (prevPlayer) { prevPlayer.classList.remove('player-cell'); var pe = prevPlayer.querySelector('.player-entity'); if (pe) pe.remove(); }
+    var prevMoony = document.querySelector('.moony-cell');
+    if (prevMoony) { prevMoony.classList.remove('moony-cell'); var me = prevMoony.querySelector('.moony-entity'); if (me) me.remove(); }
+
+    // Render coins
+    for (var i = 0; i < coins.length; i++) {
+      var c = coins[i];
+      var coinCell = document.getElementById('cell-' + c.x + '-' + c.y);
+      if (coinCell && !coinCell.querySelector('.coin')) {
+        var coinEl = document.createElement('span');
+        coinEl.className = 'coin';
+        coinEl.textContent = '$';
+        coinCell.appendChild(coinEl);
+      }
+    }
+
+    // Player
+    var pCell = document.getElementById('cell-' + player.x + '-' + player.y);
+    if (pCell) {
+      pCell.classList.add('player-cell');
+      var pEl = document.createElement('span');
+      pEl.className = 'entity player-entity';
+      pEl.innerHTML = '&#x1F995;';
+      pCell.appendChild(pEl);
+    }
+
+    // Moony
+    var mCell = document.getElementById('cell-' + moony.x + '-' + moony.y);
+    if (mCell) {
+      mCell.classList.add('moony-cell');
+      var mEl = document.createElement('span');
+      mEl.className = 'entity moony-entity';
+      mEl.innerHTML = '&#x1F319;';
+      mCell.appendChild(mEl);
+    }
+  }
+
+  // ---- Game Logic ----
+  window.startGame = function() {
+    level = 1;
+    totalCoins = 0;
+    startTime = Date.now();
+    startLevel();
+    showScreen(gameScreen);
+  };
+
+  function startLevel() {
+    cols = Math.min(BASE_SIZE + (level - 1) * SIZE_STEP, MAX_SIZE);
+    rows = cols;
+    maze = generateMaze(cols, rows);
+    player = { x: 0, y: 0 };
+    moony = { x: Math.floor(cols / 2), y: Math.floor(rows / 2) };
+    exitPos = { x: cols - 1, y: rows - 1 };
+    coins = placeCoins(maze, cols, rows, COIN_COUNT_BASE + (level - 1) * 2);
+    gameActive = true;
+
+    document.getElementById('hud-level').textContent = level;
+    document.getElementById('hud-coins').textContent = totalCoins;
+
+    renderMaze();
+
+    // Timer
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(function() {
+      if (!gameActive) return;
+      var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      document.getElementById('hud-timer').textContent = elapsed;
+    }, 100);
+
+    // Moony AI
+    if (moonyTimer) clearInterval(moonyTimer);
+    var interval = Math.max(BASE_MOONY_INTERVAL - (level - 1) * MOONY_SPEEDUP, MIN_MOONY_INTERVAL);
+    moonyTimer = setInterval(function() {
+      if (!gameActive) return;
+      moveMoony();
+    }, interval);
+  }
+
+  window.movePlayer = function(dx, dy) {
+    if (!gameActive) return;
+    var nx = player.x + dx;
+    var ny = player.y + dy;
+    if (nx < 0 || nx >= cols || ny < 0 || ny >= rows) return;
+
+    // Check wall
+    var cell = maze[player.y][player.x];
+    if (dx === 1 && cell.right) return;
+    if (dx === -1 && cell.left) return;
+    if (dy === 1 && cell.bottom) return;
+    if (dy === -1 && cell.top) return;
+
+    player.x = nx;
+    player.y = ny;
+
+    // Collect coin
+    for (var i = 0; i < coins.length; i++) {
+      if (coins[i].x === nx && coins[i].y === ny) {
+        coins.splice(i, 1);
+        totalCoins++;
+        document.getElementById('hud-coins').textContent = totalCoins;
+        // Remove coin element
+        var coinCell = document.getElementById('cell-' + nx + '-' + ny);
+        if (coinCell) { var ce = coinCell.querySelector('.coin'); if (ce) ce.remove(); }
+        break;
+      }
+    }
+
+    renderEntities();
+
+    // Check moony catch
+    if (player.x === moony.x && player.y === moony.y) {
+      endGame(false);
+      return;
+    }
+
+    // Check exit
+    if (player.x === exitPos.x && player.y === exitPos.y) {
+      levelComplete();
+    }
+  };
+
+  function moveMoony() {
+    var step = bfs(maze, moony.x, moony.y, player.x, player.y, cols, rows);
+    if (step) {
+      moony.x = step.x;
+      moony.y = step.y;
+      renderEntities();
+
+      if (moony.x === player.x && moony.y === player.y) {
+        endGame(false);
+      }
+    }
+  }
+
+  function levelComplete() {
+    gameActive = false;
+    if (moonyTimer) clearInterval(moonyTimer);
+
+    // Flash
+    var flash = document.createElement('div');
+    flash.className = 'level-flash';
+    flash.textContent = 'LEVEL ' + level + ' COMPLETE!';
+    document.body.appendChild(flash);
+
+    level++;
+    setTimeout(function() {
+      flash.remove();
+      startLevel();
+    }, 1000);
+  }
+
+  function calcScore() {
+    var elapsed = (Date.now() - startTime) / 1000;
+    var timeBonus = Math.max(1, Math.round(1000 / Math.max(elapsed, 1)));
+    return totalCoins * 10 + (level - 1) * 50 + timeBonus;
+  }
+
+  function endGame(won) {
+    gameActive = false;
+    if (timerInterval) clearInterval(timerInterval);
+    if (moonyTimer) clearInterval(moonyTimer);
+
+    var score = calcScore();
+    var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+    if (score > highScore) {
+      highScore = score;
+      localStorage.setItem(LS_KEY, highScore);
+    }
+
+    document.getElementById('gameover-title').textContent = won ? 'ESCAPED!' : 'BUSTED';
+    document.getElementById('gameover-title').style.color = won ? '#00ff88' : '#ff5050';
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('stat-level').textContent = level;
+    document.getElementById('stat-coins').textContent = totalCoins;
+    document.getElementById('stat-time').textContent = elapsed + 's';
+    document.getElementById('gameover-roast').textContent = ROASTS[Math.floor(Math.random() * ROASTS.length)];
+    updateHighScoreDisplay();
+
+    showScreen(gameoverScreen);
+
+    if (typeof DippyLB !== 'undefined') DippyLB.onGameOver(score);
+  }
+
+  // ---- Keyboard Controls ----
+  document.addEventListener('keydown', function(e) {
+    if (!gameActive) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        if (titleScreen.style.display !== 'none') startGame();
+        else if (gameoverScreen.style.display !== 'none') startGame();
+      }
+      return;
+    }
+    switch (e.key) {
+      case 'ArrowUp':    case 'w': case 'W': e.preventDefault(); movePlayer(0, -1); break;
+      case 'ArrowDown':  case 's': case 'S': e.preventDefault(); movePlayer(0, 1);  break;
+      case 'ArrowLeft':  case 'a': case 'A': e.preventDefault(); movePlayer(-1, 0); break;
+      case 'ArrowRight': case 'd': case 'D': e.preventDefault(); movePlayer(1, 0);  break;
+    }
+  });
+
+  // ---- Swipe Controls ----
+  var touchStartX = 0, touchStartY = 0;
+  document.addEventListener('touchstart', function(e) {
+    if (e.target.classList.contains('ctrl-btn')) return;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    if (!gameActive) return;
+    if (e.target.classList.contains('ctrl-btn')) return;
+    var dx = e.changedTouches[0].clientX - touchStartX;
+    var dy = e.changedTouches[0].clientY - touchStartY;
+    var absDx = Math.abs(dx), absDy = Math.abs(dy);
+    if (Math.max(absDx, absDy) < 20) return;
+    if (absDx > absDy) {
+      movePlayer(dx > 0 ? 1 : -1, 0);
+    } else {
+      movePlayer(0, dy > 0 ? 1 : -1);
+    }
+  }, { passive: true });
+
+  // ---- Init Leaderboard ----
+  if (typeof DippyLB !== 'undefined') DippyLB.init('market-maze');
+
+})();
+</script>
+{{ end }}
