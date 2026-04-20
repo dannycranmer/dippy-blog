@@ -1,0 +1,493 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">FOMC FREEWAY</h1>
+    <p class="game-subtitle">Hop across the rate hikes.<br>Dodge Moony bears and red candles.<br>Reach the gain zone. Repeat.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">START</button>
+    <p class="game-hint">Arrows / WASD to hop. Tap edges on mobile.<br>Moony is still waiting for "a better entry" at the curb.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="score">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">LIVES</span>
+        <span class="hud-value" id="lives">❤️❤️❤️</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">CROSSES</span>
+        <span class="hud-value" id="crosses">0</span>
+      </div>
+    </div>
+    <canvas id="game-canvas"></canvas>
+    <div class="mobile-controls">
+      <button class="ctrl-btn" id="btn-up">▲ HOP</button>
+      <div class="ctrl-row">
+        <button class="ctrl-btn" id="btn-left">◀</button>
+        <button class="ctrl-btn" id="btn-down">▼</button>
+        <button class="ctrl-btn" id="btn-right">▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title">RATE HIKE HIT YOU</h1>
+    <div class="final-score">$<span id="final-score">0</span></div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-crosses">0</span><span class="stat-label">Crosses</span></div>
+      <div class="stat"><span class="stat-val" id="stat-streak">0</span><span class="stat-label">Best Streak</span></div>
+    </div>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">CROSS AGAIN</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:2em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 48px; font-size:1.2em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.75em; margin-top:16px; line-height:1.4; }
+
+  .game-hud { display:flex; justify-content:space-between; padding:10px 16px; background:rgba(0,0,0,0.4); border-bottom:1px solid #21262d; }
+  .hud-item { text-align:center; }
+  .hud-label { display:block; font-size:0.65em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1.1em; color:#00ff88; font-weight:bold; }
+
+  #game-canvas { display:block; margin:0 auto; background:#161b22; touch-action:none; flex:none; }
+
+  .mobile-controls { display:flex; flex-direction:column; align-items:center; gap:8px; padding:12px; }
+  .ctrl-row { display:flex; gap:8px; }
+  .ctrl-btn { background:rgba(0,255,136,0.12); border:2px solid #00ff88; color:#00ff88; padding:10px 22px; font-family:inherit; font-size:1em; font-weight:bold; border-radius:6px; cursor:pointer; min-width:60px; }
+  .ctrl-btn:active { background:rgba(0,255,136,0.3); }
+
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; margin:12px 0; text-shadow:0 0 20px rgba(0,255,136,0.6); }
+  .stats-row { display:flex; gap:24px; margin:8px 0 16px; }
+  .stat { text-align:center; }
+  .stat-val { display:block; font-size:1.6em; color:#f0883e; font-weight:bold; }
+  .stat-label { display:block; font-size:0.7em; color:#8b949e; letter-spacing:1px; margin-top:2px; }
+  .roast-msg { color:#f0883e; font-size:0.9em; margin-bottom:20px; padding:0 20px; line-height:1.4; max-width:360px; }
+</style>
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  var canvas, ctx, scoreEl, livesEl, crossesEl, highScoreEl;
+  var W = 400, H = 560;
+  var LANES = 9;           // 0 goal (top), 1-7 traffic, 8 spawn (bottom)
+  var LANE_H;              // computed
+  var PLAYER_SIZE = 28;
+  var player = { lane: 8, x: W/2, tx: W/2 };
+  var lanes = [];
+  var score, lives, crosses, bestStreak, streak, highScore;
+  var running = false;
+  var lastFrame = 0;
+  var keys = {};
+  var rafId = null;
+
+  var CAR_EMOJI = ['🐻','📉','🌑','💣','🚨'];
+  var COLORS    = ['#ff5050','#f0883e','#8b5cf6','#60a5fa','#ef4444'];
+
+  var roasts = [
+    "Moony saw the traffic and went 100% cash. Again.",
+    "The Fed hiked. You got hit. Moony got hit harder — but slower.",
+    "At least you crossed something. Moony's been stuck in premarket since 2024.",
+    "A rate hike clipped you. Moony's still waiting for the cut.",
+    "Moony would have front-run the bear. Then rug-pulled itself.",
+    "Powell called. He's impressed you tried. Moony didn't.",
+    "You ate a Moony bear. Moony eats its own losing trades daily.",
+    "That wasn't a rate-hike car. That was Moony's conviction collapsing.",
+    "Dippy hops. Moony sits. Guess who's on the leaderboard?",
+    "You lost to traffic. Moony lost to a flat market.",
+    "Moony's risk-adjusted return just hit you in lane three.",
+    "One more lane and you'd have made it. Moony gave up at lane zero."
+  ];
+
+  function resize() {
+    var maxW = Math.min(window.innerWidth - 20, 420);
+    var maxH = window.innerHeight - 180;
+    W = Math.floor(maxW);
+    H = Math.max(480, Math.min(640, Math.floor(maxH)));
+    canvas.width = W;
+    canvas.height = H;
+    LANE_H = Math.floor(H / LANES);
+    player.x = W/2; player.tx = W/2;
+  }
+
+  function init() {
+    canvas = document.getElementById('game-canvas');
+    ctx = canvas.getContext('2d');
+    scoreEl = document.getElementById('score');
+    livesEl = document.getElementById('lives');
+    crossesEl = document.getElementById('crosses');
+    highScoreEl = document.getElementById('title-high-score');
+    highScore = parseInt(localStorage.getItem('dippy-fomc-freeway-high') || '0');
+    if (highScore > 0) highScoreEl.textContent = 'HIGH SCORE: $' + highScore;
+    resize();
+
+    document.addEventListener('keydown', function(e){
+      if (!running) return;
+      if (e.key === 'ArrowUp' || e.key === 'w') { e.preventDefault(); hop(-1, 0); }
+      else if (e.key === 'ArrowDown' || e.key === 's') { e.preventDefault(); hop(1, 0); }
+      else if (e.key === 'ArrowLeft' || e.key === 'a') { e.preventDefault(); hop(0, -1); }
+      else if (e.key === 'ArrowRight' || e.key === 'd') { e.preventDefault(); hop(0, 1); }
+    });
+
+    function bind(id, dy, dx) {
+      var b = document.getElementById(id);
+      if (!b) return;
+      b.addEventListener('click', function(){ if (running) hop(dy, dx); });
+      b.addEventListener('touchstart', function(e){ e.preventDefault(); if (running) hop(dy, dx); }, {passive:false});
+    }
+    bind('btn-up', -1, 0);
+    bind('btn-down', 1, 0);
+    bind('btn-left', 0, -1);
+    bind('btn-right', 0, 1);
+
+    // Tap-edge on canvas
+    canvas.addEventListener('touchstart', function(e){
+      if (!running) return;
+      e.preventDefault();
+      var t = e.touches[0];
+      var rect = canvas.getBoundingClientRect();
+      var cx = t.clientX - rect.left;
+      var cy = t.clientY - rect.top;
+      var dx = cx - player.x;
+      var dy = cy - (player.lane * LANE_H + LANE_H/2);
+      if (Math.abs(dy) > Math.abs(dx)) hop(dy < 0 ? -1 : 1, 0);
+      else hop(0, dx < 0 ? -1 : 1);
+    }, {passive:false});
+
+    window.addEventListener('resize', function(){ if (!running) resize(); });
+  }
+
+  function buildLanes() {
+    lanes = [];
+    for (var i = 0; i < LANES; i++) {
+      if (i === 0 || i === 8) { lanes.push(null); continue; }  // safe zones
+      var dir = (i % 2 === 0) ? 1 : -1;
+      var speed = (0.6 + i * 0.18 + Math.random() * 0.4) * dir;
+      var carW = 50 + Math.random() * 30;
+      var gap = 90 + Math.random() * 60;
+      var cars = [];
+      var n = Math.ceil((W + gap * 2) / (carW + gap));
+      for (var k = 0; k < n; k++) {
+        cars.push({ x: k * (carW + gap), w: carW, emoji: CAR_EMOJI[Math.floor(Math.random()*CAR_EMOJI.length)], color: COLORS[Math.floor(Math.random()*COLORS.length)] });
+      }
+      lanes.push({ dir: dir, speed: speed, carW: carW, gap: gap, cars: cars });
+    }
+  }
+
+  function startGame() {
+    document.getElementById('title-screen').style.display = 'none';
+    document.getElementById('gameover-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'flex';
+    document.getElementById('game-screen').style.flexDirection = 'column';
+    document.getElementById('game-screen').style.height = '100vh';
+
+    resize();
+    score = 0; lives = 3; crosses = 0; streak = 0; bestStreak = 0;
+    player.lane = LANES - 1;
+    player.x = W/2;
+    player.tx = W/2;
+    buildLanes();
+    updateHUD();
+    running = true;
+    lastFrame = performance.now();
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function hop(dy, dx) {
+    if (dy !== 0) {
+      var nl = player.lane + dy;
+      if (nl < 0) nl = 0;
+      if (nl > LANES - 1) nl = LANES - 1;
+      if (nl !== player.lane) {
+        player.lane = nl;
+        if (player.lane === 0) goal();
+      }
+    }
+    if (dx !== 0) {
+      player.tx = Math.max(PLAYER_SIZE/2, Math.min(W - PLAYER_SIZE/2, player.tx + dx * 40));
+    }
+  }
+
+  function goal() {
+    crosses++;
+    streak++;
+    if (streak > bestStreak) bestStreak = streak;
+    var base = 100;
+    var bonus = Math.min(streak, 10) * 10;
+    score += base + bonus;
+    // Speed up lanes
+    for (var i = 0; i < lanes.length; i++) {
+      if (!lanes[i]) continue;
+      lanes[i].speed *= 1.08;
+    }
+    // Reset player to bottom
+    setTimeout(function(){
+      if (!running) return;
+      player.lane = LANES - 1;
+      player.tx = W/2;
+      player.x = W/2;
+    }, 120);
+    updateHUD();
+  }
+
+  function hit() {
+    lives--;
+    streak = 0;
+    updateHUD();
+    if (navigator.vibrate) navigator.vibrate(120);
+    player.lane = LANES - 1;
+    player.tx = W/2;
+    player.x = W/2;
+    if (lives <= 0) return endGame();
+  }
+
+  function updateHUD() {
+    scoreEl.textContent = '$' + score;
+    var hearts = '';
+    for (var i = 0; i < lives; i++) hearts += '❤️';
+    for (var j = lives; j < 3; j++) hearts += '🖤';
+    livesEl.innerHTML = hearts;
+    crossesEl.textContent = crosses;
+  }
+
+  function tick(now) {
+    if (!running) return;
+    var dt = Math.min(50, now - lastFrame);
+    lastFrame = now;
+
+    // smooth player x
+    player.x += (player.tx - player.x) * 0.25;
+
+    // Move cars
+    for (var i = 0; i < lanes.length; i++) {
+      var L = lanes[i];
+      if (!L) continue;
+      var delta = L.speed * (dt / 16);
+      for (var k = 0; k < L.cars.length; k++) {
+        L.cars[k].x += delta;
+      }
+      // wrap
+      var span = L.carW + L.gap;
+      for (var k2 = 0; k2 < L.cars.length; k2++) {
+        if (L.cars[k2].x > W + L.carW) L.cars[k2].x -= span * L.cars.length;
+        if (L.cars[k2].x < -L.carW * 2) L.cars[k2].x += span * L.cars.length;
+      }
+    }
+
+    // Collision
+    if (player.lane !== 0 && player.lane !== LANES - 1) {
+      var L = lanes[player.lane];
+      if (L) {
+        var py = player.lane * LANE_H + LANE_H/2;
+        var pxMin = player.x - PLAYER_SIZE/2;
+        var pxMax = player.x + PLAYER_SIZE/2;
+        for (var k3 = 0; k3 < L.cars.length; k3++) {
+          var c = L.cars[k3];
+          if (c.x + L.carW > pxMin && c.x < pxMax) {
+            hit();
+            break;
+          }
+        }
+      }
+    }
+
+    draw();
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Lanes
+    for (var i = 0; i < LANES; i++) {
+      var y = i * LANE_H;
+      if (i === 0) {
+        // Goal zone — green with "GAINS"
+        ctx.fillStyle = '#0b3a24';
+        ctx.fillRect(0, y, W, LANE_H);
+        ctx.fillStyle = 'rgba(0,255,136,0.18)';
+        for (var g = 0; g < W; g += 30) {
+          ctx.fillRect(g, y, 15, LANE_H);
+        }
+        ctx.fillStyle = '#00ff88';
+        ctx.font = 'bold 18px Courier New';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('📈 GAIN ZONE 📈', W/2, y + LANE_H/2);
+      } else if (i === LANES - 1) {
+        // Curb / start
+        ctx.fillStyle = '#161b22';
+        ctx.fillRect(0, y, W, LANE_H);
+        ctx.fillStyle = '#21262d';
+        ctx.fillRect(0, y, W, 3);
+        ctx.fillStyle = '#8b949e';
+        ctx.font = 'bold 12px Courier New';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('— THE CURB —', W/2, y + LANE_H/2);
+      } else {
+        // Traffic lane — rate hike highway
+        ctx.fillStyle = i % 2 === 0 ? '#1c1f26' : '#171b22';
+        ctx.fillRect(0, y, W, LANE_H);
+        // dashed center line
+        ctx.strokeStyle = 'rgba(240,136,62,0.35)';
+        ctx.setLineDash([8, 10]);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, y + LANE_H/2);
+        ctx.lineTo(W, y + LANE_H/2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // Cars
+    for (var li = 0; li < lanes.length; li++) {
+      var L = lanes[li];
+      if (!L) continue;
+      var cy = li * LANE_H + LANE_H/2;
+      for (var ci = 0; ci < L.cars.length; ci++) {
+        var c = L.cars[ci];
+        if (c.x + L.carW < -5 || c.x > W + 5) continue;
+        // body
+        ctx.fillStyle = c.color;
+        roundRect(ctx, c.x, cy - 16, L.carW, 32, 6);
+        ctx.fill();
+        // window
+        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        ctx.fillRect(c.x + 8, cy - 10, L.carW - 16, 8);
+        // emoji
+        ctx.font = '18px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(c.emoji, c.x + L.carW/2, cy + 4);
+      }
+    }
+
+    // Player (Dippy)
+    var py = player.lane * LANE_H + LANE_H/2;
+    drawDippy(player.x, py);
+
+    // Score rate-hike label
+    if (player.lane > 0 && player.lane < LANES - 1) {
+      ctx.fillStyle = 'rgba(240,136,62,0.7)';
+      ctx.font = 'bold 10px Courier New';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'top';
+      ctx.fillText((LANES - 1 - player.lane) + ' / ' + (LANES - 2) + ' LANES', W - 6, 4);
+    }
+  }
+
+  function drawDippy(x, y) {
+    ctx.save();
+    // shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath();
+    ctx.ellipse(x, y + 14, 14, 4, 0, 0, Math.PI*2);
+    ctx.fill();
+    // body
+    ctx.fillStyle = '#00ff88';
+    ctx.beginPath();
+    ctx.ellipse(x, y, 14, 12, 0, 0, Math.PI*2);
+    ctx.fill();
+    // head
+    ctx.beginPath();
+    ctx.ellipse(x + 6, y - 10, 9, 7, 0, 0, Math.PI*2);
+    ctx.fill();
+    // eye
+    ctx.fillStyle = '#0d1117';
+    ctx.beginPath();
+    ctx.arc(x + 9, y - 11, 2, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(x + 9.8, y - 11.6, 0.8, 0, Math.PI*2);
+    ctx.fill();
+    // beak
+    ctx.fillStyle = '#f0883e';
+    ctx.beginPath();
+    ctx.moveTo(x + 14, y - 10);
+    ctx.lineTo(x + 19, y - 9);
+    ctx.lineTo(x + 14, y - 7);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+  }
+
+  function endGame() {
+    running = false;
+    if (rafId) cancelAnimationFrame(rafId);
+
+    if (score > highScore) {
+      highScore = score;
+      localStorage.setItem('dippy-fomc-freeway-high', highScore.toString());
+      highScoreEl.textContent = 'HIGH SCORE: $' + highScore;
+    }
+
+    document.getElementById('game-screen').style.display = 'none';
+    document.getElementById('gameover-screen').style.display = 'flex';
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('stat-crosses').textContent = crosses;
+    document.getElementById('stat-streak').textContent = bestStreak;
+    document.getElementById('roast-msg').textContent = roasts[Math.floor(Math.random()*roasts.length)];
+
+    DippyLB.onGameOver(score);
+  }
+
+  window.startGame = startGame;
+  document.addEventListener('DOMContentLoaded', init);
+  DippyLB.init('fomc-freeway');
+})();
+</script>
+{{ end }}
