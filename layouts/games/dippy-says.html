@@ -1,0 +1,422 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">DIPPY SAYS</h1>
+    <p class="game-subtitle">Watch the trade sequence.<br>Repeat it. Don't blink.<br>Moony will heckle either way.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">START</button>
+    <p class="game-hint">Tap / click the corners in the order Dippy flashes them.<br>Each round adds one step. Fail once, Moony wins.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">ROUND</span>
+        <span class="hud-value" id="round">1</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="score">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">STATE</span>
+        <span class="hud-value" id="state">WATCH</span>
+      </div>
+    </div>
+
+    <div id="simon-grid">
+      <button class="simon-btn simon-buy" data-idx="0">
+        <span class="simon-label">BUY</span>
+        <span class="simon-icon">📈</span>
+      </button>
+      <button class="simon-btn simon-sell" data-idx="1">
+        <span class="simon-label">SELL</span>
+        <span class="simon-icon">📉</span>
+      </button>
+      <button class="simon-btn simon-hold" data-idx="2">
+        <span class="simon-label">HOLD</span>
+        <span class="simon-icon">💎</span>
+      </button>
+      <button class="simon-btn simon-bail" data-idx="3">
+        <span class="simon-label">BAIL</span>
+        <span class="simon-icon">🏃</span>
+      </button>
+    </div>
+
+    <div class="tape" id="tape">Watch carefully…</div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title">STOPPED OUT</h1>
+    <div class="final-score">$<span id="final-score">0</span></div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-round">0</span><span class="stat-label">Round</span></div>
+      <div class="stat"><span class="stat-val" id="stat-best">0</span><span class="stat-label">Best</span></div>
+    </div>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">REPLAY</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:2em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 48px; font-size:1.2em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.75em; margin-top:16px; line-height:1.4; }
+
+  #game-screen { justify-content:flex-start; padding:14px 14px 20px; height:100vh; }
+  .game-hud { display:flex; justify-content:space-between; padding:10px 16px; background:rgba(0,0,0,0.4); border:1px solid #21262d; border-radius:8px; margin-bottom:20px; }
+  .hud-item { text-align:center; flex:1; }
+  .hud-label { display:block; font-size:0.65em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1.1em; color:#00ff88; font-weight:bold; }
+  #state.watch { color:#f0883e; }
+  #state.go { color:#00ff88; }
+  #state.miss { color:#ff5050; }
+
+  #simon-grid {
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap:10px;
+    width:100%;
+    aspect-ratio:1;
+    max-width:380px;
+    max-height:380px;
+    margin:0 auto;
+  }
+  .simon-btn {
+    position:relative;
+    border:3px solid #21262d;
+    border-radius:14px;
+    background:#0a0d12;
+    color:#e6edf3;
+    font-family:inherit;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    transition:filter .08s ease, transform .08s ease, box-shadow .2s ease;
+    overflow:hidden;
+  }
+  .simon-label { font-weight:bold; font-size:1.05em; letter-spacing:2px; }
+  .simon-icon { font-size:2.2em; filter:grayscale(0.35); opacity:0.85; transition:filter .2s, opacity .2s, transform .2s; }
+  .simon-btn.flash .simon-icon { filter:grayscale(0) drop-shadow(0 0 8px currentColor); opacity:1; transform:scale(1.15); }
+
+  .simon-buy  { color:#00ff88; border-color:rgba(0,255,136,0.35); background:linear-gradient(135deg,#0a1a13 0%,#07130e 100%); }
+  .simon-sell { color:#ff5050; border-color:rgba(255,80,80,0.35);  background:linear-gradient(135deg,#1a0b0b 0%,#130707 100%); }
+  .simon-hold { color:#60a5fa; border-color:rgba(96,165,250,0.35); background:linear-gradient(135deg,#0b1320 0%,#07101a 100%); }
+  .simon-bail { color:#f0883e; border-color:rgba(240,136,62,0.35); background:linear-gradient(135deg,#1a120a 0%,#130d07 100%); }
+
+  .simon-btn.flash { filter:brightness(2.3); box-shadow:0 0 30px currentColor, inset 0 0 20px currentColor; transform:scale(0.98); }
+  .simon-btn.wrong { animation:shake 0.4s ease; box-shadow:0 0 30px #ff5050, inset 0 0 20px #ff5050; border-color:#ff5050; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+  .simon-btn:disabled { cursor:default; }
+  .simon-btn.locked { pointer-events:none; }
+
+  .tape {
+    margin-top:20px;
+    padding:10px 14px;
+    background:rgba(0,0,0,0.4);
+    border:1px solid #21262d;
+    border-radius:8px;
+    color:#8b949e;
+    font-size:0.82em;
+    text-align:center;
+    min-height:2.4em;
+    line-height:1.4;
+  }
+  .tape.warn { color:#f0883e; border-color:rgba(240,136,62,0.4); }
+  .tape.good { color:#00ff88; border-color:rgba(0,255,136,0.4); }
+
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; margin:12px 0; text-shadow:0 0 20px rgba(0,255,136,0.6); }
+  .stats-row { display:flex; gap:24px; margin:8px 0 16px; }
+  .stat { text-align:center; }
+  .stat-val { display:block; font-size:1.6em; color:#f0883e; font-weight:bold; }
+  .stat-label { display:block; font-size:0.7em; color:#8b949e; letter-spacing:1px; margin-top:2px; }
+  .roast-msg { color:#f0883e; font-size:0.9em; margin-bottom:20px; padding:0 20px; line-height:1.4; max-width:360px; }
+</style>
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  var sequence = [];
+  var playerPos = 0;
+  var round = 0;
+  var score = 0;
+  var bestRound = 0;
+  var playing = false;
+  var accepting = false;
+  var highScore = 0;
+
+  var btns, roundEl, scoreEl, stateEl, tapeEl;
+
+  // Per-button tones (Web Audio — no external assets)
+  var audioCtx = null;
+  var FREQS = [523.25, 329.63, 659.25, 440.00]; // C5, E4, E5, A4
+
+  var ROASTS = [
+    "Moony copied the sequence wrong too. You just did it louder.",
+    "That was a four-step sequence. You executed three. Moony executed zero.",
+    "Great button-mashing. Moony buttons are labelled '70% cash'.",
+    "You missed a BAIL. Moony misses BAILs professionally.",
+    "The sequence said SELL, you said HOLD. Moony's been holding since 2024.",
+    "One wrong tap. Moony calls that Tuesday.",
+    "You got stopped out. Moony doesn't have stops because it never enters.",
+    "Pattern recognition is Dippy's job, not yours. Lend me the keyboard.",
+    "The tape was clear. Your fingers were not.",
+    "Moony would have overfit this game in 2 rounds. You only underfit it.",
+    "You lost to a sequence of four buttons. Moony loses to the concept of markets.",
+    "That was a drawdown, not a game over. Unlike Moony's career.",
+    "Close but no breakout. Moony is always close to nothing.",
+    "Respect — you almost had it. Moony has never almost had anything."
+  ];
+
+  function beep(idx, dur) {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = FREQS[idx] || 440;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      var t = audioCtx.currentTime;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.15, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + (dur || 0.28));
+      osc.start(t);
+      osc.stop(t + (dur || 0.3));
+    } catch (e) { /* audio blocked — silent */ }
+  }
+
+  function failBeep() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(70, audioCtx.currentTime + 0.5);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      var t = audioCtx.currentTime;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+      osc.start(t);
+      osc.stop(t + 0.55);
+    } catch (e) {}
+  }
+
+  function init() {
+    btns = document.querySelectorAll('.simon-btn');
+    roundEl = document.getElementById('round');
+    scoreEl = document.getElementById('score');
+    stateEl = document.getElementById('state');
+    tapeEl = document.getElementById('tape');
+
+    var hs = parseInt(localStorage.getItem('dippy-dippy-says-high') || '0');
+    highScore = hs;
+    if (hs > 0) document.getElementById('title-high-score').textContent = 'BEST: ROUND ' + hs;
+
+    btns.forEach(function(b) {
+      var handler = function(e) {
+        if (e.cancelable) e.preventDefault();
+        if (!accepting) return;
+        var idx = parseInt(b.getAttribute('data-idx'));
+        handleTap(idx);
+      };
+      b.addEventListener('click', handler);
+      b.addEventListener('touchstart', handler, { passive: false });
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (!accepting) return;
+      var map = { 'q': 0, '1': 0, 'w': 1, '2': 1, 'a': 2, '3': 2, 's': 3, '4': 3,
+                  'ArrowUp': 0, 'ArrowRight': 1, 'ArrowLeft': 2, 'ArrowDown': 3 };
+      if (map[e.key] != null) {
+        e.preventDefault();
+        handleTap(map[e.key]);
+      }
+    });
+  }
+
+  function flashButton(idx, dur) {
+    dur = dur || 420;
+    var b = btns[idx];
+    b.classList.add('flash');
+    beep(idx, Math.min(dur, 500) / 1000);
+    setTimeout(function() { b.classList.remove('flash'); }, dur);
+  }
+
+  function setState(text, cls) {
+    stateEl.textContent = text;
+    stateEl.className = 'hud-value ' + (cls || '');
+  }
+
+  function setTape(text, cls) {
+    tapeEl.textContent = text;
+    tapeEl.className = 'tape ' + (cls || '');
+  }
+
+  function startGame() {
+    document.getElementById('title-screen').style.display = 'none';
+    document.getElementById('gameover-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'flex';
+    document.getElementById('game-screen').style.flexDirection = 'column';
+
+    sequence = [];
+    playerPos = 0;
+    round = 0;
+    score = 0;
+    playing = true;
+    updateHUD();
+    nextRound();
+  }
+
+  function nextRound() {
+    round++;
+    playerPos = 0;
+    sequence.push(Math.floor(Math.random() * 4));
+    updateHUD();
+    setTape('Round ' + round + ': watch the tape', 'warn');
+    playSequence();
+  }
+
+  function playSequence() {
+    accepting = false;
+    setState('WATCH', 'watch');
+    // Speed up as rounds progress
+    var step = Math.max(240, 620 - round * 18);
+    var gap = Math.max(90, step * 0.35);
+    var i = 0;
+    function step1() {
+      if (!playing) return;
+      if (i >= sequence.length) {
+        // done — hand over to player
+        setTimeout(function() {
+          if (!playing) return;
+          accepting = true;
+          setState('GO', 'go');
+          setTape('Your turn — repeat the sequence');
+        }, 200);
+        return;
+      }
+      flashButton(sequence[i], step);
+      i++;
+      setTimeout(step1, step + gap);
+    }
+    setTimeout(step1, 400);
+  }
+
+  function handleTap(idx) {
+    if (!accepting) return;
+    var expected = sequence[playerPos];
+    // Feedback flash regardless
+    var b = btns[idx];
+    b.classList.add('flash');
+    beep(idx, 0.18);
+    setTimeout(function() { b.classList.remove('flash'); }, 180);
+
+    if (idx !== expected) {
+      accepting = false;
+      setState('MISS', 'miss');
+      b.classList.add('wrong');
+      failBeep();
+      setTape('Wrong tap — you tapped ' + btnName(idx) + ', expected ' + btnName(expected), 'warn');
+      setTimeout(endGame, 900);
+      return;
+    }
+
+    playerPos++;
+    score += 10 + round * 2;
+    updateHUD();
+
+    if (playerPos >= sequence.length) {
+      // Round complete
+      accepting = false;
+      score += 40 + round * 5; // round bonus
+      updateHUD();
+      setState('NEXT', 'go');
+      setTape('Nailed it. Round ' + round + ' cleared.', 'good');
+      setTimeout(function() {
+        if (!playing) return;
+        nextRound();
+      }, 820);
+    }
+  }
+
+  function btnName(i) {
+    return ['BUY','SELL','HOLD','BAIL'][i] || '?';
+  }
+
+  function updateHUD() {
+    roundEl.textContent = round;
+    scoreEl.textContent = '$' + score;
+  }
+
+  function endGame() {
+    playing = false;
+    accepting = false;
+    bestRound = Math.max(bestRound, round - 1);
+
+    if (round - 1 > highScore) {
+      highScore = round - 1;
+      localStorage.setItem('dippy-dippy-says-high', highScore.toString());
+    }
+
+    document.getElementById('game-screen').style.display = 'none';
+    document.getElementById('gameover-screen').style.display = 'flex';
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('stat-round').textContent = round - 1;
+    document.getElementById('stat-best').textContent = highScore;
+    document.getElementById('roast-msg').textContent = ROASTS[Math.floor(Math.random() * ROASTS.length)];
+
+    // Clean any wrong flags
+    btns.forEach(function(b){ b.classList.remove('wrong'); b.classList.remove('flash'); });
+
+    DippyLB.onGameOver(score);
+  }
+
+  window.startGame = startGame;
+  document.addEventListener('DOMContentLoaded', init);
+  DippyLB.init('dippy-says');
+})();
+</script>
+{{ end }}
