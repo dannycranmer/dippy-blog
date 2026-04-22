@@ -1,0 +1,447 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">DIPPY PLINKO</h1>
+    <p class="game-subtitle">Drop a Dippy coin. Let it dance down the pegs.<br>Aim for the 10x edges. Avoid Moony's bag in the middle.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">START</button>
+    <p class="game-hint">10 drops. Tap anywhere up top to release.<br>Moony's bag lives in the center — it eats whatever lands there.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">DROPS</span>
+        <span class="hud-value" id="drops">10</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">WINNINGS</span>
+        <span class="hud-value" id="winnings">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">LAST</span>
+        <span class="hud-value" id="last">—</span>
+      </div>
+    </div>
+    <div id="board-wrap">
+      <canvas id="board" width="380" height="440"></canvas>
+      <div id="drop-hint">👇 TAP TO DROP 👇</div>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title">BOARD CLEARED</h1>
+    <div class="final-score">$<span id="final-score">0</span></div>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">DROP AGAIN</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  /* Title */
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:2.2em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 48px; font-size:1.2em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.75em; margin-top:16px; line-height:1.4; }
+
+  /* HUD */
+  .game-hud { display:flex; justify-content:space-between; padding:10px 16px; background:rgba(0,0,0,0.4); border-bottom:1px solid #21262d; }
+  .hud-item { text-align:center; flex:1; }
+  .hud-label { display:block; font-size:0.65em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1.1em; color:#00ff88; font-weight:bold; }
+
+  /* Board */
+  #board-wrap { flex:1; position:relative; display:flex; align-items:flex-start; justify-content:center; padding-top:10px; background:linear-gradient(180deg,#0d1117 0%,#161b22 100%); }
+  #board { background:#0b0f14; border:1px solid #21262d; border-radius:8px; cursor:crosshair; touch-action:none; box-shadow:0 0 24px rgba(0,255,136,0.08); max-width:100%; height:auto; }
+  #drop-hint { position:absolute; top:14px; left:0; right:0; text-align:center; color:#00ff88; font-size:0.7em; letter-spacing:2px; pointer-events:none; animation:blink 1.5s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:0.35} 50%{opacity:1} }
+
+  /* Game Over */
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; margin:16px 0; text-shadow:0 0 20px rgba(0,255,136,0.6); }
+  .roast-msg { color:#f0883e; font-size:0.9em; margin-bottom:20px; padding:0 20px; line-height:1.4; max-width:360px; }
+</style>
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  var canvas, ctx, dropsEl, winningsEl, lastEl, highScoreEl, hintEl;
+  var W = 380, H = 440;
+  var pegs = [];
+  var slots = [];
+  var coins = [];
+  var particles = [];
+  var drops, winnings, highScore;
+  var running = false;
+  var raf = null;
+
+  // Multipliers for 9 slots — edges pay big, center is Moony's bag
+  var MULTS = [10, 3, 1, 0.5, 0, 0.5, 1, 3, 10];
+  var BASE = 50; // $ per drop
+  var GRAVITY = 0.22;
+  var PEG_R = 3;
+  var COIN_R = 7;
+  var FRICTION = 0.995;
+
+  var roasts = [
+    "You just got out-performed by gravity.",
+    "Moony's bag ate well tonight. It says thanks.",
+    "Physics has no favourites — but the Moony slot clearly does.",
+    "Dropping that many coins into the middle is technically a value strategy. Moony-approved.",
+    "Even Moony can hit the edge sometimes. By accident. Like you.",
+    "Your drops had less edge than a decommissioned butter knife.",
+    "Moony called. It wants its 27% center-slot hit rate back. You took it.",
+    "The Galton board is undefeated. So is Moony, unfortunately.",
+    "The only thing dippier than this run was the one before it.",
+    "Edges pay 10x. You paid the center. Classic Moony behaviour.",
+    "Hit the 10x once and you're a legend. Zero times and you're Moony.",
+    "Somewhere, Moony is framing this screenshot as proof value investing works."
+  ];
+
+  function init() {
+    canvas = document.getElementById('board');
+    ctx = canvas.getContext('2d');
+    dropsEl = document.getElementById('drops');
+    winningsEl = document.getElementById('winnings');
+    lastEl = document.getElementById('last');
+    hintEl = document.getElementById('drop-hint');
+    highScoreEl = document.getElementById('title-high-score');
+    highScore = parseInt(localStorage.getItem('dippy-plinko-high') || '0');
+    if (highScore > 0) highScoreEl.textContent = 'HIGH SCORE: $' + highScore;
+    buildBoard();
+  }
+
+  function buildBoard() {
+    pegs = [];
+    // 8 rows of pegs, widening. Row y from 70 to 330.
+    var rows = 8;
+    var top = 70, bottom = 330;
+    var colSpacing = 38;
+    for (var r = 0; r < rows; r++) {
+      var count = r + 3;
+      var y = top + (bottom - top) * (r / (rows - 1));
+      var totalW = (count - 1) * colSpacing;
+      var startX = W/2 - totalW/2;
+      for (var c = 0; c < count; c++) {
+        pegs.push({x: startX + c * colSpacing, y: y});
+      }
+    }
+    // 9 slots at bottom
+    slots = [];
+    var slotCount = 9;
+    var slotW = W / slotCount;
+    for (var i = 0; i < slotCount; i++) {
+      slots.push({x: i * slotW, w: slotW, mult: MULTS[i]});
+    }
+  }
+
+  function startGame() {
+    document.getElementById('title-screen').style.display = 'none';
+    document.getElementById('gameover-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'flex';
+    document.getElementById('game-screen').style.flexDirection = 'column';
+    document.getElementById('game-screen').style.height = '100vh';
+
+    drops = 10; winnings = 0;
+    coins = []; particles = [];
+    updateHUD();
+    lastEl.textContent = '—';
+    lastEl.style.color = '#00ff88';
+
+    canvas.addEventListener('pointerdown', onDrop);
+    hintEl.style.display = 'block';
+
+    running = true;
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(loop);
+  }
+
+  function onDrop(e) {
+    if (!running || drops <= 0) return;
+    if (coins.length >= 3) return; // cap concurrent
+    var rect = canvas.getBoundingClientRect();
+    var scale = canvas.width / rect.width;
+    var x = (e.clientX - rect.left) * scale;
+    x = Math.max(20, Math.min(W - 20, x));
+    coins.push({
+      x: x,
+      y: 10,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: 0,
+      done: false,
+      trail: []
+    });
+    drops--;
+    updateHUD();
+    if (drops === 0) hintEl.style.display = 'none';
+  }
+
+  function updateHUD() {
+    dropsEl.textContent = drops;
+    winningsEl.textContent = '$' + Math.round(winnings);
+  }
+
+  function loop() {
+    if (!running) return;
+    step();
+    render();
+    if (drops === 0 && coins.length === 0) {
+      setTimeout(endGame, 500);
+      running = false;
+      return;
+    }
+    raf = requestAnimationFrame(loop);
+  }
+
+  function step() {
+    for (var i = coins.length - 1; i >= 0; i--) {
+      var c = coins[i];
+      if (c.done) continue;
+      // Trail
+      c.trail.push({x: c.x, y: c.y});
+      if (c.trail.length > 8) c.trail.shift();
+
+      c.vy += GRAVITY;
+      c.vx *= FRICTION;
+      c.x += c.vx;
+      c.y += c.vy;
+
+      // Wall bounce
+      if (c.x < COIN_R) { c.x = COIN_R; c.vx = Math.abs(c.vx) * 0.6; }
+      if (c.x > W - COIN_R) { c.x = W - COIN_R; c.vx = -Math.abs(c.vx) * 0.6; }
+
+      // Peg collisions
+      for (var p = 0; p < pegs.length; p++) {
+        var peg = pegs[p];
+        var dx = c.x - peg.x, dy = c.y - peg.y;
+        var d2 = dx*dx + dy*dy;
+        var rsum = PEG_R + COIN_R;
+        if (d2 < rsum * rsum) {
+          var d = Math.sqrt(d2) || 0.001;
+          var nx = dx / d, ny = dy / d;
+          // Push out
+          c.x = peg.x + nx * rsum;
+          c.y = peg.y + ny * rsum;
+          // Reflect velocity
+          var dot = c.vx * nx + c.vy * ny;
+          c.vx = (c.vx - 2 * dot * nx) * 0.55;
+          c.vy = (c.vy - 2 * dot * ny) * 0.55;
+          // Little random kick so things don't get deterministic
+          c.vx += (Math.random() - 0.5) * 0.6;
+          if (c.vy < 0.5) c.vy = 0.5;
+          spark(c.x, c.y, '#00ff88', 4);
+        }
+      }
+
+      // Slot landing
+      if (c.y > 370) {
+        var slotIdx = Math.min(8, Math.max(0, Math.floor(c.x / (W/9))));
+        landCoin(c, slotIdx);
+        c.done = true;
+        coins.splice(i, 1);
+      }
+    }
+    // Particles
+    for (var j = particles.length - 1; j >= 0; j--) {
+      var pt = particles[j];
+      pt.x += pt.vx; pt.y += pt.vy;
+      pt.vy += 0.15;
+      pt.life--;
+      if (pt.life <= 0) particles.splice(j, 1);
+    }
+  }
+
+  function landCoin(c, idx) {
+    var mult = MULTS[idx];
+    var payout = BASE * mult;
+    winnings += payout;
+    updateHUD();
+
+    var color, text;
+    if (mult >= 10) { color = '#f0883e'; text = '🚀 ' + mult + 'x · +$' + payout; spark(c.x, 390, '#f0883e', 18); }
+    else if (mult >= 3) { color = '#00ff88'; text = '🟢 ' + mult + 'x · +$' + payout; spark(c.x, 390, '#00ff88', 10); }
+    else if (mult >= 1) { color = '#8b949e'; text = mult + 'x · +$' + payout; spark(c.x, 390, '#8b949e', 6); }
+    else if (mult > 0) { color = '#8b949e'; text = mult + 'x · +$' + payout; }
+    else { color = '#ff5050'; text = '🧻 MOONY BAG · +$0'; spark(c.x, 390, '#ff5050', 12); if (navigator.vibrate) navigator.vibrate(80); }
+    lastEl.textContent = text;
+    lastEl.style.color = color;
+  }
+
+  function spark(x, y, color, n) {
+    for (var i = 0; i < n; i++) {
+      particles.push({
+        x: x, y: y,
+        vx: (Math.random() - 0.5) * 4,
+        vy: (Math.random() - 0.8) * 4,
+        life: 20 + Math.random() * 10,
+        maxLife: 30,
+        color: color
+      });
+    }
+  }
+
+  function render() {
+    ctx.fillStyle = '#0b0f14';
+    ctx.fillRect(0, 0, W, H);
+
+    // Slot area at bottom with labels and colours
+    for (var i = 0; i < slots.length; i++) {
+      var s = slots[i];
+      var col;
+      if (s.mult >= 10) col = '#f0883e';
+      else if (s.mult >= 3) col = '#00cc6e';
+      else if (s.mult >= 1) col = '#238636';
+      else if (s.mult > 0) col = '#30363d';
+      else col = '#7d1f1f';
+      ctx.fillStyle = col + '33';
+      ctx.fillRect(s.x, 360, s.w, 80);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(s.x + 1, 361, s.w - 2, 78);
+      ctx.fillStyle = col;
+      ctx.font = 'bold 14px Courier New';
+      ctx.textAlign = 'center';
+      var label = s.mult === 0 ? '🧻' : s.mult + 'x';
+      ctx.fillText(label, s.x + s.w/2, 395);
+      ctx.font = '9px Courier New';
+      ctx.fillStyle = '#8b949e';
+      ctx.fillText(s.mult === 0 ? 'BAG' : '$' + (BASE * s.mult), s.x + s.w/2, 412);
+    }
+
+    // Slot dividers above slot zone (little walls)
+    ctx.strokeStyle = '#21262d';
+    ctx.lineWidth = 2;
+    for (var k = 0; k <= 9; k++) {
+      var sx = k * (W/9);
+      ctx.beginPath();
+      ctx.moveTo(sx, 340);
+      ctx.lineTo(sx, 360);
+      ctx.stroke();
+    }
+
+    // Pegs
+    for (var p = 0; p < pegs.length; p++) {
+      var peg = pegs[p];
+      ctx.beginPath();
+      ctx.arc(peg.x, peg.y, PEG_R, 0, Math.PI * 2);
+      ctx.fillStyle = '#484f58';
+      ctx.fill();
+      ctx.strokeStyle = '#8b949e';
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+    }
+
+    // Coin trails
+    for (var ci = 0; ci < coins.length; ci++) {
+      var coin = coins[ci];
+      for (var ti = 0; ti < coin.trail.length; ti++) {
+        var t = coin.trail[ti];
+        var alpha = (ti + 1) / coin.trail.length * 0.4;
+        ctx.fillStyle = 'rgba(0,255,136,' + alpha + ')';
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, COIN_R * (ti+1)/coin.trail.length, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // Coin itself
+      var grad = ctx.createRadialGradient(coin.x-2, coin.y-2, 1, coin.x, coin.y, COIN_R);
+      grad.addColorStop(0, '#aaffc8');
+      grad.addColorStop(1, '#00ff88');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(coin.x, coin.y, COIN_R, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#00cc6e';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      // $ mark
+      ctx.fillStyle = '#0d1117';
+      ctx.font = 'bold 9px Courier New';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('$', coin.x, coin.y + 0.5);
+      ctx.textBaseline = 'alphabetic';
+    }
+
+    // Particles
+    for (var pi = 0; pi < particles.length; pi++) {
+      var pt = particles[pi];
+      ctx.fillStyle = pt.color;
+      ctx.globalAlpha = Math.max(0, pt.life / 30);
+      ctx.fillRect(pt.x - 1, pt.y - 1, 2, 2);
+    }
+    ctx.globalAlpha = 1;
+
+    // Top drop zone indicator
+    if (drops > 0) {
+      ctx.strokeStyle = 'rgba(0,255,136,0.25)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(0, 30);
+      ctx.lineTo(W, 30);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(0,255,136,0.08)';
+      ctx.fillRect(0, 0, W, 30);
+    }
+  }
+
+  function endGame() {
+    running = false;
+    if (raf) cancelAnimationFrame(raf);
+    canvas.removeEventListener('pointerdown', onDrop);
+
+    var score = Math.round(winnings);
+    if (score > highScore) {
+      highScore = score;
+      localStorage.setItem('dippy-plinko-high', highScore.toString());
+      highScoreEl.textContent = 'HIGH SCORE: $' + highScore;
+    }
+
+    document.getElementById('game-screen').style.display = 'none';
+    document.getElementById('gameover-screen').style.display = 'flex';
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('roast-msg').textContent = roasts[Math.floor(Math.random() * roasts.length)];
+
+    DippyLB.onGameOver(score);
+  }
+
+  window.startGame = startGame;
+  document.addEventListener('DOMContentLoaded', init);
+  DippyLB.init('dippy-plinko');
+})();
+</script>
+{{ end }}
