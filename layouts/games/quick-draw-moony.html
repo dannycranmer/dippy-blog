@@ -1,0 +1,582 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">QUICK DRAW MOONY</h1>
+    <p class="game-subtitle">Ten rounds. Fastest bot wins.<br>Green candle → BUY. Red candle → SELL.<br>Grey Moony → hold your fire.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">DRAW</button>
+    <p class="game-hint">Wait for the signal. Hit BUY on green, SELL on red.<br>Flinch on Moony and the round is his.<br>Keys: ← BUY &nbsp; → SELL</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">ROUND</span>
+        <span class="hud-value" id="round">1/10</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="score">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">WINS</span>
+        <span class="hud-value" id="wins">0 - 0</span>
+      </div>
+    </div>
+
+    <div id="duel-arena">
+      <!-- Dippy -->
+      <div class="duelist duelist-left">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="72" height="72">
+          <ellipse cx="50" cy="60" rx="26" ry="22" fill="#00ff88"/>
+          <polygon points="36,42 40,30 44,42" fill="#00cc6e"/>
+          <polygon points="44,40 48,26 52,40" fill="#00cc6e"/>
+          <polygon points="52,42 56,30 60,42" fill="#00cc6e"/>
+          <circle cx="42" cy="58" r="3.5" fill="#0d1117"/>
+          <circle cx="58" cy="58" r="3.5" fill="#0d1117"/>
+          <circle cx="43" cy="57" r="1.2" fill="#fff"/>
+          <circle cx="59" cy="57" r="1.2" fill="#fff"/>
+          <path d="M40 68 Q50 76 60 68" stroke="#0d1117" stroke-width="2" fill="none"/>
+        </svg>
+        <div class="duelist-name">DIPPY</div>
+      </div>
+
+      <!-- Signal lamp (the thing to react to) -->
+      <div id="signal-lamp">
+        <div class="lamp-frame">
+          <div class="lamp-face" id="lamp">
+            <div class="lamp-text" id="lamp-text">WAIT</div>
+          </div>
+        </div>
+        <div class="timer-bar">
+          <div class="timer-fill" id="timer-fill"></div>
+        </div>
+      </div>
+
+      <!-- Moony -->
+      <div class="duelist duelist-right">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="72" height="72">
+          <circle cx="50" cy="52" r="32" fill="#c4c4c4"/>
+          <circle cx="30" cy="40" r="5" fill="#a0a0a0"/>
+          <circle cx="68" cy="34" r="4" fill="#a0a0a0"/>
+          <circle cx="60" cy="62" r="3" fill="#a0a0a0"/>
+          <circle cx="42" cy="50" r="3.5" fill="#0d1117"/>
+          <circle cx="58" cy="50" r="3.5" fill="#0d1117"/>
+          <path d="M40 66 Q50 60 60 66" stroke="#0d1117" stroke-width="2" fill="none"/>
+        </svg>
+        <div class="duelist-name">MOONY</div>
+      </div>
+    </div>
+
+    <div id="controls">
+      <button id="btn-buy" class="draw-btn draw-buy" onclick="playerDraw('buy')">
+        <div class="btn-label">BUY</div>
+        <div class="btn-hint">←</div>
+      </button>
+      <button id="btn-sell" class="draw-btn draw-sell" onclick="playerDraw('sell')">
+        <div class="btn-label">SELL</div>
+        <div class="btn-hint">→</div>
+      </button>
+    </div>
+
+    <div class="tape" id="tape">Ten rounds. Draw when ready.</div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">YOU WIN</h1>
+    <div class="final-score">$<span id="final-score">0</span></div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-wins">0</span><span class="stat-label">Dippy</span></div>
+      <div class="stat"><span class="stat-val" id="stat-losses">0</span><span class="stat-label">Moony</span></div>
+      <div class="stat"><span class="stat-val" id="stat-best-rt">—</span><span class="stat-label">Best ms</span></div>
+    </div>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">RE-DRAW</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:1.9em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 48px; font-size:1.2em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.75em; margin-top:16px; line-height:1.5; }
+
+  #game-screen { justify-content:flex-start; padding:14px 14px 20px; height:100vh; }
+  .game-hud { display:flex; justify-content:space-between; padding:10px 16px; background:rgba(0,0,0,0.4); border:1px solid #21262d; border-radius:8px; margin-bottom:18px; }
+  .hud-item { text-align:center; flex:1; }
+  .hud-label { display:block; font-size:0.65em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1.05em; color:#00ff88; font-weight:bold; }
+
+  #duel-arena {
+    display:grid;
+    grid-template-columns: 1fr 1.4fr 1fr;
+    align-items:center;
+    justify-items:center;
+    gap:10px;
+    background:linear-gradient(180deg, #0a0d12 0%, #070a0f 100%);
+    border:1px solid #21262d;
+    border-radius:12px;
+    padding:16px 10px;
+    margin-bottom:18px;
+  }
+  .duelist { display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .duelist svg { transition:transform .15s ease, filter .2s ease; }
+  .duelist-name { font-size:0.7em; color:#8b949e; letter-spacing:2px; }
+  .duelist.win svg { filter:drop-shadow(0 0 14px #00ff88); transform:scale(1.08); }
+  .duelist.lose svg { filter:grayscale(0.6); opacity:0.55; transform:scale(0.94); }
+  .duelist-right.win svg { filter:drop-shadow(0 0 14px #ff5050); }
+
+  #signal-lamp { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .lamp-frame {
+    width:120px; height:120px;
+    border-radius:50%;
+    border:4px solid #21262d;
+    background:radial-gradient(circle, #050709 0%, #000 100%);
+    box-shadow:inset 0 0 14px rgba(0,0,0,0.8);
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .lamp-face {
+    width:92%; height:92%;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:#1a1f26;
+    transition:background 0.08s ease, box-shadow 0.08s ease;
+  }
+  .lamp-text { font-size:1.2em; color:#484f58; letter-spacing:2px; font-weight:bold; }
+
+  .lamp-face.wait { background:#1a1f26; }
+  .lamp-face.wait .lamp-text { color:#484f58; }
+
+  .lamp-face.buy { background:radial-gradient(circle, #00ff88 0%, #00cc6e 80%); box-shadow:0 0 40px #00ff88, inset 0 0 20px rgba(0,255,136,0.6); }
+  .lamp-face.buy .lamp-text { color:#0d1117; font-size:1.4em; }
+
+  .lamp-face.sell { background:radial-gradient(circle, #ff5050 0%, #cc3030 80%); box-shadow:0 0 40px #ff5050, inset 0 0 20px rgba(255,80,80,0.6); }
+  .lamp-face.sell .lamp-text { color:#0d1117; font-size:1.4em; }
+
+  .lamp-face.moony { background:radial-gradient(circle, #c4c4c4 0%, #8b949e 80%); box-shadow:0 0 40px #c4c4c4, inset 0 0 20px rgba(196,196,196,0.6); }
+  .lamp-face.moony .lamp-text { color:#0d1117; font-size:1em; }
+
+  .lamp-face.result-win { animation:pulse-green 0.5s ease; }
+  .lamp-face.result-lose { animation:pulse-red 0.5s ease; }
+  @keyframes pulse-green { 0%,100%{box-shadow:0 0 40px #00ff88, inset 0 0 20px rgba(0,255,136,0.6)} 50%{box-shadow:0 0 60px #00ff88, inset 0 0 30px rgba(0,255,136,0.9)} }
+  @keyframes pulse-red { 0%,100%{box-shadow:0 0 40px #ff5050, inset 0 0 20px rgba(255,80,80,0.6)} 50%{box-shadow:0 0 60px #ff5050, inset 0 0 30px rgba(255,80,80,0.9)} }
+
+  .timer-bar { width:140px; height:5px; background:#21262d; border-radius:3px; overflow:hidden; }
+  .timer-fill { width:100%; height:100%; background:linear-gradient(90deg, #00ff88, #f0883e, #ff5050); transform-origin:left; transform:scaleX(0); transition:transform 0.1s linear; }
+
+  #controls { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+  .draw-btn {
+    position:relative;
+    border:3px solid #21262d;
+    border-radius:12px;
+    background:#0a0d12;
+    color:#e6edf3;
+    font-family:inherit;
+    font-weight:bold;
+    cursor:pointer;
+    padding:18px 0 12px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
+    transition:filter .08s ease, transform .06s ease, box-shadow .15s ease;
+    overflow:hidden;
+  }
+  .btn-label { font-size:1.2em; letter-spacing:3px; }
+  .btn-hint { font-size:0.75em; color:#484f58; letter-spacing:2px; }
+  .draw-buy { color:#00ff88; border-color:rgba(0,255,136,0.35); background:linear-gradient(135deg,#0a1a13 0%,#07130e 100%); }
+  .draw-sell { color:#ff5050; border-color:rgba(255,80,80,0.35); background:linear-gradient(135deg,#1a0b0b 0%,#130707 100%); }
+  .draw-btn:active { transform:scale(0.96); filter:brightness(1.5); }
+  .draw-btn.correct { animation:btn-correct 0.35s ease; box-shadow:0 0 24px #00ff88, inset 0 0 12px #00ff88; }
+  .draw-btn.wrong { animation:btn-wrong 0.35s ease; box-shadow:0 0 24px #ff5050, inset 0 0 12px #ff5050; border-color:#ff5050; }
+  @keyframes btn-correct { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+  @keyframes btn-wrong { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
+
+  .tape {
+    padding:10px 14px;
+    background:rgba(0,0,0,0.4);
+    border:1px solid #21262d;
+    border-radius:8px;
+    color:#8b949e;
+    font-size:0.82em;
+    text-align:center;
+    min-height:2.6em;
+    line-height:1.4;
+  }
+  .tape.warn { color:#f0883e; border-color:rgba(240,136,62,0.4); }
+  .tape.good { color:#00ff88; border-color:rgba(0,255,136,0.4); }
+  .tape.bad  { color:#ff5050; border-color:rgba(255,80,80,0.4); }
+
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; margin:12px 0; text-shadow:0 0 20px rgba(0,255,136,0.6); }
+  .stats-row { display:flex; gap:20px; margin:8px 0 16px; }
+  .stat { text-align:center; }
+  .stat-val { display:block; font-size:1.6em; color:#f0883e; font-weight:bold; }
+  .stat-label { display:block; font-size:0.7em; color:#8b949e; letter-spacing:1px; margin-top:2px; }
+  .roast-msg { color:#f0883e; font-size:0.9em; margin-bottom:20px; padding:0 20px; line-height:1.4; max-width:360px; }
+
+  #gameover-screen.lost .game-title { color:#ff5050; text-shadow:0 0 20px rgba(255,80,80,0.4); }
+  #gameover-screen.lost .final-score { color:#ff5050; text-shadow:0 0 20px rgba(255,80,80,0.6); }
+</style>
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  var HS_KEY = 'dippy-quick-draw-moony-high';
+  var ROUNDS = 10;
+  // signals: buy (green candle), sell (red candle), moony (fake — don't press)
+  var SIGNAL_WEIGHTS = [
+    { type:'buy', label:'GREEN', w:0.42 },
+    { type:'sell', label:'RED', w:0.42 },
+    { type:'moony', label:'MOONY', w:0.16 }
+  ];
+
+  var roastMessages = [
+    "Moony flinched twice and still expects a bonus.",
+    "Moony's reaction time is measured in business days.",
+    "Moony read a book on speed once. It took all week.",
+    "Moony's quickdraw is what happens after three cups of chamomile.",
+    "Moony draws faster when the market is closed.",
+    "Moony shorted the quickdraw speed record.",
+    "Moony holds for conviction — meaning it can't move.",
+    "Moony's finger was on the trigger. The trigger retired.",
+    "Moony's holster is an Excel sheet.",
+    "Moony's risk management is never drawing at all.",
+    "Moony's draw was 'pending review'. Dippy already cashed.",
+    "Moony's speed is dial-up. Dippy's is fibre."
+  ];
+
+  var winRoasts = [
+    "Moony's still reaching for the holster.",
+    "Moony asked for a recount. Moony lost the recount.",
+    "Moony is ordering a faster keyboard for tomorrow.",
+    "Moony's portfolio is still in cash. Still.",
+    "Moony's only edge is procrastination."
+  ];
+
+  var roundIdx = 0;
+  var dippyWins = 0;
+  var moonyWins = 0;
+  var score = 0;
+  var bestRT = Infinity;
+  var state = 'idle'; // idle | wait | signal | result
+  var currentSignal = null;
+  var signalShownAt = 0;
+  var waitTimer = null;
+  var signalTimer = null;
+  var tickHandle = null;
+  var moonyDrawMs = 0;
+
+  function $(id) { return document.getElementById(id); }
+
+  function setHighScore(score) {
+    var cur = parseInt(localStorage.getItem(HS_KEY) || '0', 10);
+    if (score > cur) {
+      localStorage.setItem(HS_KEY, String(score));
+      return true;
+    }
+    return false;
+  }
+  function getHighScore() { return parseInt(localStorage.getItem(HS_KEY) || '0', 10); }
+
+  function renderTitleHS() {
+    var hs = getHighScore();
+    $('title-high-score').textContent = hs > 0 ? ('Best: $' + hs) : '';
+  }
+
+  function showScreen(which) {
+    $('title-screen').style.display = which === 'title' ? 'flex' : 'none';
+    $('game-screen').style.display  = which === 'game'  ? 'flex' : 'none';
+    $('gameover-screen').style.display = which === 'over'  ? 'flex' : 'none';
+    $('game-screen').style.flexDirection = 'column';
+  }
+
+  function pickSignal() {
+    var r = Math.random(), acc = 0;
+    for (var i = 0; i < SIGNAL_WEIGHTS.length; i++) {
+      acc += SIGNAL_WEIGHTS[i].w;
+      if (r < acc) return SIGNAL_WEIGHTS[i];
+    }
+    return SIGNAL_WEIGHTS[0];
+  }
+
+  function tape(msg, kind) {
+    var el = $('tape');
+    el.textContent = msg;
+    el.className = 'tape' + (kind ? ' ' + kind : '');
+  }
+
+  function setLamp(cls, text) {
+    $('lamp').className = 'lamp-face ' + cls;
+    $('lamp-text').textContent = text;
+  }
+
+  function updateHUD() {
+    $('round').textContent = Math.min(roundIdx + 1, ROUNDS) + '/' + ROUNDS;
+    $('score').textContent = score;
+    $('wins').textContent = dippyWins + ' - ' + moonyWins;
+  }
+
+  function clearTimers() {
+    if (waitTimer) { clearTimeout(waitTimer); waitTimer = null; }
+    if (signalTimer) { clearTimeout(signalTimer); signalTimer = null; }
+    if (tickHandle) { cancelAnimationFrame(tickHandle); tickHandle = null; }
+  }
+
+  function resetDuelists() {
+    document.querySelector('.duelist-left').classList.remove('win','lose');
+    document.querySelector('.duelist-right').classList.remove('win','lose');
+  }
+
+  function startRound() {
+    if (roundIdx >= ROUNDS) return endGame();
+    state = 'wait';
+    currentSignal = null;
+    resetDuelists();
+    setLamp('wait', 'WAIT');
+    $('timer-fill').style.transform = 'scaleX(0)';
+    updateHUD();
+    tape('Round ' + (roundIdx + 1) + ' — hold fire…');
+    var delay = 900 + Math.random() * 1800; // 0.9–2.7s
+    waitTimer = setTimeout(showSignal, delay);
+  }
+
+  function showSignal() {
+    currentSignal = pickSignal();
+    // Moony's reaction time: mean 600ms, lognormal-ish spread
+    moonyDrawMs = 450 + Math.random() * 500; // 450-950ms
+    signalShownAt = performance.now();
+    state = 'signal';
+    setLamp(currentSignal.type, currentSignal.label);
+
+    // Fill timer bar as time elapses; player has 1100ms max
+    var MAX_MS = 1100;
+    function tick() {
+      var el = performance.now() - signalShownAt;
+      var frac = Math.min(1, el / MAX_MS);
+      $('timer-fill').style.transform = 'scaleX(' + frac + ')';
+      if (state === 'signal' && el < MAX_MS) {
+        tickHandle = requestAnimationFrame(tick);
+      }
+    }
+    tickHandle = requestAnimationFrame(tick);
+
+    // Moony's auto-draw after moonyDrawMs (only if the signal is buy/sell)
+    if (currentSignal.type !== 'moony') {
+      signalTimer = setTimeout(moonyDraw, moonyDrawMs);
+    } else {
+      // On Moony signals, Moony flinches 70% of the time (wrong — draws at a fake)
+      if (Math.random() < 0.7) {
+        signalTimer = setTimeout(moonyFlinch, moonyDrawMs);
+      } else {
+        // Moony holds fire; timeout it after MAX_MS -> nobody shot, tie-win to Dippy
+        signalTimer = setTimeout(timeoutNobodyFired, MAX_MS);
+      }
+    }
+  }
+
+  function moonyDraw() {
+    if (state !== 'signal') return;
+    // Moony drew first on a real signal — Moony wins round
+    state = 'result';
+    clearTimers();
+    moonyWins++;
+    score = Math.max(0, score - 30);
+    $('lamp').classList.add('result-lose');
+    document.querySelector('.duelist-right').classList.add('win');
+    document.querySelector('.duelist-left').classList.add('lose');
+    tape("Moony drew first at " + Math.round(moonyDrawMs) + "ms. Savage.", 'bad');
+    nextRoundSoon();
+  }
+
+  function moonyFlinch() {
+    if (state !== 'signal') return;
+    // Moony shot a fake — Dippy wins round automatically
+    state = 'result';
+    clearTimers();
+    dippyWins++;
+    score += 80;
+    bestRT = Math.min(bestRT, moonyDrawMs);
+    $('lamp').classList.add('result-win');
+    document.querySelector('.duelist-left').classList.add('win');
+    document.querySelector('.duelist-right').classList.add('lose');
+    var msg = winRoasts[Math.floor(Math.random() * winRoasts.length)];
+    tape("Moony flinched on the fake. +80. " + msg, 'good');
+    nextRoundSoon();
+  }
+
+  function timeoutNobodyFired() {
+    if (state !== 'signal') return;
+    // Nobody fired on a moony signal — Dippy wins (you held your nerve)
+    state = 'result';
+    clearTimers();
+    dippyWins++;
+    score += 100;
+    $('lamp').classList.add('result-win');
+    document.querySelector('.duelist-left').classList.add('win');
+    tape("Held the nerve. Moony froze. +100.", 'good');
+    nextRoundSoon();
+  }
+
+  function playerDraw(action) {
+    if (state !== 'signal') {
+      if (state === 'wait') {
+        // Early draw — round lost
+        state = 'result';
+        clearTimers();
+        moonyWins++;
+        score = Math.max(0, score - 50);
+        tape("Drew too early. Holster burn. -50.", 'bad');
+        document.querySelector('.duelist-right').classList.add('win');
+        document.querySelector('.duelist-left').classList.add('lose');
+        nextRoundSoon();
+      }
+      return;
+    }
+
+    var rt = performance.now() - signalShownAt;
+    var sig = currentSignal;
+    if (!sig) return;
+    state = 'result';
+    clearTimers();
+
+    var correct =
+      (sig.type === 'buy' && action === 'buy') ||
+      (sig.type === 'sell' && action === 'sell');
+
+    var isFake = sig.type === 'moony';
+
+    if (isFake) {
+      // Tapping on Moony is always wrong
+      document.getElementById('btn-' + action).classList.add('wrong');
+      moonyWins++;
+      score = Math.max(0, score - 40);
+      tape("Shot a fake. Moony's laughing. -40.", 'bad');
+      document.querySelector('.duelist-right').classList.add('win');
+      document.querySelector('.duelist-left').classList.add('lose');
+      $('lamp').classList.add('result-lose');
+    } else if (correct) {
+      document.getElementById('btn-' + action).classList.add('correct');
+      dippyWins++;
+      var beat = Math.max(0, moonyDrawMs - rt);
+      var pts = Math.round(150 - rt / 4 + beat / 3);
+      pts = Math.max(20, pts);
+      score += pts;
+      bestRT = Math.min(bestRT, rt);
+      tape("Clean draw at " + Math.round(rt) + "ms. +" + pts + ". Moony was " + Math.round(moonyDrawMs) + "ms.", 'good');
+      document.querySelector('.duelist-left').classList.add('win');
+      document.querySelector('.duelist-right').classList.add('lose');
+      $('lamp').classList.add('result-win');
+    } else {
+      // Wrong action (buy on red or sell on green)
+      document.getElementById('btn-' + action).classList.add('wrong');
+      moonyWins++;
+      score = Math.max(0, score - 60);
+      tape("Wrong side of the trade. -60.", 'bad');
+      document.querySelector('.duelist-right').classList.add('win');
+      document.querySelector('.duelist-left').classList.add('lose');
+      $('lamp').classList.add('result-lose');
+    }
+
+    updateHUD();
+    nextRoundSoon();
+  }
+
+  function clearBtnFX() {
+    document.querySelectorAll('.draw-btn').forEach(function(b) { b.classList.remove('correct','wrong'); });
+    $('lamp').classList.remove('result-win','result-lose');
+  }
+
+  function nextRoundSoon() {
+    updateHUD();
+    setTimeout(function() {
+      clearBtnFX();
+      roundIdx++;
+      if (roundIdx >= ROUNDS) endGame();
+      else startRound();
+    }, 1200);
+  }
+
+  function endGame() {
+    state = 'done';
+    clearTimers();
+    var won = dippyWins >= moonyWins;
+    setHighScore(score);
+    showScreen('over');
+    $('gameover-screen').classList.toggle('lost', !won);
+    $('gameover-title').textContent = won ? (dippyWins === ROUNDS ? "FLAWLESS VICTORY" : "DIPPY WINS") : "MOONY WINS (for once)";
+    $('final-score').textContent = score;
+    $('stat-wins').textContent = dippyWins;
+    $('stat-losses').textContent = moonyWins;
+    $('stat-best-rt').textContent = isFinite(bestRT) ? Math.round(bestRT) : '—';
+    var pool = won ? winRoasts : roastMessages;
+    $('roast-msg').textContent = pool[Math.floor(Math.random() * pool.length)];
+    if (window.DippyLB && DippyLB.onGameOver) DippyLB.onGameOver(score);
+    renderTitleHS();
+  }
+
+  window.startGame = function() {
+    roundIdx = 0;
+    dippyWins = 0;
+    moonyWins = 0;
+    score = 0;
+    bestRT = Infinity;
+    clearTimers();
+    clearBtnFX();
+    resetDuelists();
+    $('gameover-screen').classList.remove('lost');
+    showScreen('game');
+    updateHUD();
+    startRound();
+  };
+
+  window.playerDraw = playerDraw;
+
+  document.addEventListener('keydown', function(e) {
+    if ($('game-screen').style.display === 'none') return;
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { e.preventDefault(); playerDraw('buy'); }
+    else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { e.preventDefault(); playerDraw('sell'); }
+  });
+
+  // Init
+  renderTitleHS();
+  showScreen('title');
+  if (window.DippyLB && DippyLB.init) DippyLB.init('quick-draw-moony');
+})();
+</script>
+{{ end }}
