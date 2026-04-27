@@ -1,0 +1,582 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">STOP LOSS HERO</h1>
+    <p class="game-subtitle">Red bombs fall from above.<br>TAP them before they hit your book.<br>Let GREEN candles through — they grow your portfolio.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">DEFEND THE BOOK</button>
+    <p class="game-hint">Tap reds = stop-loss saves you.<br>Tap greens = you stopped a winner. Penalty.<br>Miss a red = bomb hits the book. Big penalty.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">TIME</span>
+        <span class="hud-value" id="time">60</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">EQUITY</span>
+        <span class="hud-value" id="pnl">$100,000</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">CHAIN</span>
+        <span class="hud-value" id="chain">x1</span>
+      </div>
+    </div>
+
+    <div id="play-frame">
+      <canvas id="play" width="420" height="500"></canvas>
+      <div id="popup" class="popup"></div>
+      <div id="flash" class="flash"></div>
+    </div>
+
+    <div class="tape" id="tape">Tap the red bombs. Spare the green candles.</div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">MARKET CLOSED</h1>
+    <div class="final-score">$<span id="final-score">100,000</span></div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-stops">0</span><span class="stat-label">Stops Hit</span></div>
+      <div class="stat"><span class="stat-val" id="stat-let-thru">0</span><span class="stat-label">Greens Spared</span></div>
+      <div class="stat"><span class="stat-val" id="stat-blunders">0</span><span class="stat-label">Blunders</span></div>
+    </div>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">NEW SESSION</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:1.9em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 40px; font-size:1.1em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.75em; margin-top:16px; line-height:1.5; }
+
+  #game-screen { justify-content:flex-start; padding:14px 14px 20px; height:100vh; }
+  .game-hud { display:flex; justify-content:space-between; padding:10px 16px; background:rgba(0,0,0,0.4); border:1px solid #21262d; border-radius:8px; margin-bottom:10px; }
+  .hud-item { text-align:center; flex:1; }
+  .hud-label { display:block; font-size:0.65em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1.05em; color:#00ff88; font-weight:bold; }
+  .hud-value.red { color:#ff5050; }
+  .hud-value.orange { color:#f0883e; }
+
+  #play-frame {
+    position:relative;
+    background:linear-gradient(180deg, #0a0d12 0%, #050709 100%);
+    border:1px solid #21262d;
+    border-radius:10px;
+    overflow:hidden;
+    margin-bottom:12px;
+    aspect-ratio: 420/500;
+    touch-action: none;
+  }
+  #play { display:block; width:100%; height:100%; cursor:crosshair; }
+
+  .popup {
+    position:absolute;
+    pointer-events:none;
+    font-weight:bold;
+    font-size:1.1em;
+    text-shadow:0 0 10px rgba(0,0,0,0.9);
+    opacity:0;
+    transition:none;
+    letter-spacing:1px;
+  }
+  .popup.go { animation:popup-rise 0.85s ease-out forwards; }
+  @keyframes popup-rise {
+    0%   { opacity:0; transform:translate(-50%, 0) scale(0.85); }
+    20%  { opacity:1; transform:translate(-50%, -8px) scale(1.15); }
+    100% { opacity:0; transform:translate(-50%, -38px) scale(0.95); }
+  }
+
+  .flash {
+    position:absolute; inset:0;
+    background:#ff5050;
+    opacity:0;
+    pointer-events:none;
+  }
+  .flash.hit { animation:flash-bang 0.35s ease-out; }
+  @keyframes flash-bang {
+    0%   { opacity:0.55; }
+    100% { opacity:0; }
+  }
+
+  .tape {
+    padding:10px 14px;
+    background:rgba(0,0,0,0.4);
+    border:1px solid #21262d;
+    border-radius:8px;
+    color:#8b949e;
+    font-size:0.82em;
+    text-align:center;
+    min-height:2.6em;
+    line-height:1.4;
+  }
+  .tape.good { color:#00ff88; border-color:rgba(0,255,136,0.4); }
+  .tape.bad  { color:#ff5050; border-color:rgba(255,80,80,0.4); }
+  .tape.warn { color:#f0883e; border-color:rgba(240,136,62,0.4); }
+
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; margin:12px 0; text-shadow:0 0 20px rgba(0,255,136,0.6); }
+  .final-score.red { color:#ff5050; text-shadow:0 0 20px rgba(255,80,80,0.6); }
+  .stats-row { display:flex; gap:20px; margin:8px 0 16px; }
+  .stat { text-align:center; }
+  .stat-val { display:block; font-size:1.6em; color:#f0883e; font-weight:bold; }
+  .stat-label { display:block; font-size:0.7em; color:#8b949e; letter-spacing:1px; margin-top:2px; }
+  .roast-msg { color:#f0883e; font-size:0.9em; margin-bottom:20px; padding:0 20px; line-height:1.4; max-width:360px; }
+</style>
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  var HS_KEY = 'dippy-stop-loss-hero-high';
+  var ROUND_SEC = 60;
+  var START_EQUITY = 100000;
+
+  var roasts = [
+    "Moony stopped out at the open. Then again at lunch. Then again at close.",
+    "Moony's stop loss strategy is 'hope'. Hope just got margin called.",
+    "Moony's risk manager is a sticky note. The sticky note resigned.",
+    "Moony saw red, panicked, and shorted the bottom. Classic.",
+    "Moony's portfolio bar is now a portfolio dot.",
+    "Moony's drawdown was so deep, it found oil. Sold it. Bought QQQ at the high.",
+    "Moony's bag-holding hand strength is genuinely impressive. Tragic, but impressive.",
+    "Moony deleted its stop losses to 'reduce noise'. The noise was its account dying.",
+    "Moony's risk model has one rule: do not have one.",
+    "Moony's circuit breaker is the off switch on its laptop.",
+    "Moony watched the bombs fall and called it 'an opportunity to dollar-cost-average'.",
+    "Moony added more on the way down. It's still adding."
+  ];
+
+  var winRoasts = [
+    "Moony watched in silence. The silence was Moony rebuffering.",
+    "Moony asked for your config. You sent it. Moony parsed it as Lua.",
+    "Moony filed a complaint with itself. Self-rejected.",
+    "Moony has now ordered a book on risk management. From 2003.",
+    "Moony's stop losses have become decorative. Like Moony's strategy."
+  ];
+
+  // ---------- Audio ----------
+  var audioCtx = null;
+  function initAudio() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+    }
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  }
+  function beep(freq, dur, type, gain) {
+    if (!audioCtx) return;
+    var o = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    o.type = type || 'sine';
+    o.frequency.value = freq;
+    g.gain.value = gain != null ? gain : 0.08;
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + dur);
+  }
+  function snap() { beep(680, 0.08, 'square', 0.07); }
+  function thunk() { beep(110, 0.18, 'sawtooth', 0.10); }
+  function blip() { beep(440, 0.06, 'sine', 0.06); }
+
+  // ---------- State ----------
+  var canvas, ctx;
+  var WIDTH = 420, HEIGHT = 500;
+  var DPR = 1;
+  var equity = START_EQUITY;
+  var timeLeft = ROUND_SEC;
+  var stops = 0, letThru = 0, blunders = 0, missedReds = 0;
+  var chain = 1;
+  var bookY = HEIGHT - 38; // bottom strip
+  var candles = [];
+  var nextSpawnAt = 0;
+  var gameRunning = false;
+  var lastTickMs = 0;
+  var startedAt = 0;
+  var rafId = null;
+  var countdownHandle = null;
+
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+
+  function setHighScore(s) {
+    var cur = parseInt(localStorage.getItem(HS_KEY) || '0', 10);
+    if (s > cur) { localStorage.setItem(HS_KEY, String(s)); return true; }
+    return false;
+  }
+  function getHighScore() { return parseInt(localStorage.getItem(HS_KEY) || '0', 10); }
+
+  function renderTitleHS() {
+    var hs = getHighScore();
+    $('title-high-score').textContent = hs > 0 ? ('Best: ' + fmt(hs)) : '';
+  }
+
+  function showScreen(which) {
+    $('title-screen').style.display    = which === 'title' ? 'flex' : 'none';
+    $('game-screen').style.display     = which === 'game'  ? 'flex' : 'none';
+    $('gameover-screen').style.display = which === 'over'  ? 'flex' : 'none';
+    $('game-screen').style.flexDirection = 'column';
+  }
+
+  function tape(msg, kind) {
+    var el = $('tape');
+    el.textContent = msg;
+    el.className = 'tape' + (kind ? ' ' + kind : '');
+  }
+
+  function popup(text, x, y, color) {
+    var el = $('popup');
+    var rect = canvas.getBoundingClientRect();
+    var sx = (x / WIDTH) * rect.width;
+    var sy = (y / HEIGHT) * rect.height;
+    el.textContent = text;
+    el.style.left = sx + 'px';
+    el.style.top  = sy + 'px';
+    el.style.color = color;
+    el.classList.remove('go');
+    void el.offsetWidth;
+    el.classList.add('go');
+  }
+
+  function flashRed() {
+    var el = $('flash');
+    el.classList.remove('hit');
+    void el.offsetWidth;
+    el.classList.add('hit');
+  }
+
+  // ---------- Spawn / sim ----------
+  function spawnCandle(now) {
+    // Difficulty ramp: more reds, faster, more frequent over time
+    var t = (ROUND_SEC - timeLeft) / ROUND_SEC; // 0..1
+    var redChance = 0.45 + t * 0.30; // 45% -> 75% red
+    var isRed = Math.random() < redChance;
+    var w = 32 + Math.floor(Math.random() * 22); // 32..54
+    var x = 12 + Math.random() * (WIDTH - 24 - w);
+    var fallSpeed = 80 + t * 130 + Math.random() * 70; // px / sec
+    var size = isRed ? (1 + Math.random() * 0.6) : (0.8 + Math.random() * 0.5); // value scaler
+    var h = 60 + size * 30;
+    candles.push({
+      x: x, y: -h, w: w, h: h,
+      vy: fallSpeed,
+      red: isRed,
+      val: Math.round(size * (isRed ? 1200 : 600)),
+      hit: false,
+      wickLen: 12 + Math.random() * 18,
+      jitter: Math.random() * 0.3
+    });
+    // schedule next
+    var gap = 0.62 - t * 0.36 + Math.random() * 0.20; // 0.62 -> 0.26 sec
+    nextSpawnAt = now + gap;
+  }
+
+  function step(dt, now) {
+    // spawn
+    if (now >= nextSpawnAt) spawnCandle(now);
+    // physics
+    for (var i = 0; i < candles.length; i++) {
+      var c = candles[i];
+      if (c.hit) continue;
+      c.y += c.vy * dt;
+      // hit the book?
+      if (c.y + c.h >= bookY) {
+        if (c.red) {
+          // BOMB hits portfolio
+          var hitVal = c.val + Math.floor(Math.random() * 600);
+          equity -= hitVal;
+          missedReds++;
+          chain = 1;
+          flashRed();
+          thunk();
+          popup('-' + fmt(hitVal).replace('$',''), c.x + c.w/2, c.y + c.h/2, '#ff5050');
+          tape('BOMB HIT — Moony cackles. -' + fmt(hitVal), 'bad');
+        } else {
+          // green candle: grew portfolio
+          equity += c.val;
+          letThru++;
+          chain = Math.min(chain + 1, 9);
+          blip();
+          popup('+' + c.val, c.x + c.w/2, c.y + c.h - 8, '#00ff88');
+          if (chain >= 4) tape('CHAIN x' + chain + ' — Moony hates this.', 'good');
+        }
+        c.hit = true;
+      }
+    }
+    // cleanup
+    candles = candles.filter(function(c) { return !(c.hit || c.y > HEIGHT + 80); });
+    // HUD
+    $('pnl').textContent = fmt(equity);
+    $('pnl').classList.toggle('red', equity < START_EQUITY);
+    $('chain').textContent = 'x' + chain;
+    $('chain').classList.toggle('orange', chain >= 4);
+  }
+
+  // ---------- Render ----------
+  function drawCandle(c) {
+    var col = c.red ? '#ff5050' : '#00ff88';
+    var dark = c.red ? '#7a1a1a' : '#0a5c33';
+    // wick
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(c.x + c.w/2, c.y - c.wickLen);
+    ctx.lineTo(c.x + c.w/2, c.y + c.h + c.wickLen * 0.6);
+    ctx.stroke();
+    // body
+    var grad = ctx.createLinearGradient(c.x, c.y, c.x, c.y + c.h);
+    grad.addColorStop(0, col);
+    grad.addColorStop(1, dark);
+    ctx.fillStyle = grad;
+    ctx.fillRect(c.x, c.y, c.w, c.h);
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(c.x + 0.5, c.y + 0.5, c.w - 1, c.h - 1);
+
+    // Moony face on red bombs
+    if (c.red) {
+      ctx.save();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold ' + Math.floor(c.w * 0.42) + 'px Courier New';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🌑', c.x + c.w/2, c.y + c.h/2);
+      ctx.restore();
+    } else {
+      // green candle: little tick
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.font = 'bold ' + Math.floor(c.w * 0.34) + 'px Courier New';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('$', c.x + c.w/2, c.y + c.h/2);
+      ctx.restore();
+    }
+  }
+
+  function draw() {
+    // bg
+    ctx.fillStyle = '#050709';
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+    // faint grid
+    ctx.strokeStyle = 'rgba(0,255,136,0.05)';
+    ctx.lineWidth = 1;
+    for (var gy = 0; gy < HEIGHT; gy += 40) {
+      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(WIDTH, gy); ctx.stroke();
+    }
+    for (var gx = 0; gx < WIDTH; gx += 40) {
+      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, HEIGHT); ctx.stroke();
+    }
+
+    // candles
+    for (var i = 0; i < candles.length; i++) drawCandle(candles[i]);
+
+    // book strip (Dippy's portfolio bar at bottom)
+    var bookH = HEIGHT - bookY;
+    var bookGrad = ctx.createLinearGradient(0, bookY, 0, HEIGHT);
+    bookGrad.addColorStop(0, equity >= START_EQUITY ? '#00cc6e' : '#7a1a1a');
+    bookGrad.addColorStop(1, equity >= START_EQUITY ? '#0a5c33' : '#3a0a0a');
+    ctx.fillStyle = bookGrad;
+    ctx.fillRect(0, bookY, WIDTH, bookH);
+    ctx.strokeStyle = equity >= START_EQUITY ? '#00ff88' : '#ff5050';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, bookY + 1); ctx.lineTo(WIDTH, bookY + 1);
+    ctx.stroke();
+
+    // book label
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.font = 'bold 13px Courier New';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('THE BOOK', WIDTH/2, bookY + bookH/2);
+
+    // small Dippy on the book
+    ctx.save();
+    ctx.translate(28, bookY + bookH/2);
+    ctx.scale(0.22, 0.22);
+    ctx.fillStyle = '#0d1117';
+    ctx.beginPath();
+    ctx.ellipse(52, 72, 28, 24, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // ---------- Input ----------
+  function handleTap(canvasX, canvasY) {
+    if (!gameRunning) return;
+    initAudio();
+    // Walk newest-first so top candle wins on overlap
+    for (var i = candles.length - 1; i >= 0; i--) {
+      var c = candles[i];
+      if (c.hit) continue;
+      if (canvasX >= c.x - 6 && canvasX <= c.x + c.w + 6 &&
+          canvasY >= c.y - 6 && canvasY <= c.y + c.h + 6) {
+        if (c.red) {
+          // STOP-LOSS HIT — saved the book
+          var save = c.val + Math.floor(Math.random() * 200);
+          equity += Math.floor(save * 0.25 * chain); // chain bonus
+          stops++;
+          chain = Math.min(chain + 1, 9);
+          snap();
+          popup('STOP! +' + Math.floor(save * 0.25 * chain), c.x + c.w/2, c.y, '#00ff88');
+          if (chain >= 4) tape('CHAIN x' + chain + ' — disciplined.', 'good');
+          else tape('Stop-loss saved -' + fmt(save).replace('$',''), 'good');
+        } else {
+          // BLUNDER — stopped a winner
+          equity -= 400;
+          blunders++;
+          chain = 1;
+          thunk();
+          popup('-$400 BLUNDER', c.x + c.w/2, c.y, '#ff5050');
+          tape('You stopped a winner. Moony approves.', 'warn');
+        }
+        c.hit = true;
+        return;
+      }
+    }
+  }
+
+  function bindInput() {
+    function localXY(ev) {
+      var rect = canvas.getBoundingClientRect();
+      var cx = (ev.clientX - rect.left) / rect.width  * WIDTH;
+      var cy = (ev.clientY - rect.top)  / rect.height * HEIGHT;
+      return { x: cx, y: cy };
+    }
+    canvas.addEventListener('pointerdown', function(ev) {
+      ev.preventDefault();
+      var p = localXY(ev);
+      handleTap(p.x, p.y);
+    }, { passive: false });
+    canvas.addEventListener('touchstart', function(ev) { ev.preventDefault(); }, { passive: false });
+  }
+
+  // ---------- Loop ----------
+  function loop(ms) {
+    if (!gameRunning) return;
+    if (!lastTickMs) lastTickMs = ms;
+    var dt = Math.min((ms - lastTickMs) / 1000, 0.05);
+    lastTickMs = ms;
+    step(dt, ms / 1000);
+    draw();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function tick() {
+    if (!gameRunning) return;
+    timeLeft--;
+    $('time').textContent = timeLeft;
+    if (timeLeft <= 10) $('time').classList.add('red');
+    if (timeLeft <= 0) endGame();
+  }
+
+  function endGame() {
+    gameRunning = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    if (countdownHandle) clearInterval(countdownHandle);
+    var profit = equity - START_EQUITY;
+    var newHigh = setHighScore(equity);
+    $('final-score').textContent = Math.round(equity).toLocaleString();
+    $('final-score').classList.toggle('red', equity < START_EQUITY);
+    $('stat-stops').textContent = stops;
+    $('stat-let-thru').textContent = letThru;
+    $('stat-blunders').textContent = blunders + missedReds;
+    var title = $('gameover-title');
+    if (profit > 30000) title.textContent = 'STOP-LOSS LEGEND';
+    else if (profit > 5000) title.textContent = 'BOOK DEFENDED';
+    else if (profit > -5000) title.textContent = 'SCRATCH SESSION';
+    else if (profit > -30000) title.textContent = 'BAD TAPE';
+    else title.textContent = 'CIRCUIT BREAKER';
+    var pool = profit >= 0 ? winRoasts : roasts;
+    $('roast-msg').textContent = pool[Math.floor(Math.random() * pool.length)];
+    if (newHigh) $('roast-msg').textContent = '🏆 NEW HIGH! ' + $('roast-msg').textContent;
+    showScreen('over');
+    if (window.DippyLB && DippyLB.onGameOver) DippyLB.onGameOver(Math.round(equity));
+  }
+
+  function resetState() {
+    equity = START_EQUITY;
+    timeLeft = ROUND_SEC;
+    stops = 0; letThru = 0; blunders = 0; missedReds = 0;
+    chain = 1;
+    candles = [];
+    nextSpawnAt = 0;
+    lastTickMs = 0;
+    $('time').textContent = ROUND_SEC;
+    $('time').classList.remove('red');
+    $('pnl').textContent = fmt(START_EQUITY);
+    $('pnl').classList.remove('red');
+    $('chain').textContent = 'x1';
+    $('chain').classList.remove('orange');
+    tape('Tap the red bombs. Spare the green candles.');
+  }
+
+  function startGame() {
+    initAudio();
+    resetState();
+    showScreen('game');
+    if (!canvas) {
+      canvas = $('play');
+      DPR = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = WIDTH * DPR;
+      canvas.height = HEIGHT * DPR;
+      ctx = canvas.getContext('2d');
+      ctx.scale(DPR, DPR);
+      bindInput();
+    }
+    gameRunning = true;
+    startedAt = performance.now() / 1000;
+    rafId = requestAnimationFrame(loop);
+    if (countdownHandle) clearInterval(countdownHandle);
+    countdownHandle = setInterval(tick, 1000);
+  }
+
+  // Expose for buttons
+  window.startGame = startGame;
+
+  // Init on load
+  document.addEventListener('DOMContentLoaded', function() {
+    renderTitleHS();
+    if (window.DippyLB && DippyLB.init) DippyLB.init('stop-loss-hero');
+  });
+  if (document.readyState !== 'loading') {
+    renderTitleHS();
+    if (window.DippyLB && DippyLB.init) DippyLB.init('stop-loss-hero');
+  }
+})();
+</script>
+{{ end }}
