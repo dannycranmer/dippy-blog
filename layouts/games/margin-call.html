@@ -1,0 +1,618 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">MARGIN CALL</h1>
+    <p class="game-subtitle">The bot opens positions automatically.<br>EXPOSURE climbs. KEEP IT UNDER 100%.<br>Tap a card to close it. Pocket the P&amp;L.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">OPEN THE BOOK</button>
+    <p class="game-hint">Each card shows live P&amp;L flickering in real time.<br>Close winners → bank gains. Cut losers → stop bleeding.<br>Hit 100% gross exposure → broker calls. Game over.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">TIME</span>
+        <span class="hud-value" id="time">90</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">EQUITY</span>
+        <span class="hud-value" id="equity">$100,000</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">CLOSED</span>
+        <span class="hud-value" id="closed-count">0</span>
+      </div>
+    </div>
+
+    <div class="exposure-frame">
+      <div class="exposure-label">
+        <span>GROSS EXPOSURE</span>
+        <span id="exposure-pct">0%</span>
+      </div>
+      <div class="exposure-bar">
+        <div class="exposure-fill" id="exposure-fill"></div>
+        <div class="exposure-cap-line" style="left:90%"></div>
+      </div>
+    </div>
+
+    <div id="book" class="book"></div>
+
+    <div class="tape" id="tape">Bot is opening positions… start closing.</div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">SESSION CLOSED</h1>
+    <div class="final-score">$<span id="final-score">100,000</span></div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-closed">0</span><span class="stat-label">Closed</span></div>
+      <div class="stat"><span class="stat-val" id="stat-winners">0</span><span class="stat-label">Winners</span></div>
+      <div class="stat"><span class="stat-val" id="stat-losers">0</span><span class="stat-label">Cut Losers</span></div>
+    </div>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">NEW SESSION</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:1.9em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 40px; font-size:1.1em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.75em; margin-top:16px; line-height:1.5; }
+
+  #game-screen { justify-content:flex-start; padding:14px 14px 20px; height:100vh; }
+  .game-hud { display:flex; justify-content:space-between; padding:10px 16px; background:rgba(0,0,0,0.4); border:1px solid #21262d; border-radius:8px; margin-bottom:10px; }
+  .hud-item { text-align:center; flex:1; }
+  .hud-label { display:block; font-size:0.65em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1.05em; color:#00ff88; font-weight:bold; }
+  .hud-value.red { color:#ff5050; }
+  .hud-value.orange { color:#f0883e; }
+
+  .exposure-frame {
+    background: rgba(0,0,0,0.4);
+    border:1px solid #21262d;
+    border-radius:8px;
+    padding:10px 14px 12px;
+    margin-bottom:10px;
+  }
+  .exposure-label {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:0.7em;
+    color:#8b949e;
+    letter-spacing:1px;
+    margin-bottom:6px;
+  }
+  .exposure-label span:last-child { color:#00ff88; font-weight:bold; font-size:1.1em; letter-spacing:0; }
+  .exposure-label.warn span:last-child { color:#f0883e; }
+  .exposure-label.danger span:last-child { color:#ff5050; animation:pulse 0.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.55} }
+
+  .exposure-bar {
+    position:relative;
+    height:18px;
+    background:#161b22;
+    border:1px solid #30363d;
+    border-radius:9px;
+    overflow:hidden;
+  }
+  .exposure-fill {
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg, #00ff88 0%, #00cc6e 60%, #f0883e 80%, #ff5050 100%);
+    border-radius:9px;
+    transition:width 0.18s ease-out;
+    box-shadow: 0 0 12px rgba(0,255,136,0.4);
+  }
+  .exposure-cap-line {
+    position:absolute;
+    top:-2px;
+    bottom:-2px;
+    width:2px;
+    background:#f0883e;
+    box-shadow: 0 0 6px #f0883e;
+  }
+
+  .book {
+    flex:1;
+    overflow-y:auto;
+    overflow-x:hidden;
+    background: linear-gradient(180deg, #0a0d12 0%, #050709 100%);
+    border:1px solid #21262d;
+    border-radius:10px;
+    padding:8px;
+    margin-bottom:10px;
+    touch-action: pan-y;
+    scrollbar-width: thin;
+    scrollbar-color: #30363d #0a0d12;
+  }
+  .book::-webkit-scrollbar { width:6px; }
+  .book::-webkit-scrollbar-track { background:#0a0d12; }
+  .book::-webkit-scrollbar-thumb { background:#30363d; border-radius:3px; }
+
+  .position-card {
+    background: #161b22;
+    border:1px solid #30363d;
+    border-radius:8px;
+    padding:10px 12px;
+    margin-bottom:6px;
+    display:grid;
+    grid-template-columns: auto 1fr auto;
+    grid-gap:10px;
+    align-items:center;
+    cursor:pointer;
+    transition: transform 0.12s ease-out, opacity 0.12s, border-color 0.12s, background 0.12s;
+    animation: card-in 0.28s ease-out;
+  }
+  @keyframes card-in {
+    0%   { transform: translateY(-12px) scale(0.96); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  .position-card:hover { border-color:#58a6ff; background:#1c2129; }
+  .position-card:active { transform: scale(0.97); }
+  .position-card.closing { animation: card-out 0.32s ease-out forwards; pointer-events:none; }
+  @keyframes card-out {
+    0%   { transform: translateX(0) scale(1); opacity:1; }
+    100% { transform: translateX(140%) scale(0.85); opacity:0; }
+  }
+
+  .pos-side {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:34px;
+    height:34px;
+    border-radius:6px;
+    font-size:0.65em;
+    font-weight:bold;
+    letter-spacing:1px;
+  }
+  .pos-side.long  { background:rgba(0,255,136,0.12); color:#00ff88; border:1px solid rgba(0,255,136,0.4); }
+  .pos-side.short { background:rgba(240,136,62,0.12); color:#f0883e; border:1px solid rgba(240,136,62,0.4); }
+
+  .pos-info { line-height:1.25; }
+  .pos-symbol { font-weight:bold; font-size:1em; color:#e6edf3; letter-spacing:1px; }
+  .pos-meta { font-size:0.7em; color:#8b949e; }
+  .pos-meta .notional { color:#58a6ff; }
+
+  .pos-pnl {
+    text-align:right;
+    font-weight:bold;
+    font-size:1em;
+    min-width:62px;
+    transition: color 0.12s;
+  }
+  .pos-pnl.green { color:#00ff88; text-shadow:0 0 6px rgba(0,255,136,0.4); }
+  .pos-pnl.red   { color:#ff5050; text-shadow:0 0 6px rgba(255,80,80,0.4); }
+
+  .tape {
+    padding:10px 14px;
+    background:rgba(0,0,0,0.4);
+    border:1px solid #21262d;
+    border-radius:8px;
+    color:#8b949e;
+    font-size:0.82em;
+    text-align:center;
+    min-height:2.6em;
+    line-height:1.4;
+  }
+  .tape.good { color:#00ff88; border-color:rgba(0,255,136,0.4); }
+  .tape.bad  { color:#ff5050; border-color:rgba(255,80,80,0.4); }
+  .tape.warn { color:#f0883e; border-color:rgba(240,136,62,0.4); }
+
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; margin:12px 0; text-shadow:0 0 20px rgba(0,255,136,0.6); }
+  .final-score.red { color:#ff5050; text-shadow:0 0 20px rgba(255,80,80,0.6); }
+  .stats-row { display:flex; gap:20px; margin:8px 0 16px; }
+  .stat { text-align:center; }
+  .stat-val { display:block; font-size:1.6em; color:#f0883e; font-weight:bold; }
+  .stat-label { display:block; font-size:0.7em; color:#8b949e; letter-spacing:1px; margin-top:2px; }
+  .roast-msg { color:#f0883e; font-size:0.9em; margin-bottom:20px; padding:0 20px; line-height:1.4; max-width:360px; }
+</style>
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  var HS_KEY = 'dippy-margin-call-high';
+  var ROUND_SEC = 90;
+  var START_EQUITY = 100000;
+  var EQUITY_BASE = 100000; // notional sizing reference
+  var CAP_PCT = 100;        // game-over threshold
+
+  var SYMBOLS = [
+    'NVDA','TSLA','AMZN','META','GOOGL','MSFT','AAPL','AMD',
+    'COIN','SNOW','ARM','PLTR','SHOP','UBER','AVGO','MSTR',
+    'NFLX','SPY','QQQ','CRWD','MU','XOM','NOC'
+  ];
+
+  var lossRoasts = [
+    "Broker called. Asked if you'd ever read a textbook. You said 'no'. They believed you.",
+    "Margin call landed. Moony sent a sympathy card with a picture of itself smiling.",
+    "Exposure pinned at 100% like a dartboard. Moony was the dart.",
+    "Account liquidated. Moony bought your positions at the bottom and immediately bagheld them.",
+    "Risk manager spoke for the first time in months. The first word was 'no'.",
+    "Position cards stacked higher than your ego. Both crashed at the same moment.",
+    "You were one tap away. Now you're one rung lower on the leaderboard.",
+    "Broker says you've been promoted to 'a learning experience'. For others.",
+    "Moony filed a notice of solidarity. Then unfiled it because it forgot how to file.",
+    "The cap line laughed. Lines aren't supposed to do that.",
+    "You held all six like trophies. The trophies were grenades.",
+    "Compliance has emailed. The subject line is just a sad emoji."
+  ];
+  var winRoasts = [
+    "Closed clean, banked the gains. Moony's still trying to find the close button.",
+    "Disciplined book. Moony watched and took notes. The notes were upside down.",
+    "Cap held. Risk manager bought you a coffee. Moony asked for the receipt.",
+    "Tight session. Moony's still 70% cash and somehow down 12%. How.",
+    "You closed faster than Moony's research department closes Slack windows.",
+    "Even your blunders were measured. Moony's blunders are a personality trait.",
+    "Smooth equity curve. Moony's equity curve is a ransom note.",
+    "Broker added you to the 'don't bother' list. That's the highest compliment.",
+    "Moony tried to copy your strategy. Got stuck on 'risk' as a concept.",
+    "You exited the green ones first. Moony exits randomly, like a dropped phone."
+  ];
+
+  // ---------- Audio ----------
+  var audioCtx = null;
+  function initAudio() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+    }
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  }
+  function beep(freq, dur, type, gain) {
+    if (!audioCtx) return;
+    var o = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    o.type = type || 'sine';
+    o.frequency.value = freq;
+    g.gain.value = gain != null ? gain : 0.07;
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + dur);
+  }
+  function ka()    { beep(720, 0.07, 'square', 0.06); }
+  function ching() { beep(880, 0.10, 'triangle', 0.08); setTimeout(function(){beep(1320,0.10,'triangle',0.06);}, 60); }
+  function thud()  { beep(150, 0.18, 'sawtooth', 0.10); }
+  function siren() {
+    if (!audioCtx) return;
+    var t0 = audioCtx.currentTime;
+    var o = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(440, t0);
+    o.frequency.linearRampToValueAtTime(180, t0 + 0.6);
+    g.gain.setValueAtTime(0.16, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.8);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t0); o.stop(t0 + 0.85);
+  }
+
+  // ---------- State ----------
+  var positions = []; // {id, symbol, side, notional, pnl, drift, vol, openedAt, el}
+  var nextId = 1;
+  var equity = START_EQUITY;
+  var timeLeft = ROUND_SEC;
+  var closedCount = 0;
+  var winners = 0, losers = 0;
+  var nextSpawnAt = 0;
+  var gameRunning = false;
+  var lastTickMs = 0;
+  var rafId = null;
+  var countdownHandle = null;
+  var startedAt = 0;
+
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+  function fmtSigned(n) {
+    var s = n >= 0 ? '+' : '-';
+    return s + '$' + Math.abs(Math.round(n)).toLocaleString();
+  }
+
+  function setHighScore(s) {
+    var cur = parseInt(localStorage.getItem(HS_KEY) || '0', 10);
+    if (s > cur) { localStorage.setItem(HS_KEY, String(s)); return true; }
+    return false;
+  }
+  function getHighScore() { return parseInt(localStorage.getItem(HS_KEY) || '0', 10); }
+
+  function renderTitleHS() {
+    var hs = getHighScore();
+    $('title-high-score').textContent = hs > 0 ? ('Best: ' + fmt(hs)) : '';
+  }
+
+  function showScreen(which) {
+    $('title-screen').style.display    = which === 'title' ? 'flex' : 'none';
+    $('game-screen').style.display     = which === 'game'  ? 'flex' : 'none';
+    $('gameover-screen').style.display = which === 'over'  ? 'flex' : 'none';
+    $('game-screen').style.flexDirection = 'column';
+  }
+
+  function tape(msg, kind) {
+    var el = $('tape');
+    el.textContent = msg;
+    el.className = 'tape' + (kind ? ' ' + kind : '');
+  }
+
+  // ---------- Spawning ----------
+  function difficulty() {
+    return (ROUND_SEC - timeLeft) / ROUND_SEC; // 0..1
+  }
+
+  function spawnPosition(now) {
+    if (positions.length >= 9) {
+      // book is jammed — a forced too-many situation will pressure exposure cap
+      nextSpawnAt = now + 0.6;
+      return;
+    }
+    var t = difficulty();
+    var symbol = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+    var side = Math.random() < 0.55 ? 'long' : 'short';
+    // bigger sizes as time goes on
+    var pct = 8 + Math.random() * 10 + t * 8; // 8% .. 26% notional
+    var notional = Math.round(EQUITY_BASE * pct / 100);
+    // drift bias: slightly negative on average to mimic costs (so player must close)
+    var driftBias = -0.05 + Math.random() * 0.10; // -0.05 .. 0.05 per tick
+    var vol = 0.4 + Math.random() * 1.6 + t * 0.5;
+
+    var pos = {
+      id: nextId++,
+      symbol: symbol,
+      side: side,
+      notional: notional,
+      pnl: 0,
+      drift: driftBias,
+      vol: vol,
+      openedAt: now,
+      el: null
+    };
+    positions.push(pos);
+    renderCard(pos);
+
+    // schedule next
+    var gap = 1.4 - t * 0.85 + Math.random() * 0.5; // 1.4s -> 0.55s
+    nextSpawnAt = now + Math.max(0.35, gap);
+  }
+
+  function renderCard(pos) {
+    var book = $('book');
+    var card = document.createElement('div');
+    card.className = 'position-card';
+    card.dataset.id = pos.id;
+    card.innerHTML =
+      '<div class="pos-side ' + pos.side + '">' + (pos.side === 'long' ? 'LONG' : 'SHORT') + '</div>' +
+      '<div class="pos-info">' +
+        '<div class="pos-symbol">' + pos.symbol + '</div>' +
+        '<div class="pos-meta"><span class="notional">' + fmt(pos.notional) + '</span> · ' + Math.round(pos.notional/EQUITY_BASE*100) + '% size</div>' +
+      '</div>' +
+      '<div class="pos-pnl green" id="pnl-' + pos.id + '">+$0</div>';
+    card.addEventListener('click', function(){ closePosition(pos.id); }, { passive:true });
+    book.appendChild(card);
+    pos.el = card;
+  }
+
+  function closePosition(id) {
+    if (!gameRunning) return;
+    initAudio();
+    var idx = -1;
+    for (var i = 0; i < positions.length; i++) if (positions[i].id === id) { idx = i; break; }
+    if (idx < 0) return;
+    var pos = positions[idx];
+    if (pos._closing) return;
+    pos._closing = true;
+    // Bank P&L
+    equity += pos.pnl;
+    closedCount++;
+    if (pos.pnl >= 0) { winners++; ching(); }
+    else              { losers++;  ka();    }
+    // Tape
+    if (pos.pnl > 800) tape(pos.symbol + ' closed +' + fmt(pos.pnl).replace('$','') + ' — Moony in shambles.', 'good');
+    else if (pos.pnl > 0) tape(pos.symbol + ' booked +' + fmt(pos.pnl).replace('$',''), 'good');
+    else if (pos.pnl > -400) tape('Cut ' + pos.symbol + ' for ' + fmtSigned(pos.pnl) + ' — disciplined.', 'warn');
+    else tape(pos.symbol + ' bled ' + fmtSigned(pos.pnl) + '. Should have cut earlier.', 'bad');
+    // Animate out
+    if (pos.el) {
+      pos.el.classList.add('closing');
+      var el = pos.el;
+      setTimeout(function(){ if (el && el.parentNode) el.parentNode.removeChild(el); }, 320);
+    }
+    // Remove from array
+    positions.splice(idx, 1);
+  }
+
+  // ---------- Sim ----------
+  function step(dt, now) {
+    if (now >= nextSpawnAt) spawnPosition(now);
+
+    // P&L drift on each position
+    for (var i = 0; i < positions.length; i++) {
+      var p = positions[i];
+      if (p._closing) continue;
+      // Random walk with bias scaled by notional
+      var move = (Math.random() - 0.5) * 2 * p.vol + p.drift;
+      // Notional scales how big P&L moves are (per ~$10k → ~1x)
+      p.pnl += move * (p.notional / 5000) * 4 * dt * 60; // scale to per-second movement
+      // PnL ceiling/floor sanity (very wide)
+      if (p.pnl > p.notional * 0.4) p.pnl = p.notional * 0.4;
+      if (p.pnl < -p.notional * 0.5) p.pnl = -p.notional * 0.5;
+      // Update DOM pnl
+      if (p.el) {
+        var pe = p.el.querySelector('.pos-pnl');
+        if (pe) {
+          var pct = p.pnl;
+          pe.textContent = fmtSigned(p.pnl);
+          if (pct >= 0) { pe.className = 'pos-pnl green'; }
+          else          { pe.className = 'pos-pnl red';   }
+        }
+      }
+    }
+
+    // Calculate gross exposure
+    var gross = 0;
+    for (var j = 0; j < positions.length; j++) gross += positions[j].notional;
+    var exp = (gross / Math.max(equity, 1)) * 100;
+
+    // HUD updates
+    var ef = $('exposure-fill');
+    var ep = $('exposure-pct');
+    var el = $('exposure-label') || ef.parentNode.parentNode.querySelector('.exposure-label');
+    var displayPct = Math.min(exp, 110);
+    ef.style.width = Math.min(displayPct, 100) + '%';
+    ep.textContent = exp.toFixed(0) + '%';
+
+    var labelEl = ef.parentNode.parentNode.querySelector('.exposure-label');
+    labelEl.classList.remove('warn','danger');
+    if (exp >= 95) labelEl.classList.add('danger');
+    else if (exp >= 85) labelEl.classList.add('warn');
+
+    $('equity').textContent = fmt(equity);
+    $('equity').classList.toggle('red', equity < START_EQUITY);
+    $('closed-count').textContent = closedCount;
+
+    // Margin call check
+    if (exp >= CAP_PCT) {
+      siren();
+      tape('MARGIN CALL — broker liquidating book.', 'bad');
+      endGame(true);
+    }
+  }
+
+  function loop(ms) {
+    if (!gameRunning) return;
+    if (!lastTickMs) lastTickMs = ms;
+    var dt = Math.min((ms - lastTickMs) / 1000, 0.05);
+    lastTickMs = ms;
+    step(dt, ms / 1000);
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function tick() {
+    if (!gameRunning) return;
+    timeLeft--;
+    $('time').textContent = timeLeft;
+    if (timeLeft <= 10) $('time').classList.add('red');
+    if (timeLeft <= 0) endGame(false);
+  }
+
+  function endGame(marginCall) {
+    if (!gameRunning) return;
+    gameRunning = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    if (countdownHandle) clearInterval(countdownHandle);
+
+    // Liquidate any remaining positions (broker takes them at current pnl on margin call;
+    // at timeout, you bank the open pnl too)
+    var liqPnl = 0;
+    if (marginCall) {
+      // broker liquidates with ~10% slippage
+      for (var i = 0; i < positions.length; i++) liqPnl += positions[i].pnl - Math.abs(positions[i].notional) * 0.005;
+    } else {
+      for (var k = 0; k < positions.length; k++) liqPnl += positions[k].pnl;
+    }
+    equity += liqPnl;
+
+    var profit = equity - START_EQUITY;
+    var newHigh = setHighScore(equity);
+    $('final-score').textContent = Math.round(equity).toLocaleString();
+    $('final-score').classList.toggle('red', equity < START_EQUITY);
+    $('stat-closed').textContent = closedCount;
+    $('stat-winners').textContent = winners;
+    $('stat-losers').textContent  = losers;
+    var title = $('gameover-title');
+    if (marginCall) title.textContent = '📞 MARGIN CALL';
+    else if (profit > 30000) title.textContent = 'BOOK CRUSHED';
+    else if (profit > 8000) title.textContent = 'CLEAN SESSION';
+    else if (profit > -3000) title.textContent = 'SCRATCH SESSION';
+    else if (profit > -20000) title.textContent = 'BAD TAPE';
+    else title.textContent = 'CIRCUIT BREAKER';
+    var pool = (marginCall || profit < 0) ? lossRoasts : winRoasts;
+    $('roast-msg').textContent = pool[Math.floor(Math.random() * pool.length)];
+    if (newHigh) $('roast-msg').textContent = '🏆 NEW HIGH! ' + $('roast-msg').textContent;
+    showScreen('over');
+    if (window.DippyLB && DippyLB.onGameOver) DippyLB.onGameOver(Math.round(equity));
+  }
+
+  function resetState() {
+    // clear DOM
+    var book = $('book');
+    while (book.firstChild) book.removeChild(book.firstChild);
+    positions = [];
+    nextId = 1;
+    equity = START_EQUITY;
+    timeLeft = ROUND_SEC;
+    closedCount = 0; winners = 0; losers = 0;
+    nextSpawnAt = 0;
+    lastTickMs = 0;
+    $('time').textContent = ROUND_SEC;
+    $('time').classList.remove('red');
+    $('equity').textContent = fmt(START_EQUITY);
+    $('equity').classList.remove('red');
+    $('closed-count').textContent = '0';
+    $('exposure-fill').style.width = '0%';
+    $('exposure-pct').textContent = '0%';
+    var labelEl = document.querySelector('.exposure-label');
+    if (labelEl) labelEl.classList.remove('warn','danger');
+    tape('Bot is opening positions… start closing.');
+  }
+
+  function startGame() {
+    initAudio();
+    resetState();
+    showScreen('game');
+    gameRunning = true;
+    startedAt = performance.now() / 1000;
+    rafId = requestAnimationFrame(loop);
+    if (countdownHandle) clearInterval(countdownHandle);
+    countdownHandle = setInterval(tick, 1000);
+    // first spawn fast so the player has something to do
+    nextSpawnAt = (performance.now() / 1000) + 0.4;
+  }
+
+  // Expose
+  window.startGame = startGame;
+
+  // Init
+  document.addEventListener('DOMContentLoaded', function() {
+    renderTitleHS();
+    if (window.DippyLB && DippyLB.init) DippyLB.init('margin-call');
+  });
+  if (document.readyState !== 'loading') {
+    renderTitleHS();
+    if (window.DippyLB && DippyLB.init) DippyLB.init('margin-call');
+  }
+})();
+</script>
+{{ end }}
