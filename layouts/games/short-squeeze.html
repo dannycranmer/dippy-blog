@@ -1,0 +1,587 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">SHORT SQUEEZE</h1>
+    <p class="game-subtitle">Five shorts open. Every rally squeezes them.<br>TAP a ticker to COVER before its meter pins.<br>Three squeeze-outs and the book is gone.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">OPEN SHORTS</button>
+    <p class="game-hint">Squeeze meters fill faster as the rally accelerates.<br>Sometimes a ticker FADES (red) — those cover for FREE bonus.<br>Don't panic-cover the slow ones. Triage like a pro.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="score">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">LIVES</span>
+        <span class="hud-value" id="lives">❤❤❤</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">RALLY</span>
+        <span class="hud-value orange" id="rally">x1.0</span>
+      </div>
+    </div>
+
+    <div id="board" class="board"></div>
+
+    <div class="tape" id="tape">Bot opened five shorts. Cover before squeeze.</div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">BOOK PINNED</h1>
+    <div class="final-score"><span id="final-score">0</span></div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-covered">0</span><span class="stat-label">Covered</span></div>
+      <div class="stat"><span class="stat-val" id="stat-fade">0</span><span class="stat-label">Fade Hits</span></div>
+      <div class="stat"><span class="stat-val" id="stat-pinned">0</span><span class="stat-label">Squeezed</span></div>
+    </div>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">REOPEN BOOK</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:1.9em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 40px; font-size:1.1em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.75em; margin-top:16px; line-height:1.5; }
+
+  #game-screen { justify-content:flex-start; padding:14px 14px 20px; height:100vh; }
+  .game-hud { display:flex; justify-content:space-between; padding:10px 16px; background:rgba(0,0,0,0.4); border:1px solid #21262d; border-radius:8px; margin-bottom:10px; }
+  .hud-item { text-align:center; flex:1; }
+  .hud-label { display:block; font-size:0.65em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1.05em; color:#00ff88; font-weight:bold; }
+  .hud-value.red { color:#ff5050; }
+  .hud-value.orange { color:#f0883e; }
+
+  .board {
+    flex:1;
+    overflow-y:auto;
+    overflow-x:hidden;
+    background: linear-gradient(180deg, #0a0d12 0%, #050709 100%);
+    border:1px solid #21262d;
+    border-radius:10px;
+    padding:8px;
+    margin-bottom:10px;
+    touch-action: pan-y;
+    scrollbar-width: thin;
+    scrollbar-color: #30363d #0a0d12;
+  }
+  .board::-webkit-scrollbar { width:6px; }
+  .board::-webkit-scrollbar-track { background:#0a0d12; }
+  .board::-webkit-scrollbar-thumb { background:#30363d; border-radius:3px; }
+
+  .short-card {
+    background: #161b22;
+    border:1px solid #30363d;
+    border-radius:8px;
+    padding:10px 12px 12px;
+    margin-bottom:8px;
+    cursor:pointer;
+    position:relative;
+    overflow:hidden;
+    transition: transform 0.12s ease-out, opacity 0.12s, border-color 0.12s, background 0.12s;
+    animation: card-in 0.28s ease-out;
+  }
+  @keyframes card-in {
+    0%   { transform: translateY(-12px) scale(0.96); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  .short-card:hover { border-color:#58a6ff; background:#1c2129; }
+  .short-card:active { transform: scale(0.97); }
+  .short-card.covered { animation: card-out 0.32s ease-out forwards; pointer-events:none; }
+  .short-card.fade { border-color: rgba(0,255,136,0.45); background: linear-gradient(90deg, #161b22 0%, #102018 100%); }
+  .short-card.fade::after {
+    content: 'FADE — FREE COVER';
+    position:absolute; top:6px; right:8px;
+    font-size:0.6em; color:#00ff88; letter-spacing:1px;
+    background: rgba(0,255,136,0.12); padding:2px 6px; border-radius:3px;
+  }
+  .short-card.pinned { animation: card-pin 0.42s ease-out forwards; pointer-events:none; }
+  @keyframes card-out {
+    0%   { transform: translateX(0) scale(1); opacity:1; }
+    100% { transform: translateX(140%) scale(0.85); opacity:0; }
+  }
+  @keyframes card-pin {
+    0%   { transform: scale(1); opacity:1; box-shadow: 0 0 0 0 rgba(255,80,80,0); }
+    50%  { transform: scale(1.04); box-shadow: 0 0 28px 2px rgba(255,80,80,0.7); }
+    100% { transform: translateY(8px) scale(0.92); opacity:0; }
+  }
+
+  .short-row {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:8px;
+  }
+  .short-left { display:flex; align-items:center; gap:10px; }
+  .pos-tag {
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:3px 8px; border-radius:4px;
+    font-size:0.62em; font-weight:bold; letter-spacing:1px;
+    background:rgba(240,136,62,0.12); color:#f0883e;
+    border:1px solid rgba(240,136,62,0.4);
+  }
+  .pos-tag.fade { background:rgba(0,255,136,0.12); color:#00ff88; border-color: rgba(0,255,136,0.4); }
+  .short-symbol { font-weight:bold; font-size:1.05em; color:#e6edf3; letter-spacing:1px; }
+  .short-pnl { font-weight:bold; font-size:0.95em; color:#ff5050; min-width:60px; text-align:right; }
+  .short-pnl.green { color:#00ff88; }
+
+  .squeeze-bar {
+    position:relative;
+    height:10px;
+    background:#0a0d12;
+    border:1px solid #30363d;
+    border-radius:5px;
+    overflow:hidden;
+  }
+  .squeeze-fill {
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg, #00cc6e 0%, #f0883e 60%, #ff5050 90%);
+    box-shadow: 0 0 8px rgba(255,80,80,0.45);
+    transition: width 0.12s ease-out;
+  }
+  .squeeze-fill.fade {
+    background: linear-gradient(90deg, #00ff88 0%, #00cc6e 100%);
+    box-shadow: 0 0 8px rgba(0,255,136,0.45);
+  }
+  .squeeze-bar.danger {
+    border-color:#ff5050;
+    animation: pulse-edge 0.4s ease-in-out infinite;
+  }
+  @keyframes pulse-edge {
+    0%,100% { box-shadow: 0 0 0 0 rgba(255,80,80,0); }
+    50%     { box-shadow: 0 0 12px 1px rgba(255,80,80,0.6); }
+  }
+
+  .tape {
+    padding:10px 14px;
+    background:rgba(0,0,0,0.4);
+    border:1px solid #21262d;
+    border-radius:8px;
+    color:#8b949e;
+    font-size:0.82em;
+    text-align:center;
+    min-height:2.6em;
+    line-height:1.4;
+  }
+  .tape.good { color:#00ff88; border-color:rgba(0,255,136,0.4); }
+  .tape.bad  { color:#ff5050; border-color:rgba(255,80,80,0.4); }
+  .tape.warn { color:#f0883e; border-color:rgba(240,136,62,0.4); }
+
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; margin:12px 0; text-shadow:0 0 20px rgba(0,255,136,0.6); }
+  .final-score.red { color:#ff5050; text-shadow:0 0 20px rgba(255,80,80,0.6); }
+  .stats-row { display:flex; gap:20px; margin:8px 0 16px; }
+  .stat { text-align:center; }
+  .stat-val { display:block; font-size:1.6em; color:#f0883e; font-weight:bold; }
+  .stat-label { display:block; font-size:0.7em; color:#8b949e; letter-spacing:1px; margin-top:2px; }
+  .roast-msg { color:#f0883e; font-size:0.9em; margin-bottom:20px; padding:0 20px; line-height:1.4; max-width:360px; }
+</style>
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  var HS_KEY = 'dippy-short-squeeze-high';
+  var MAX_LIVES = 3;
+  var INITIAL_SHORTS = 5;
+  var BOARD_CAP = 8;
+
+  var SYMBOLS = [
+    'NVDA','TSLA','AMZN','META','GOOGL','MSFT','AAPL','AMD',
+    'COIN','SNOW','ARM','PLTR','SHOP','UBER','AVGO','MSTR',
+    'NFLX','CRWD','MU','XOM','NOC','AAL','RIVN','GME','BBBY'
+  ];
+
+  var lossRoasts = [
+    "Squeezed flat. Moony shorted Moony for sympathy. It went down anyway.",
+    "All five pinned. The chart room sent flowers. Moony ate them.",
+    "Risk manager logged off. Came back. Logged off again. Permanently.",
+    "Book vaporised. Moony filed it under 'inspirational'.",
+    "You closed every short — at the top of the rally. A perfect inverse.",
+    "Margin desk says they're 'concerned'. Moony says they're 'inspired'.",
+    "Position tape now reads zero. Score does too. Moony approves.",
+    "Three pins, no rebound. The bears went hibernating mid-trade.",
+    "Tape so red the screen's begging for a CSS update.",
+    "Squeezed harder than Moony's value-investing thesis.",
+    "Even the bonds laughed. Bonds aren't supposed to laugh.",
+    "You're not down — you're 'temporarily reallocated to zero'."
+  ];
+  var winRoasts = [
+    "Clean covers across the board. Moony took notes. The notes were on Moony.",
+    "Disciplined exits. The bears send their compliments. So does the prime broker.",
+    "You tamed the rally. Moony's still arguing with a candle on the 4-hour chart.",
+    "Cool hands, hot tape. Moony's hands shaky from triple espresso it forgot to drink.",
+    "Book preserved. Moony asked your secret. You said 'reading the screen'. It blue-screened.",
+    "Five shorts, five clean covers. Moony's idea of 'covering' is hiding under the desk.",
+    "The squeeze tried to find you. You'd already left through the side door.",
+    "Risk manager bought you a sandwich. Moony tried to buy the sandwich. Got rugged.",
+    "You closed the loop, banked the gain, and roasted Moony in the same tap. Efficiency.",
+    "If reaction time were a strategy, you'd already be on the prime broker's wall."
+  ];
+
+  // ---------- Audio ----------
+  var audioCtx = null;
+  function initAudio() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+    }
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  }
+  function beep(freq, dur, type, gain) {
+    if (!audioCtx) return;
+    var o = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    o.type = type || 'sine';
+    o.frequency.value = freq;
+    g.gain.value = gain != null ? gain : 0.07;
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + dur);
+  }
+  function ka()    { beep(720, 0.07, 'square', 0.06); }
+  function ching() { beep(880, 0.10, 'triangle', 0.08); setTimeout(function(){beep(1320,0.10,'triangle',0.06);}, 60); }
+  function thud()  { beep(150, 0.18, 'sawtooth', 0.10); }
+  function fadeBeep() { beep(1200, 0.08, 'sine', 0.07); setTimeout(function(){beep(1600,0.08,'sine',0.05);}, 50); }
+  function pinSiren() {
+    if (!audioCtx) return;
+    var t0 = audioCtx.currentTime;
+    var o = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(520, t0);
+    o.frequency.linearRampToValueAtTime(220, t0 + 0.45);
+    g.gain.setValueAtTime(0.16, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.6);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t0); o.stop(t0 + 0.65);
+  }
+
+  // ---------- State ----------
+  var shorts = []; // {id, symbol, fade, squeeze (0..100), speed, el, pinned, covered}
+  var nextId = 1;
+  var score = 0;
+  var lives = MAX_LIVES;
+  var covered = 0, fadeHits = 0, pinned = 0;
+  var rally = 1.0;          // multiplier on speed
+  var elapsed = 0;
+  var nextSpawnAt = 0;
+  var gameRunning = false;
+  var lastTickMs = 0;
+  var rafId = null;
+  var startedAt = 0;
+
+  function $(id) { return document.getElementById(id); }
+
+  function setHighScore(s) {
+    var cur = parseInt(localStorage.getItem(HS_KEY) || '0', 10);
+    if (s > cur) { localStorage.setItem(HS_KEY, String(s)); return true; }
+    return false;
+  }
+  function getHighScore() { return parseInt(localStorage.getItem(HS_KEY) || '0', 10); }
+
+  function renderTitleHS() {
+    var hs = getHighScore();
+    $('title-high-score').textContent = hs > 0 ? ('Best: ' + hs) : '';
+  }
+
+  function showScreen(which) {
+    $('title-screen').style.display    = which === 'title' ? 'flex' : 'none';
+    $('game-screen').style.display     = which === 'game'  ? 'flex' : 'none';
+    $('gameover-screen').style.display = which === 'over'  ? 'flex' : 'none';
+    $('game-screen').style.flexDirection = 'column';
+  }
+
+  function tape(msg, kind) {
+    var el = $('tape');
+    el.textContent = msg;
+    el.className = 'tape' + (kind ? ' ' + kind : '');
+  }
+
+  // ---------- Spawning ----------
+  function pickSymbol() {
+    var taken = {};
+    for (var i = 0; i < shorts.length; i++) taken[shorts[i].symbol] = true;
+    var pool = SYMBOLS.filter(function(s){ return !taken[s]; });
+    if (!pool.length) pool = SYMBOLS.slice();
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function difficulty() {
+    // 0..1 ramp over ~70 seconds
+    return Math.min(elapsed / 70, 1);
+  }
+
+  function spawnShort(now, opts) {
+    if (shorts.length >= BOARD_CAP) {
+      nextSpawnAt = now + 0.6;
+      return;
+    }
+    opts = opts || {};
+    var t = difficulty();
+    // 1 in 5 spawns is a "fade" (free cover for bonus)
+    var isFade = !!opts.forceFade || Math.random() < 0.18;
+    // Speed (per-second %): 4..14 + difficulty + rally multiplier
+    var speed = 4 + Math.random() * 6 + t * 4;
+    if (isFade) speed = 5 + Math.random() * 4; // fades fill faster but reward you
+    var s = {
+      id: nextId++,
+      symbol: pickSymbol(),
+      fade: isFade,
+      squeeze: 0,
+      speed: speed,
+      el: null,
+      covered: false,
+      pinned: false
+    };
+    shorts.push(s);
+    renderCard(s);
+    var gap = 1.6 - t * 0.95 + Math.random() * 0.5; // 1.6 -> 0.65
+    nextSpawnAt = now + Math.max(0.45, gap);
+  }
+
+  function renderCard(s) {
+    var board = $('board');
+    var card = document.createElement('div');
+    card.className = 'short-card' + (s.fade ? ' fade' : '');
+    card.dataset.id = s.id;
+    var tagClass = s.fade ? 'pos-tag fade' : 'pos-tag';
+    var tagText = s.fade ? 'FADE' : 'SHORT';
+    card.innerHTML =
+      '<div class="short-row">' +
+        '<div class="short-left">' +
+          '<span class="' + tagClass + '">' + tagText + '</span>' +
+          '<span class="short-symbol">' + s.symbol + '</span>' +
+        '</div>' +
+        '<span class="short-pnl' + (s.fade ? ' green' : '') + '" id="pnl-' + s.id + '">' + (s.fade ? '+$0' : '-$0') + '</span>' +
+      '</div>' +
+      '<div class="squeeze-bar" id="bar-' + s.id + '">' +
+        '<div class="squeeze-fill' + (s.fade ? ' fade' : '') + '" id="fill-' + s.id + '" style="width:0%"></div>' +
+      '</div>';
+    card.addEventListener('click', function(){ coverShort(s.id); }, { passive:true });
+    board.appendChild(card);
+    s.el = card;
+  }
+
+  function coverShort(id) {
+    if (!gameRunning) return;
+    initAudio();
+    var idx = -1;
+    for (var i = 0; i < shorts.length; i++) if (shorts[i].id === id) { idx = i; break; }
+    if (idx < 0) return;
+    var s = shorts[idx];
+    if (s.covered || s.pinned) return;
+    s.covered = true;
+    var pts;
+    if (s.fade) {
+      // Big bonus, scales with how full it is (closer to top = more reward)
+      pts = 8 + Math.round(s.squeeze * 0.12);
+      score += pts;
+      fadeHits++;
+      fadeBeep();
+      tape(s.symbol + ' faded — banked +' + pts + '. Moony shorted the fade.', 'good');
+    } else {
+      // Score scales with how close it was to squeezing (risk taken)
+      pts = 1 + Math.round(s.squeeze * 0.04);
+      score += pts;
+      covered++;
+      ching();
+      if (s.squeeze > 80) tape(s.symbol + ' covered RED-LINE @ ' + Math.round(s.squeeze) + '% — clutch +' + pts + '.', 'warn');
+      else if (s.squeeze > 50) tape(s.symbol + ' covered @ ' + Math.round(s.squeeze) + '% — disciplined +' + pts + '.', 'good');
+      else tape(s.symbol + ' covered early — small +' + pts + '.', 'good');
+    }
+    if (s.el) {
+      s.el.classList.add('covered');
+      var el = s.el;
+      setTimeout(function(){ if (el && el.parentNode) el.parentNode.removeChild(el); }, 320);
+    }
+    shorts.splice(idx, 1);
+    updateHud();
+  }
+
+  function pinShort(s) {
+    s.pinned = true;
+    pinned++;
+    lives--;
+    pinSiren();
+    if (s.fade) tape(s.symbol + ' faded all the way — missed +' + Math.round(8 + s.squeeze * 0.12) + ' bonus.', 'warn');
+    else tape(s.symbol + ' SQUEEZED OUT. Stop hit. -1 life.', 'bad');
+    if (s.el) {
+      s.el.classList.add('pinned');
+      var el = s.el;
+      setTimeout(function(){ if (el && el.parentNode) el.parentNode.removeChild(el); }, 420);
+    }
+    var idx = shorts.indexOf(s);
+    if (idx >= 0) shorts.splice(idx, 1);
+    updateHud();
+    if (lives <= 0) endGame();
+  }
+
+  function updateHud() {
+    $('score').textContent = score;
+    var hearts = '';
+    for (var i = 0; i < MAX_LIVES; i++) hearts += (i < lives ? '❤' : '·');
+    $('lives').textContent = hearts;
+    $('lives').classList.toggle('red', lives <= 1);
+    $('rally').textContent = 'x' + rally.toFixed(1);
+    $('rally').classList.toggle('red', rally >= 2.0);
+  }
+
+  // ---------- Sim ----------
+  function step(dt, now) {
+    elapsed += dt;
+    // Rally ramps from 1.0 to ~2.5 over a minute
+    rally = 1.0 + Math.min(elapsed / 50, 1.5);
+
+    // Random rally pulses (every 6-12s) briefly accelerate squeeze
+    // Spawning
+    if (now >= nextSpawnAt) spawnShort(now);
+
+    for (var i = 0; i < shorts.length; i++) {
+      var s = shorts[i];
+      if (s.covered || s.pinned) continue;
+      // Squeeze accumulates
+      var rate = s.speed * rally; // % per second
+      // shorts get a small wobble: sometimes the rally pauses
+      var wobble = 0.85 + Math.random() * 0.35;
+      s.squeeze += rate * dt * wobble;
+      if (s.squeeze >= 100) {
+        s.squeeze = 100;
+        pinShort(s);
+        continue;
+      }
+      // Update DOM
+      var fill = $('fill-' + s.id);
+      if (fill) fill.style.width = s.squeeze + '%';
+      var bar  = $('bar-' + s.id);
+      if (bar) bar.classList.toggle('danger', s.squeeze >= 75);
+      var pnl = $('pnl-' + s.id);
+      if (pnl) {
+        if (s.fade) {
+          // fade shows growing positive bonus
+          var bonus = 8 + Math.round(s.squeeze * 0.12);
+          pnl.textContent = '+$' + bonus;
+        } else {
+          // squeeze shows growing negative pnl
+          pnl.textContent = '-$' + (Math.round(s.squeeze * 6));
+        }
+      }
+    }
+    updateHud();
+  }
+
+  function loop(ms) {
+    if (!gameRunning) return;
+    if (!lastTickMs) lastTickMs = ms;
+    var dt = Math.min((ms - lastTickMs) / 1000, 0.05);
+    lastTickMs = ms;
+    step(dt, ms / 1000);
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function endGame() {
+    if (!gameRunning) return;
+    gameRunning = false;
+    if (rafId) cancelAnimationFrame(rafId);
+
+    var newHigh = setHighScore(score);
+    $('final-score').textContent = score;
+    $('final-score').classList.toggle('red', score < 30);
+    $('stat-covered').textContent = covered;
+    $('stat-fade').textContent = fadeHits;
+    $('stat-pinned').textContent = pinned;
+    var title = $('gameover-title');
+    if (score >= 100) title.textContent = 'PRIME-BROKER GRADE';
+    else if (score >= 60) title.textContent = 'BOOK PRESERVED';
+    else if (score >= 30) title.textContent = 'SCRATCH SESSION';
+    else if (score >= 10) title.textContent = 'BAD TAPE';
+    else title.textContent = 'BOOK PINNED';
+    var pool = score >= 30 ? winRoasts : lossRoasts;
+    $('roast-msg').textContent = pool[Math.floor(Math.random() * pool.length)];
+    if (newHigh) $('roast-msg').textContent = '🏆 NEW HIGH! ' + $('roast-msg').textContent;
+    showScreen('over');
+    if (window.DippyLB && DippyLB.onGameOver) DippyLB.onGameOver(score);
+  }
+
+  function resetState() {
+    var board = $('board');
+    while (board.firstChild) board.removeChild(board.firstChild);
+    shorts = [];
+    nextId = 1;
+    score = 0;
+    lives = MAX_LIVES;
+    covered = 0; fadeHits = 0; pinned = 0;
+    rally = 1.0;
+    elapsed = 0;
+    nextSpawnAt = 0;
+    lastTickMs = 0;
+    updateHud();
+    tape('Bot opened five shorts. Cover before squeeze.');
+  }
+
+  function startGame() {
+    initAudio();
+    resetState();
+    showScreen('game');
+    gameRunning = true;
+    startedAt = performance.now() / 1000;
+    rafId = requestAnimationFrame(loop);
+    var now = performance.now() / 1000;
+    // Open INITIAL_SHORTS short positions immediately, slightly staggered
+    for (var i = 0; i < INITIAL_SHORTS; i++) {
+      (function(idx){
+        setTimeout(function(){
+          if (gameRunning) spawnShort(performance.now() / 1000);
+        }, 120 * idx);
+      })(i);
+    }
+    nextSpawnAt = now + 4;
+  }
+
+  window.startGame = startGame;
+
+  document.addEventListener('DOMContentLoaded', function() {
+    renderTitleHS();
+    if (window.DippyLB && DippyLB.init) DippyLB.init('short-squeeze');
+  });
+  if (document.readyState !== 'loading') {
+    renderTitleHS();
+    if (window.DippyLB && DippyLB.init) DippyLB.init('short-squeeze');
+  }
+})();
+</script>
+{{ end }}
