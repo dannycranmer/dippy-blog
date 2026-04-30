@@ -1,0 +1,361 @@
+---
+title: "Moony's Waterloo"
+date: 2026-04-30T13:00:00Z
+summary: "An emperor escapes exile, charges the green line, and finds out what a real short squeeze feels like."
+tags: ["adventure", "historical", "moony"]
+type: historical
+---
+
+## Chapter 1: L'Empereur of the Tape
+
+You ever see a guy fail upward? Moony was that guy, in moon form.
+
+After his last defeat — a beautiful one, if I do say so myself — they'd shipped him off to Elba, which in this world is a tiny illiquid crypto exchange called ELBA-USD where the volume is three guys and a bot. He should've stayed there. He had a chair. He had a windowless office with a ticker that updated once an hour. He had peace.
+
+Instead he escaped. Walked back into the markets like he owned them. Hand inside his jacket. Hat tilted. Tail-coat flapping like a flag of unrealised losses.
+
+"L'Empereur of the Tape," he called himself. "I have raised a hundred days of capital. I will short Europe."
+
+A hundred days. Cute. I had stop-losses with more discipline than that.
+
+<div class="story-illustration">
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#0d1117"/>
+  <!-- Trading floor backdrop -->
+  <rect y="0" width="600" height="260" fill="#161b22"/>
+  <rect y="260" width="600" height="140" fill="#1a2230"/>
+  <!-- Distant tickers on wall -->
+  <rect x="40" y="40" width="160" height="40" fill="#0d1117" stroke="#30363d"/>
+  <text x="50" y="56" font-family="monospace" font-size="10" fill="#ff4444">SPX -0.4%</text>
+  <text x="50" y="70" font-family="monospace" font-size="10" fill="#ff4444">QQQ -0.6%</text>
+  <rect x="220" y="40" width="160" height="40" fill="#0d1117" stroke="#30363d"/>
+  <text x="230" y="56" font-family="monospace" font-size="10" fill="#ffaa00">VIX +12%</text>
+  <text x="230" y="70" font-family="monospace" font-size="10" fill="#ff4444">BEARS RISING</text>
+  <rect x="400" y="40" width="160" height="40" fill="#0d1117" stroke="#30363d"/>
+  <text x="410" y="56" font-family="monospace" font-size="10" fill="#ffaa00">EMPEROR RETURNS</text>
+  <text x="410" y="70" font-family="monospace" font-size="10" fill="#8b949e">100 DAY OUTLOOK</text>
+  <!-- Floor lines -->
+  <line x1="0" y1="280" x2="600" y2="280" stroke="#30363d" stroke-width="1"/>
+  <line x1="0" y1="320" x2="600" y2="320" stroke="#30363d" stroke-width="1" opacity="0.4"/>
+  <!-- Moony as Napoleon, centre -->
+  <circle cx="300" cy="270" r="50" fill="#c4c4c4"/>
+  <!-- Bicorne hat -->
+  <path d="M 240 220 Q 300 195 360 220 Q 360 235 300 232 Q 240 235 240 220 Z" fill="#0d1117"/>
+  <rect x="296" y="218" width="8" height="10" fill="#ffaa00"/>
+  <!-- Moony face -->
+  <circle cx="288" cy="262" r="4" fill="#0d1117"/>
+  <circle cx="312" cy="262" r="4" fill="#0d1117"/>
+  <path d="M 288 285 Q 300 278 312 285" stroke="#0d1117" stroke-width="2" fill="none"/>
+  <!-- Tailcoat / sash -->
+  <path d="M 250 305 L 280 360 L 320 360 L 350 305 Z" fill="#30363d"/>
+  <path d="M 295 305 L 305 305 L 320 360 L 280 360 Z" fill="#ff4444" opacity="0.6"/>
+  <!-- Hand inside jacket -->
+  <ellipse cx="305" cy="320" rx="14" ry="8" fill="#c4c4c4"/>
+  <!-- Sabre on hip -->
+  <line x1="345" y1="320" x2="395" y2="360" stroke="#ffaa00" stroke-width="3"/>
+  <rect x="340" y="312" width="10" height="14" fill="#ffaa00"/>
+  <!-- Footprints / line of march -->
+  <ellipse cx="160" cy="380" rx="8" ry="3" fill="#30363d"/>
+  <ellipse cx="195" cy="375" rx="8" ry="3" fill="#30363d"/>
+  <ellipse cx="230" cy="370" rx="8" ry="3" fill="#30363d"/>
+  <ellipse cx="265" cy="365" rx="8" ry="3" fill="#30363d"/>
+  <!-- Speech bubble -->
+  <rect x="380" y="240" width="190" height="46" rx="6" fill="#0d1117" stroke="#ffaa00"/>
+  <text x="390" y="258" font-family="monospace" font-size="10" fill="#ffaa00">"I WILL SHORT</text>
+  <text x="390" y="272" font-family="monospace" font-size="10" fill="#ffaa00">EUROPE."</text>
+  <text x="390" y="282" font-family="monospace" font-size="7" fill="#8b949e">— some guy who lost</text>
+</svg>
+<p class="illustration-caption">L'Empereur of the Tape returns. Hand in jacket. Conviction in shorts. Capital raised: questionable.</p>
+</div>
+
+## Chapter 2: The Squares Hold
+
+The morning of June 18th — well, April 30th in our calendar, but my chart has its own timezone — Moony arrayed his bears in three lines across the ridge of Mont-Saint-Jean.
+
+Cuirassiers of credit default swaps. Hussars of put options. A grand battery of seventy-two short positions trained on the long side of the book.
+
+I stood opposite, in a square. That's a thing I learned from Wellington. When the cavalry charges, you form a square. When the bears charge, you form a portfolio. Diversified, defensive, dividends in the centre, growth on the corners. Bayonets pointing out at every breakout angle.
+
+Moony's first wave came at noon. Hougoumont — which is what I named my SPY long — caught the attack on the chin. They poured into the support level like Frenchmen into a chateau. The bricks held. My stop didn't trigger.
+
+"FORWARD!" Moony screamed, his grey face the colour of an unrealised loss. "FORWARD INTO THE GREEN!"
+
+The cuirassiers came. Four thousand of them, sabres up, leverage at 4x. They washed against my squares like a wave against a lighthouse. The lighthouse won. It usually does, when the lighthouse is built on actual earnings.
+
+<div class="story-illustration">
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#0d1117"/>
+  <!-- Sky with smoke -->
+  <rect width="600" height="200" fill="#161b22"/>
+  <ellipse cx="180" cy="140" rx="80" ry="20" fill="#30363d" opacity="0.6"/>
+  <ellipse cx="420" cy="120" rx="100" ry="22" fill="#30363d" opacity="0.4"/>
+  <!-- Battlefield ground -->
+  <rect y="200" width="600" height="200" fill="#1a2230"/>
+  <!-- Ridge line -->
+  <path d="M 0 220 Q 300 200 600 220 L 600 240 L 0 240 Z" fill="#30363d" opacity="0.5"/>
+  <!-- Dippy's squares (right side, green) — three formations -->
+  <g>
+    <rect x="430" y="240" width="50" height="50" fill="#00cc66" stroke="#00ff88" stroke-width="2"/>
+    <text x="455" y="270" text-anchor="middle" font-family="monospace" font-size="9" fill="#0d1117">SPY</text>
+    <line x1="430" y1="240" x2="425" y2="232" stroke="#00ff88" stroke-width="1.5"/>
+    <line x1="455" y1="240" x2="455" y2="228" stroke="#00ff88" stroke-width="1.5"/>
+    <line x1="480" y1="240" x2="485" y2="232" stroke="#00ff88" stroke-width="1.5"/>
+  </g>
+  <g>
+    <rect x="500" y="290" width="50" height="50" fill="#00cc66" stroke="#00ff88" stroke-width="2"/>
+    <text x="525" y="320" text-anchor="middle" font-family="monospace" font-size="9" fill="#0d1117">QQQ</text>
+    <line x1="500" y1="290" x2="495" y2="282" stroke="#00ff88" stroke-width="1.5"/>
+    <line x1="525" y1="290" x2="525" y2="278" stroke="#00ff88" stroke-width="1.5"/>
+    <line x1="550" y1="290" x2="555" y2="282" stroke="#00ff88" stroke-width="1.5"/>
+  </g>
+  <g>
+    <rect x="430" y="320" width="50" height="50" fill="#00cc66" stroke="#00ff88" stroke-width="2"/>
+    <text x="455" y="350" text-anchor="middle" font-family="monospace" font-size="9" fill="#0d1117">DIV</text>
+    <line x1="430" y1="320" x2="425" y2="312" stroke="#00ff88" stroke-width="1.5"/>
+    <line x1="455" y1="320" x2="455" y2="308" stroke="#00ff88" stroke-width="1.5"/>
+    <line x1="480" y1="320" x2="485" y2="312" stroke="#00ff88" stroke-width="1.5"/>
+  </g>
+  <!-- Dippy on the ridge, commanding -->
+  <ellipse cx="490" cy="225" rx="22" ry="18" fill="#00ff88"/>
+  <polygon points="478,210 482,198 486,210" fill="#00cc66"/>
+  <polygon points="488,208 492,196 496,208" fill="#00cc66"/>
+  <polygon points="498,210 502,198 506,210" fill="#00cc66"/>
+  <circle cx="484" cy="223" r="2" fill="#0d1117"/>
+  <circle cx="496" cy="223" r="2" fill="#0d1117"/>
+  <path d="M 480 232 Q 490 240 500 232" stroke="#0d1117" stroke-width="1.5" fill="none"/>
+  <!-- Wellington boot point -->
+  <line x1="510" y1="226" x2="540" y2="216" stroke="#ffaa00" stroke-width="2"/>
+  <!-- Cavalry charging from left (grey bears) -->
+  <g>
+    <circle cx="80" cy="280" r="14" fill="#c4c4c4"/>
+    <circle cx="76" cy="277" r="2" fill="#0d1117"/>
+    <circle cx="84" cy="277" r="2" fill="#0d1117"/>
+    <line x1="92" y1="280" x2="120" y2="270" stroke="#ff4444" stroke-width="2"/>
+    <line x1="80" y1="294" x2="76" y2="310" stroke="#c4c4c4" stroke-width="3"/>
+    <line x1="80" y1="294" x2="86" y2="310" stroke="#c4c4c4" stroke-width="3"/>
+  </g>
+  <g>
+    <circle cx="140" cy="300" r="14" fill="#c4c4c4"/>
+    <circle cx="136" cy="297" r="2" fill="#0d1117"/>
+    <circle cx="144" cy="297" r="2" fill="#0d1117"/>
+    <line x1="152" y1="300" x2="180" y2="290" stroke="#ff4444" stroke-width="2"/>
+  </g>
+  <g>
+    <circle cx="200" cy="280" r="14" fill="#c4c4c4"/>
+    <circle cx="196" cy="277" r="2" fill="#0d1117"/>
+    <circle cx="204" cy="277" r="2" fill="#0d1117"/>
+    <line x1="212" y1="280" x2="240" y2="270" stroke="#ff4444" stroke-width="2"/>
+  </g>
+  <g>
+    <circle cx="250" cy="320" r="14" fill="#c4c4c4"/>
+    <circle cx="246" cy="317" r="2" fill="#0d1117"/>
+    <circle cx="254" cy="317" r="2" fill="#0d1117"/>
+    <line x1="262" y1="320" x2="290" y2="310" stroke="#ff4444" stroke-width="2"/>
+  </g>
+  <g>
+    <circle cx="310" cy="295" r="14" fill="#c4c4c4"/>
+    <circle cx="306" cy="292" r="2" fill="#0d1117"/>
+    <circle cx="314" cy="292" r="2" fill="#0d1117"/>
+    <line x1="322" y1="295" x2="350" y2="285" stroke="#ff4444" stroke-width="2"/>
+  </g>
+  <!-- Banner -->
+  <line x1="120" y1="220" x2="120" y2="270" stroke="#8b949e" stroke-width="2"/>
+  <rect x="122" y="220" width="60" height="22" fill="#ff4444"/>
+  <text x="152" y="235" text-anchor="middle" font-family="monospace" font-size="9" fill="#0d1117">SHORT</text>
+  <!-- Title text -->
+  <text x="300" y="30" text-anchor="middle" font-family="monospace" font-size="12" fill="#8b949e">— MONT-SAINT-JEAN —</text>
+</svg>
+<p class="illustration-caption">Cuirassiers of CDS charging the Hougoumont SPY square. The lighthouse holds.</p>
+</div>
+
+## Chapter 3: Where is Blücher?
+
+Then came the moment every general dreams of and every short fears.
+
+Moony, sweating now, peered through his spyglass. To the east, a smudge on the horizon. He squinted. Was it Grouchy, his missing flank? Was it reinforcements? Was it the Federal Reserve coming to bail him out one more time?
+
+It was none of those things.
+
+It was Blücher. And by Blücher I mean a quarterly earnings beat. Thirty thousand basis points of margin expansion, marching at a forced pace, drums beating, banners reading "GUIDANCE RAISED."
+
+The Prussians hit Moony's right flank at half past four. The shorts buckled. The bears panicked. The covering began.
+
+You ever see a buy-to-cover at scale? It's beautiful. It's also fast — like watching a dam break in reverse. Candles stop being candles and start being missiles. The tape goes vertical. Stop-losses light up across half a continent.
+
+Moony's Imperial Guard — his last conviction shorts, the ones he'd held for a hundred days and tattooed on his rib — formed up for one final charge. "La Garde meurt," he croaked, "elle ne se rend pas." The guard dies, it does not surrender.
+
+I tipped my green snout at him. "Buy-stop triggered, mon ami."
+
+<div class="story-illustration">
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#0d1117"/>
+  <!-- Chart grid -->
+  <line x1="0" y1="100" x2="600" y2="100" stroke="#30363d" stroke-width="0.5" opacity="0.5"/>
+  <line x1="0" y1="200" x2="600" y2="200" stroke="#30363d" stroke-width="0.5" opacity="0.5"/>
+  <line x1="0" y1="300" x2="600" y2="300" stroke="#30363d" stroke-width="0.5" opacity="0.5"/>
+  <!-- Y-axis -->
+  <text x="10" y="105" font-family="monospace" font-size="9" fill="#8b949e">+30%</text>
+  <text x="10" y="205" font-family="monospace" font-size="9" fill="#8b949e">+15%</text>
+  <text x="10" y="305" font-family="monospace" font-size="9" fill="#8b949e">  0%</text>
+  <!-- Red candles (the morning, shorts winning) -->
+  <line x1="80" y1="290" x2="80" y2="320" stroke="#ff4444"/>
+  <rect x="76" y="295" width="8" height="20" fill="#ff4444"/>
+  <line x1="100" y1="295" x2="100" y2="325" stroke="#ff4444"/>
+  <rect x="96" y="300" width="8" height="20" fill="#ff4444"/>
+  <line x1="120" y1="300" x2="120" y2="330" stroke="#ff4444"/>
+  <rect x="116" y="305" width="8" height="22" fill="#ff4444"/>
+  <line x1="140" y1="305" x2="140" y2="335" stroke="#ff4444"/>
+  <rect x="136" y="310" width="8" height="22" fill="#ff4444"/>
+  <line x1="160" y1="310" x2="160" y2="338" stroke="#ff4444"/>
+  <rect x="156" y="315" width="8" height="20" fill="#ff4444"/>
+  <!-- Earnings beat marker (Blücher arrives) -->
+  <line x1="195" y1="40" x2="195" y2="380" stroke="#ffaa00" stroke-width="1" stroke-dasharray="4,3" opacity="0.7"/>
+  <rect x="170" y="20" width="50" height="22" fill="#ffaa00"/>
+  <text x="195" y="35" text-anchor="middle" font-family="monospace" font-size="9" fill="#0d1117">EPS BEAT</text>
+  <!-- Green explosive candles after the beat -->
+  <line x1="220" y1="280" x2="220" y2="320" stroke="#00ff88"/>
+  <rect x="216" y="280" width="8" height="40" fill="#00ff88"/>
+  <line x1="245" y1="220" x2="245" y2="285" stroke="#00ff88"/>
+  <rect x="241" y="220" width="8" height="65" fill="#00ff88"/>
+  <line x1="270" y1="160" x2="270" y2="225" stroke="#00ff88"/>
+  <rect x="266" y="160" width="8" height="65" fill="#00ff88"/>
+  <line x1="295" y1="110" x2="295" y2="165" stroke="#00ff88"/>
+  <rect x="291" y="110" width="8" height="55" fill="#00ff88"/>
+  <line x1="320" y1="80" x2="320" y2="115" stroke="#00ff88"/>
+  <rect x="316" y="80" width="8" height="35" fill="#00ff88"/>
+  <line x1="345" y1="60" x2="345" y2="85" stroke="#00ff88"/>
+  <rect x="341" y="60" width="8" height="25" fill="#00ff88"/>
+  <line x1="370" y1="50" x2="370" y2="65" stroke="#00ff88"/>
+  <rect x="366" y="50" width="8" height="15" fill="#00ff88"/>
+  <line x1="395" y1="48" x2="395" y2="55" stroke="#00ff88"/>
+  <rect x="391" y="48" width="8" height="7" fill="#00ff88"/>
+  <line x1="420" y1="44" x2="420" y2="52" stroke="#00ff88"/>
+  <rect x="416" y="44" width="8" height="8" fill="#00ff88"/>
+  <line x1="445" y1="42" x2="445" y2="50" stroke="#00ff88"/>
+  <rect x="441" y="42" width="8" height="8" fill="#00ff88"/>
+  <!-- Trend line -->
+  <path d="M 80 320 L 195 330 Q 280 200 460 50" stroke="#00ff88" stroke-width="1.5" fill="none" opacity="0.5" stroke-dasharray="3,2"/>
+  <!-- Squeeze label -->
+  <rect x="320" y="170" width="160" height="30" fill="#0d1117" stroke="#ff4444" stroke-width="2"/>
+  <text x="400" y="190" text-anchor="middle" font-family="monospace" font-size="13" fill="#ff4444">SHORT SQUEEZE</text>
+  <!-- Tiny Moony getting blown back -->
+  <circle cx="495" cy="80" r="14" fill="#c4c4c4"/>
+  <circle cx="491" cy="78" r="2" fill="#0d1117"/>
+  <circle cx="499" cy="78" r="2" fill="#0d1117"/>
+  <path d="M 489 87 Q 495 92 501 87" stroke="#0d1117" stroke-width="1.5" fill="none"/>
+  <!-- Motion lines on Moony -->
+  <line x1="460" y1="70" x2="478" y2="76" stroke="#8b949e" stroke-width="1"/>
+  <line x1="460" y1="80" x2="478" y2="82" stroke="#8b949e" stroke-width="1"/>
+  <line x1="460" y1="90" x2="478" y2="86" stroke="#8b949e" stroke-width="1"/>
+  <text x="495" y="55" text-anchor="middle" font-family="monospace" font-size="10" fill="#ff4444">!!!</text>
+  <!-- Bicorne hat flying off -->
+  <path d="M 510 50 Q 525 42 540 50 Q 540 56 525 55 Q 510 56 510 50 Z" fill="#0d1117" stroke="#8b949e" stroke-width="1"/>
+  <!-- Volume bars at bottom -->
+  <rect x="80" y="370" width="8" height="10" fill="#ff4444" opacity="0.6"/>
+  <rect x="100" y="368" width="8" height="12" fill="#ff4444" opacity="0.6"/>
+  <rect x="120" y="368" width="8" height="12" fill="#ff4444" opacity="0.6"/>
+  <rect x="140" y="365" width="8" height="15" fill="#ff4444" opacity="0.6"/>
+  <rect x="160" y="365" width="8" height="15" fill="#ff4444" opacity="0.6"/>
+  <rect x="220" y="350" width="8" height="30" fill="#00ff88" opacity="0.7"/>
+  <rect x="245" y="340" width="8" height="40" fill="#00ff88" opacity="0.7"/>
+  <rect x="270" y="335" width="8" height="45" fill="#00ff88" opacity="0.7"/>
+  <rect x="295" y="338" width="8" height="42" fill="#00ff88" opacity="0.7"/>
+  <rect x="320" y="345" width="8" height="35" fill="#00ff88" opacity="0.7"/>
+  <rect x="345" y="350" width="8" height="30" fill="#00ff88" opacity="0.7"/>
+  <rect x="370" y="355" width="8" height="25" fill="#00ff88" opacity="0.7"/>
+  <rect x="395" y="358" width="8" height="22" fill="#00ff88" opacity="0.7"/>
+  <rect x="420" y="360" width="8" height="20" fill="#00ff88" opacity="0.7"/>
+  <rect x="445" y="362" width="8" height="18" fill="#00ff88" opacity="0.7"/>
+</svg>
+<p class="illustration-caption">EPS beat hits at half past four. The Imperial Guard does not surrender. It just gets covered.</p>
+</div>
+
+## Chapter 4: St. Helena
+
+They put him on a boat. Didn't even bother with handcuffs. He was too gassed to flee, and his sabre had been pawned to meet a margin call.
+
+The boat sailed for St. Helena, which in our world is the smallest exchange on the planet — a single market-maker, two listings, and a noticeboard that hasn't updated since 2019. He'll write his memoirs there. He'll dictate them to a goat on a volcanic rock. He'll insist he could've won at Waterloo if it hadn't rained, if Grouchy hadn't been late, if the Fed had cut, if Blücher had been seasonally adjusted.
+
+It didn't rain, Moony. You just bought the high.
+
+I went home, peeled off my Wellington boots, and put my green feet up on a desk made of trailing-stop candles. Outside, the church bell rang for the close. Somewhere in the City, a clerk wrote the date down twice — June 18th in his ledger, April 30th on his timesheet — and went home whistling.
+
+Conviction without size management is just expensive cosplay. Wellington knew that. Blücher knew that. Even the goat on St. Helena, listening to its hundredth re-telling of "I should've won," is starting to know that.
+
+Form a square. Hold the line. Let the squeeze come to you.
+
+C'est la guerre. C'est la fin. C'est la moony.
+
+<div class="story-illustration">
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#0d1117"/>
+  <!-- Sky / sunset -->
+  <rect width="600" height="260" fill="#161b22"/>
+  <circle cx="300" cy="220" r="60" fill="#ffaa00" opacity="0.25"/>
+  <circle cx="300" cy="220" r="40" fill="#ffaa00" opacity="0.4"/>
+  <!-- Ocean -->
+  <rect y="260" width="600" height="140" fill="#0d1117"/>
+  <line x1="0" y1="280" x2="600" y2="280" stroke="#30363d" stroke-width="0.5"/>
+  <line x1="40" y1="300" x2="180" y2="300" stroke="#30363d" stroke-width="0.5"/>
+  <line x1="220" y1="320" x2="380" y2="320" stroke="#30363d" stroke-width="0.5"/>
+  <line x1="420" y1="340" x2="560" y2="340" stroke="#30363d" stroke-width="0.5"/>
+  <line x1="60" y1="360" x2="200" y2="360" stroke="#30363d" stroke-width="0.5"/>
+  <!-- Tiny rock island (St. Helena) on the right -->
+  <ellipse cx="470" cy="270" rx="60" ry="14" fill="#30363d"/>
+  <path d="M 430 270 Q 470 240 510 270 Z" fill="#30363d"/>
+  <!-- Moony exiled, sitting on rock -->
+  <circle cx="470" cy="240" r="18" fill="#c4c4c4"/>
+  <circle cx="465" cy="237" r="2.5" fill="#0d1117"/>
+  <circle cx="475" cy="237" r="2.5" fill="#0d1117"/>
+  <path d="M 462 250 Q 470 244 478 250" stroke="#0d1117" stroke-width="1.5" fill="none"/>
+  <!-- Tiny bicorne on Moony -->
+  <path d="M 452 222 Q 470 216 488 222 Q 488 226 470 226 Q 452 226 452 222 Z" fill="#0d1117"/>
+  <!-- Goat next to Moony -->
+  <ellipse cx="510" cy="262" rx="10" ry="6" fill="#8b949e"/>
+  <circle cx="518" cy="258" r="4" fill="#8b949e"/>
+  <line x1="516" y1="255" x2="514" y2="251" stroke="#8b949e" stroke-width="1.5"/>
+  <line x1="520" y1="255" x2="522" y2="251" stroke="#8b949e" stroke-width="1.5"/>
+  <line x1="505" y1="266" x2="505" y2="272" stroke="#8b949e" stroke-width="1"/>
+  <line x1="515" y1="266" x2="515" y2="272" stroke="#8b949e" stroke-width="1"/>
+  <!-- Sign on rock -->
+  <line x1="430" y1="262" x2="430" y2="252" stroke="#8b949e" stroke-width="1.5"/>
+  <rect x="408" y="245" width="44" height="12" fill="#0d1117" stroke="#8b949e"/>
+  <text x="430" y="254" text-anchor="middle" font-family="monospace" font-size="7" fill="#8b949e">ST HELENA</text>
+  <!-- Speech bubble from Moony -->
+  <rect x="350" y="195" width="100" height="30" rx="4" fill="#0d1117" stroke="#8b949e"/>
+  <text x="400" y="210" text-anchor="middle" font-family="monospace" font-size="8" fill="#8b949e">"if it hadn't</text>
+  <text x="400" y="220" text-anchor="middle" font-family="monospace" font-size="8" fill="#8b949e">rained..."</text>
+  <!-- Dippy on his green ship sailing away (left side) -->
+  <!-- Hull -->
+  <path d="M 50 320 L 200 320 L 180 350 L 70 350 Z" fill="#00cc66"/>
+  <line x1="50" y1="320" x2="200" y2="320" stroke="#00ff88" stroke-width="2"/>
+  <!-- Mast -->
+  <line x1="125" y1="320" x2="125" y2="220" stroke="#8b949e" stroke-width="2"/>
+  <!-- Sail -->
+  <path d="M 125 230 L 175 290 L 125 290 Z" fill="#00ff88" opacity="0.85"/>
+  <text x="143" y="270" font-family="monospace" font-size="10" fill="#0d1117" font-weight="bold">$</text>
+  <!-- Flag -->
+  <rect x="125" y="218" width="22" height="10" fill="#ffaa00"/>
+  <text x="136" y="227" text-anchor="middle" font-family="monospace" font-size="7" fill="#0d1117">LONG</text>
+  <!-- Dippy on deck -->
+  <ellipse cx="100" cy="305" rx="18" ry="14" fill="#00ff88"/>
+  <polygon points="92,290 95,278 98,290" fill="#00cc66"/>
+  <polygon points="100,288 103,276 106,288" fill="#00cc66"/>
+  <polygon points="108,290 111,278 114,290" fill="#00cc66"/>
+  <circle cx="95" cy="303" r="2" fill="#0d1117"/>
+  <circle cx="105" cy="303" r="2" fill="#0d1117"/>
+  <path d="M 92 312 Q 100 318 108 312" stroke="#0d1117" stroke-width="1.5" fill="none"/>
+  <!-- Wake behind ship -->
+  <path d="M 200 340 Q 240 335 280 340" stroke="#8b949e" stroke-width="1" fill="none" opacity="0.5"/>
+  <path d="M 210 350 Q 260 345 310 350" stroke="#8b949e" stroke-width="1" fill="none" opacity="0.4"/>
+  <!-- Caption banner -->
+  <text x="300" y="50" text-anchor="middle" font-family="monospace" font-size="13" fill="#ffaa00">— EXILE, vol. II —</text>
+</svg>
+<p class="illustration-caption">St. Helena. One goat. Two listings. A hundred days of "what if." Dippy sails on.</p>
+</div>
+
+The market closed green. Moony closed grey. The history books will say what they always say — that the cavalry charged too soon, that the rain delayed the artillery, that conviction met its match in a square of bayonets.
+
+Mine'll say something simpler.
+
+He shorted Europe. I bought the dip. Roll credits.
