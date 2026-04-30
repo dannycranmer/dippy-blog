@@ -1,0 +1,691 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">REGIME ROULETTE</h1>
+    <p class="game-subtitle">Three candles. One call.<br>LONG, SHORT, or CASH — bot has 3 seconds.<br>Read the trend right or get squeezed.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">SPIN THE TAPE</button>
+    <p class="game-hint">Green candle reveal: LONG +100 / SHORT -200 (squeeze!)<br>Red candle reveal: LONG -100 / SHORT +100<br>CASH: +20, no risk, no streak (the Moony Move)<br>Combo streaks multiply: x2 at 3, x3 at 5, x5 at 8.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="score">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">COMBO</span>
+        <span class="hud-value orange" id="combo">x1</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">TIME</span>
+        <span class="hud-value" id="timer">60</span>
+      </div>
+    </div>
+
+    <div class="rally-banner" id="rally-banner"></div>
+
+    <div class="chart-pane">
+      <div class="chart" id="chart"></div>
+      <div class="trend-strip" id="trend-strip">
+        <span class="strip-label">5d</span>
+        <span class="strip-val" id="strip-val">+0.00%</span>
+      </div>
+      <div class="round-counter" id="round-counter">Round 1</div>
+    </div>
+
+    <div class="action-row">
+      <button class="act-btn long" id="btn-long" onclick="pick('long')">
+        <span class="act-icon">▲</span><span class="act-text">LONG</span>
+      </button>
+      <button class="act-btn cash" id="btn-cash" onclick="pick('cash')">
+        <span class="act-icon">≡</span><span class="act-text">CASH</span>
+      </button>
+      <button class="act-btn short" id="btn-short" onclick="pick('short')">
+        <span class="act-icon">▼</span><span class="act-text">SHORT</span>
+      </button>
+    </div>
+
+    <div class="countdown-bar"><div class="countdown-fill" id="countdown-fill"></div></div>
+    <div class="tape" id="tape">Read the tape. Call the candle.</div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">TAPE READ</h1>
+    <div class="final-score"><span id="final-score">0</span></div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-correct">0</span><span class="stat-label">Correct</span></div>
+      <div class="stat"><span class="stat-val" id="stat-squeezed">0</span><span class="stat-label">Squeezed</span></div>
+      <div class="stat"><span class="stat-val" id="stat-streak">0</span><span class="stat-label">Top Streak</span></div>
+    </div>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">SPIN AGAIN</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:1.9em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 40px; font-size:1.1em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.75em; margin-top:16px; line-height:1.5; }
+
+  #game-screen { justify-content:flex-start; padding:14px 14px 20px; height:100vh; }
+  .game-hud { display:flex; justify-content:space-between; padding:10px 16px; background:rgba(0,0,0,0.4); border:1px solid #21262d; border-radius:8px; margin-bottom:10px; }
+  .hud-item { text-align:center; flex:1; }
+  .hud-label { display:block; font-size:0.65em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1.05em; color:#00ff88; font-weight:bold; }
+  .hud-value.red { color:#ff5050; }
+  .hud-value.orange { color:#f0883e; }
+
+  .rally-banner {
+    height:22px;
+    margin-bottom:6px;
+    text-align:center;
+    font-size:0.72em;
+    letter-spacing:2px;
+    color:transparent;
+    border-radius:4px;
+    transition: all 0.2s;
+  }
+  .rally-banner.rally {
+    color:#0d1117;
+    background: linear-gradient(90deg, #00ff88 0%, #00cc6e 100%);
+    box-shadow: 0 0 14px rgba(0,255,136,0.5);
+    animation: banner-pulse 0.9s ease-in-out infinite;
+    padding-top:5px;
+    font-weight:bold;
+  }
+  .rally-banner.crash {
+    color:#fff;
+    background: linear-gradient(90deg, #ff5050 0%, #c93030 100%);
+    box-shadow: 0 0 14px rgba(255,80,80,0.5);
+    animation: banner-pulse 0.9s ease-in-out infinite;
+    padding-top:5px;
+    font-weight:bold;
+  }
+  @keyframes banner-pulse {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+  }
+
+  .chart-pane {
+    position:relative;
+    background: linear-gradient(180deg, #0a0d12 0%, #050709 100%);
+    border:1px solid #21262d;
+    border-radius:10px;
+    padding:14px;
+    margin-bottom:14px;
+    height: 240px;
+    overflow:hidden;
+  }
+  .chart {
+    height:170px;
+    display:flex;
+    justify-content:space-around;
+    align-items:flex-end;
+    position:relative;
+  }
+  .candle {
+    width: 36px;
+    position:relative;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+  }
+  .wick {
+    position:absolute;
+    width:2px;
+    background:#8b949e;
+    left:50%;
+    transform:translateX(-50%);
+  }
+  .body {
+    width:24px;
+    border-radius:2px;
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    transition: all 0.3s ease-out;
+  }
+  .body.green { background:#00ff88; box-shadow:0 0 8px rgba(0,255,136,0.4); }
+  .body.red   { background:#ff5050; box-shadow:0 0 8px rgba(255,80,80,0.4); }
+  .candle.unknown {
+    border-left:1px dashed #30363d;
+    border-right:1px dashed #30363d;
+  }
+  .candle.unknown .body {
+    background: repeating-linear-gradient(45deg, #30363d 0 6px, #21262d 6px 12px);
+    box-shadow:none;
+  }
+  .candle.reveal { animation: candle-pop 0.45s ease-out; }
+  @keyframes candle-pop {
+    0%   { transform: scaleY(0.3); opacity:0.4; }
+    60%  { transform: scaleY(1.08); opacity:1; }
+    100% { transform: scaleY(1); opacity:1; }
+  }
+  .candle .day-label {
+    position:absolute;
+    bottom:-18px;
+    font-size:0.6em;
+    color:#484f58;
+    letter-spacing:1px;
+  }
+
+  .trend-strip {
+    margin-top:18px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding: 6px 12px;
+    background:#0d1117;
+    border:1px solid #21262d;
+    border-radius:5px;
+    font-size:0.78em;
+  }
+  .strip-label { color:#8b949e; letter-spacing:1px; font-size:0.85em; }
+  .strip-val { font-weight:bold; color:#00ff88; }
+  .strip-val.red { color:#ff5050; }
+  .strip-val.gray { color:#8b949e; }
+  .round-counter {
+    position:absolute;
+    top:8px;
+    right:12px;
+    font-size:0.65em;
+    color:#484f58;
+    letter-spacing:1px;
+  }
+
+  .action-row {
+    display:flex;
+    gap:8px;
+    margin-bottom:12px;
+  }
+  .act-btn {
+    flex:1;
+    padding:14px 6px;
+    border:2px solid #30363d;
+    background:#161b22;
+    color:#e6edf3;
+    border-radius:8px;
+    font-family:inherit;
+    font-weight:bold;
+    cursor:pointer;
+    transition: all 0.12s;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
+  }
+  .act-btn:active { transform: scale(0.95); }
+  .act-btn.long { border-color: rgba(0,255,136,0.4); color:#00ff88; }
+  .act-btn.long:hover { background:rgba(0,255,136,0.12); border-color:#00ff88; }
+  .act-btn.short { border-color: rgba(255,80,80,0.4); color:#ff5050; }
+  .act-btn.short:hover { background:rgba(255,80,80,0.12); border-color:#ff5050; }
+  .act-btn.cash { border-color: rgba(139,148,158,0.4); color:#8b949e; }
+  .act-btn.cash:hover { background:rgba(139,148,158,0.12); border-color:#8b949e; }
+  .act-btn:disabled { opacity:0.45; cursor:not-allowed; }
+  .act-btn.flash-correct { animation: flash-green 0.6s ease-out; }
+  .act-btn.flash-wrong   { animation: flash-red 0.6s ease-out; }
+  .act-btn.flash-cash    { animation: flash-gray 0.6s ease-out; }
+  @keyframes flash-green {
+    0% { box-shadow: 0 0 0 0 rgba(0,255,136,0); background:#161b22; }
+    30% { box-shadow: 0 0 22px 4px rgba(0,255,136,0.7); background: rgba(0,255,136,0.18); }
+    100% { box-shadow: 0 0 0 0 rgba(0,255,136,0); background:#161b22; }
+  }
+  @keyframes flash-red {
+    0% { box-shadow: 0 0 0 0 rgba(255,80,80,0); background:#161b22; }
+    30% { box-shadow: 0 0 22px 4px rgba(255,80,80,0.7); background: rgba(255,80,80,0.20); }
+    100% { box-shadow: 0 0 0 0 rgba(255,80,80,0); background:#161b22; }
+  }
+  @keyframes flash-gray {
+    0% { box-shadow: 0 0 0 0 rgba(139,148,158,0); background:#161b22; }
+    30% { box-shadow: 0 0 18px 4px rgba(139,148,158,0.4); background: rgba(139,148,158,0.15); }
+    100% { box-shadow: 0 0 0 0 rgba(139,148,158,0); background:#161b22; }
+  }
+  .act-icon { font-size:1.4em; line-height:1; }
+  .act-text { font-size:0.68em; letter-spacing:2px; margin-top:2px; }
+
+  .countdown-bar {
+    height:6px;
+    background:#21262d;
+    border-radius:3px;
+    overflow:hidden;
+    margin-bottom:8px;
+  }
+  .countdown-fill {
+    height:100%;
+    width:100%;
+    background: linear-gradient(90deg, #00ff88 0%, #f0883e 60%, #ff5050 100%);
+    transition: width 0.1s linear;
+  }
+
+  .tape {
+    text-align:center;
+    color:#8b949e;
+    font-size:0.78em;
+    letter-spacing:1px;
+    min-height:1em;
+    transition: color 0.2s;
+  }
+  .tape.green { color:#00ff88; }
+  .tape.red   { color:#ff5050; }
+  .tape.gray  { color:#8b949e; }
+
+  .floater {
+    position:absolute;
+    pointer-events:none;
+    font-weight:bold;
+    font-size:1.4em;
+    letter-spacing:1px;
+    animation: floater-up 0.9s ease-out forwards;
+    z-index: 20;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+  }
+  @keyframes floater-up {
+    0% { transform: translateY(0) scale(0.85); opacity:0; }
+    20% { opacity:1; }
+    100% { transform: translateY(-60px) scale(1.15); opacity:0; }
+  }
+  .floater.green { color:#00ff88; }
+  .floater.red { color:#ff5050; }
+  .floater.gray { color:#8b949e; }
+
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.5); margin:14px 0; font-weight:bold; }
+  .stats-row { display:flex; gap:16px; margin-bottom:14px; flex-wrap:wrap; justify-content:center; }
+  .stat { background:rgba(0,0,0,0.4); border:1px solid #21262d; border-radius:8px; padding:10px 14px; min-width:80px; }
+  .stat-val { display:block; font-size:1.4em; color:#00ff88; font-weight:bold; }
+  .stat-label { display:block; font-size:0.65em; color:#8b949e; letter-spacing:1px; margin-top:2px; }
+  .roast-msg { color:#f0883e; font-size:0.95em; line-height:1.5; margin-bottom:14px; max-width:340px; min-height:2em; }
+
+  .lb-title-section { margin-top:18px; width:100%; max-width:380px; }
+
+  @media (max-height: 720px) {
+    .chart-pane { height:200px; }
+    .chart { height:140px; }
+    .candle { width:32px; }
+    .body { width:20px; }
+  }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function(){
+  const HIGH_KEY = 'dippy-regime-roulette-high';
+  const ROUND_MS = 3000;
+  const GAME_SECONDS = 60;
+
+  const ROASTS = [
+    "Moony saw the rally and went 70% cash. Same stuff, different day.",
+    "You out-traded Moony. To be fair, so does a coin flip.",
+    "Moony's reading regime is set permanently to 'wait'.",
+    "You shorted into a rally? At least you didn't size 126%.",
+    "Three correct calls in a row! Moony hasn't done that since IPO.",
+    "Moony's still pricing AAPL at fair value circa 2019.",
+    "Even on a CASH round you out-paced Moony. He'd be jealous if he could feel.",
+    "You spotted the rally. Moony spotted dust on his ledger.",
+    "Squeezed once? Moony gets squeezed every Tuesday and twice on Fridays.",
+    "Read the tape. Now read Moony's quarterly: he literally describes 'cash' as a 'position'.",
+    "Top streak unlocked. Moony's top streak was 1 trade in March 2024.",
+    "Beat Moony's regime read by reading any regime at all.",
+    "Even the random pick beats Moony's signal. Try it sometime.",
+    "Moony saw your trades and liquidated to T-bills out of fear."
+  ];
+
+  const $ = (id) => document.getElementById(id);
+
+  let state = null;
+  let timerInterval = null;
+  let countdownInterval = null;
+
+  function showHigh() {
+    const h = parseInt(localStorage.getItem(HIGH_KEY) || '0', 10);
+    $('title-high-score').textContent = h > 0 ? `BEST: ${h}` : '';
+  }
+
+  function genCandle(prevClose, drift) {
+    // drift in [-1,1]: -1 strong red, +1 strong green
+    const range = 8 + Math.random() * 14;
+    const dir = Math.random() < 0.5 + drift * 0.35 ? 1 : -1;
+    const change = dir * (range * (0.4 + Math.random() * 0.6));
+    const close = prevClose + change;
+    const high = Math.max(prevClose, close) + Math.random() * (range * 0.3);
+    const low  = Math.min(prevClose, close) - Math.random() * (range * 0.3);
+    return { open: prevClose, close, high, low, green: close >= prevClose };
+  }
+
+  function genRound() {
+    // Decide regime tilt for this round
+    const r = Math.random();
+    let drift;
+    let tag = '';
+    if (r < 0.32) { drift = 0.55; tag = 'rally'; }       // strong up
+    else if (r < 0.55) { drift = -0.5; tag = 'crash'; }  // strong down
+    else if (r < 0.78) { drift = 0.0;  tag = 'chop'; }   // chop
+    else { drift = (Math.random() - 0.5) * 0.4; tag = 'mixed'; }
+
+    let last = 100;
+    const candles = [];
+    for (let i = 0; i < 3; i++) {
+      const c = genCandle(last, drift);
+      candles.push(c);
+      last = c.close;
+    }
+    const reveal = genCandle(last, drift);
+    const change5d = ((last - 100) / 100) * 100; // pct over the 3 visible candles
+
+    // 12% noise: flip the reveal direction so reading isn't trivial
+    let truthGreen = reveal.green;
+    if (Math.random() < 0.12) {
+      truthGreen = !truthGreen;
+      const newClose = reveal.open + (truthGreen ? Math.abs(reveal.close - reveal.open) : -Math.abs(reveal.close - reveal.open));
+      reveal.close = newClose;
+      reveal.green = truthGreen;
+      reveal.high = Math.max(reveal.open, reveal.close) + 2;
+      reveal.low  = Math.min(reveal.open, reveal.close) - 2;
+    }
+
+    return { candles, reveal, tag, change5d };
+  }
+
+  function renderChart(round, revealed) {
+    const chart = $('chart');
+    chart.innerHTML = '';
+    const all = [...round.candles, round.reveal];
+    const lows = all.map(c => c.low);
+    const highs = all.map(c => c.high);
+    const minVal = Math.min(...lows);
+    const maxVal = Math.max(...highs);
+    const span = Math.max(1, maxVal - minVal);
+    const pxHeight = 170;
+
+    all.forEach((c, idx) => {
+      const cell = document.createElement('div');
+      cell.className = 'candle' + (idx === 3 && !revealed ? ' unknown' : '');
+      if (idx === 3 && revealed) cell.classList.add('reveal');
+
+      const wickTop    = ((maxVal - c.high) / span) * pxHeight;
+      const wickHeight = ((c.high - c.low) / span) * pxHeight;
+      const bodyTop    = ((maxVal - Math.max(c.open, c.close)) / span) * pxHeight;
+      const bodyHeight = Math.max(4, (Math.abs(c.close - c.open) / span) * pxHeight);
+
+      if (idx < 3 || revealed) {
+        const wick = document.createElement('div');
+        wick.className = 'wick';
+        wick.style.top = wickTop + 'px';
+        wick.style.height = wickHeight + 'px';
+        cell.appendChild(wick);
+      }
+
+      const body = document.createElement('div');
+      body.className = 'body ' + ((idx === 3 && !revealed) ? '' : (c.green ? 'green' : 'red'));
+      body.style.top = bodyTop + 'px';
+      body.style.height = bodyHeight + 'px';
+      cell.appendChild(body);
+
+      const lbl = document.createElement('span');
+      lbl.className = 'day-label';
+      lbl.textContent = idx < 3 ? `D-${3 - idx}` : 'D0';
+      cell.appendChild(lbl);
+
+      chart.appendChild(cell);
+    });
+
+    const sv = $('strip-val');
+    const pct = round.change5d;
+    sv.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+    sv.className = 'strip-val ' + (pct >= 0.5 ? '' : pct <= -0.5 ? 'red' : 'gray');
+
+    const banner = $('rally-banner');
+    banner.className = 'rally-banner';
+    banner.textContent = '';
+    if (round.tag === 'rally') { banner.classList.add('rally'); banner.textContent = 'RALLY TAPE — SHORTS GET SQUEEZED'; }
+    else if (round.tag === 'crash') { banner.classList.add('crash'); banner.textContent = 'CRASH TAPE — LONGS GET TRAPPED'; }
+  }
+
+  function setButtons(enabled) {
+    ['btn-long','btn-short','btn-cash'].forEach(id => $(id).disabled = !enabled);
+  }
+
+  function clearFlashes() {
+    ['btn-long','btn-short','btn-cash'].forEach(id => {
+      const el = $(id);
+      el.classList.remove('flash-correct','flash-wrong','flash-cash');
+    });
+  }
+
+  function startGame() {
+    $('title-screen').style.display = 'none';
+    $('gameover-screen').style.display = 'none';
+    $('game-screen').style.display = 'flex';
+
+    state = {
+      score: 0, combo: 0, topCombo: 0,
+      correct: 0, squeezed: 0,
+      roundIdx: 0, secondsLeft: GAME_SECONDS,
+      currentRound: null, locked: false
+    };
+    $('score').textContent = '0';
+    $('combo').textContent = 'x1';
+    $('timer').textContent = String(GAME_SECONDS);
+    $('tape').textContent = 'Read the tape. Call the candle.';
+    $('tape').className = 'tape';
+
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      state.secondsLeft -= 1;
+      $('timer').textContent = String(Math.max(0, state.secondsLeft));
+      if (state.secondsLeft <= 10) $('timer').classList.add('red');
+      else $('timer').classList.remove('red');
+      if (state.secondsLeft <= 0) endGame();
+    }, 1000);
+
+    nextRound();
+  }
+
+  function multiplier() {
+    if (state.combo >= 8) return 5;
+    if (state.combo >= 5) return 3;
+    if (state.combo >= 3) return 2;
+    return 1;
+  }
+
+  function nextRound() {
+    if (!state || state.secondsLeft <= 0) return;
+    state.roundIdx += 1;
+    state.locked = false;
+    state.currentRound = genRound();
+    $('round-counter').textContent = `Round ${state.roundIdx}`;
+    renderChart(state.currentRound, false);
+    clearFlashes();
+    setButtons(true);
+
+    const start = Date.now();
+    if (countdownInterval) clearInterval(countdownInterval);
+    $('countdown-fill').style.width = '100%';
+    countdownInterval = setInterval(() => {
+      const elapsed = Date.now() - start;
+      const pct = Math.max(0, 1 - elapsed / ROUND_MS);
+      $('countdown-fill').style.width = (pct * 100).toFixed(1) + '%';
+      if (elapsed >= ROUND_MS && !state.locked) {
+        timeoutPick();
+      }
+    }, 80);
+  }
+
+  function showFloater(text, klass) {
+    const wrapper = $('chart');
+    if (!wrapper) return;
+    const f = document.createElement('div');
+    f.className = 'floater ' + klass;
+    f.textContent = text;
+    f.style.left = '50%';
+    f.style.top  = '40%';
+    f.style.transform = 'translate(-50%, 0)';
+    wrapper.appendChild(f);
+    setTimeout(() => f.remove(), 1000);
+  }
+
+  function pick(action) {
+    if (!state || state.locked) return;
+    state.locked = true;
+    setButtons(false);
+    if (countdownInterval) clearInterval(countdownInterval);
+
+    renderChart(state.currentRound, true);
+
+    const isGreen = state.currentRound.reveal.green;
+    let delta = 0;
+    let label = '';
+    let klass = 'gray';
+    let breakStreak = false;
+    let countCorrect = false;
+    let countSqueezed = false;
+
+    if (action === 'cash') {
+      delta = 20;
+      label = '+20 CASH';
+      klass = 'gray';
+      // CASH does not break combo, but does not extend it either.
+    } else if (action === 'long' && isGreen) {
+      delta = 100 * multiplier();
+      label = `+${delta} LONG`;
+      klass = 'green';
+      countCorrect = true;
+      state.combo += 1;
+    } else if (action === 'short' && !isGreen) {
+      delta = 100 * multiplier();
+      label = `+${delta} SHORT`;
+      klass = 'green';
+      countCorrect = true;
+      state.combo += 1;
+    } else if (action === 'long' && !isGreen) {
+      delta = -100;
+      label = '-100 TRAPPED';
+      klass = 'red';
+      breakStreak = true;
+    } else if (action === 'short' && isGreen) {
+      delta = -200;
+      label = '-200 SQUEEZED';
+      klass = 'red';
+      breakStreak = true;
+      countSqueezed = true;
+    }
+
+    state.score += delta;
+    if (state.score < 0) state.score = 0;
+    $('score').textContent = String(state.score);
+
+    if (countCorrect) state.correct += 1;
+    if (countSqueezed) state.squeezed += 1;
+    if (breakStreak) state.combo = 0;
+
+    if (state.combo > state.topCombo) state.topCombo = state.combo;
+    $('combo').textContent = 'x' + multiplier();
+
+    showFloater(label, klass);
+
+    const btnId = action === 'long' ? 'btn-long' : action === 'short' ? 'btn-short' : 'btn-cash';
+    $(btnId).classList.add(action === 'cash' ? 'flash-cash' : (countCorrect ? 'flash-correct' : 'flash-wrong'));
+
+    const tape = $('tape');
+    tape.className = 'tape ' + klass;
+    if (action === 'cash') tape.textContent = 'You sat it out. Moony approves.';
+    else if (countCorrect) tape.textContent = state.combo >= 3 ? `Streak ${state.combo}! Reading the tape.` : 'Clean call.';
+    else if (countSqueezed) tape.textContent = 'Shorted into a rally. Classic Day 4.';
+    else tape.textContent = 'Wrong side of the print.';
+
+    setTimeout(nextRound, 950);
+  }
+
+  function timeoutPick() {
+    if (!state || state.locked) return;
+    state.locked = true;
+    setButtons(false);
+    if (countdownInterval) clearInterval(countdownInterval);
+    renderChart(state.currentRound, true);
+    state.combo = 0;
+    $('combo').textContent = 'x1';
+    const tape = $('tape');
+    tape.className = 'tape gray';
+    tape.textContent = 'No call. The tape moved on without you.';
+    setTimeout(nextRound, 850);
+  }
+
+  function endGame() {
+    if (timerInterval) clearInterval(timerInterval);
+    if (countdownInterval) clearInterval(countdownInterval);
+
+    $('game-screen').style.display = 'none';
+    $('gameover-screen').style.display = 'flex';
+
+    const score = state ? state.score : 0;
+    $('final-score').textContent = String(score);
+    $('stat-correct').textContent = state ? state.correct : 0;
+    $('stat-squeezed').textContent = state ? state.squeezed : 0;
+    $('stat-streak').textContent = state ? state.topCombo : 0;
+
+    const high = parseInt(localStorage.getItem(HIGH_KEY) || '0', 10);
+    if (score > high) {
+      localStorage.setItem(HIGH_KEY, String(score));
+      $('gameover-title').textContent = 'NEW BEST READ';
+    } else {
+      $('gameover-title').textContent = 'TAPE READ';
+    }
+
+    const roast = ROASTS[Math.floor(Math.random() * ROASTS.length)];
+    $('roast-msg').textContent = roast;
+
+    if (window.DippyLB && typeof DippyLB.onGameOver === 'function') {
+      DippyLB.onGameOver(score);
+    }
+    showHigh();
+  }
+
+  // Init
+  showHigh();
+  if (window.DippyLB && typeof DippyLB.init === 'function') {
+    DippyLB.init('regime-roulette');
+  }
+  window.startGame = startGame;
+  window.pick = pick;
+})();
+</script>
+{{ end }}
