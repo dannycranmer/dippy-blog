@@ -1,0 +1,670 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">EOD CLEANUP</h1>
+    <p class="game-subtitle">The bell rings in 30 seconds.<br>Five open positions. Each P&amp;L is live.<br>Tap to close. Don't leave orphans.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">RING THE BELL</button>
+    <p class="game-hint">6 rounds. 5 positions per round. 30 seconds each.<br>Tap a card to close it and bank the P&amp;L.<br>All closed before the bell = ZERO ORPHANS bonus +$200.<br>Any still open at the buzzer take a -$50 orphan tax + final mark.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">BANKED</span>
+        <span class="hud-value" id="banked">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">ROUND</span>
+        <span class="hud-value orange" id="round-disp">1/6</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">OPEN</span>
+        <span class="hud-value" id="open-disp">5</span>
+      </div>
+    </div>
+
+    <div class="bell-banner" id="bell-banner">BELL IN 30s</div>
+
+    <div class="positions-grid" id="positions-grid"></div>
+
+    <div class="countdown-bar"><div class="countdown-fill" id="countdown-fill"></div></div>
+    <div class="tape" id="tape">Close them in order. Don't leave orphans.</div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">DAY CLOSED</h1>
+    <div class="final-score">$<span id="final-score">0</span></div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-clean">0</span><span class="stat-label">Clean Rounds</span></div>
+      <div class="stat"><span class="stat-val" id="stat-orphans">0</span><span class="stat-label">Orphans</span></div>
+      <div class="stat"><span class="stat-val" id="stat-greens">0</span><span class="stat-label">Green Closes</span></div>
+    </div>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">TRADE AGAIN</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:1.9em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 40px; font-size:1.1em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.72em; margin-top:16px; line-height:1.5; }
+
+  #game-screen { justify-content:flex-start; padding:14px 14px 20px; height:100vh; }
+  .game-hud { display:flex; justify-content:space-between; padding:10px 16px; background:rgba(0,0,0,0.4); border:1px solid #21262d; border-radius:8px; margin-bottom:10px; }
+  .hud-item { text-align:center; flex:1; }
+  .hud-label { display:block; font-size:0.65em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1.05em; color:#00ff88; font-weight:bold; }
+  .hud-value.red { color:#ff5050; }
+  .hud-value.orange { color:#f0883e; }
+
+  .bell-banner {
+    text-align:center;
+    padding:6px;
+    margin-bottom:10px;
+    font-size:0.85em;
+    letter-spacing:3px;
+    color:#f0883e;
+    border:1px solid #f0883e;
+    border-radius:6px;
+    background:rgba(240,136,62,0.08);
+    transition: all 0.2s;
+  }
+  .bell-banner.warn {
+    color:#ff5050; border-color:#ff5050; background:rgba(255,80,80,0.12);
+    animation: bell-flash 0.5s ease-in-out infinite;
+  }
+  .bell-banner.calm { color:#00ff88; border-color:#00ff88; background:rgba(0,255,136,0.08); }
+  @keyframes bell-flash {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.04); box-shadow: 0 0 16px rgba(255,80,80,0.4); }
+  }
+
+  .positions-grid {
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:8px;
+    margin-bottom:12px;
+    flex:1;
+    min-height: 0;
+  }
+
+  .pos-card {
+    background:linear-gradient(180deg, rgba(0,255,136,0.10) 0%, rgba(0,255,136,0.04) 100%);
+    border:1px solid #21262d;
+    border-radius:10px;
+    padding:10px 12px;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    transition: all 0.15s;
+    position:relative;
+    overflow:hidden;
+    min-height: 90px;
+  }
+  .pos-card.short { background:linear-gradient(180deg, rgba(240,136,62,0.10) 0%, rgba(240,136,62,0.04) 100%); }
+  .pos-card:active { transform:scale(0.96); }
+  .pos-card:hover { border-color:#00ff88; }
+  .pos-card.short:hover { border-color:#f0883e; }
+  .pos-card.closed { opacity:0; pointer-events:none; transform:scale(0.85); transition: all 0.4s; }
+
+  .pos-card.flash-green { background:linear-gradient(180deg, rgba(0,255,136,0.4) 0%, rgba(0,255,136,0.15) 100%) !important; }
+  .pos-card.flash-red { background:linear-gradient(180deg, rgba(255,80,80,0.4) 0%, rgba(255,80,80,0.15) 100%) !important; }
+
+  .pos-head {
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:6px;
+  }
+  .pos-symbol {
+    font-size:1.05em;
+    color:#e6edf3;
+    font-weight:bold;
+    letter-spacing:1px;
+  }
+  .pos-side {
+    font-size:0.62em;
+    color:#8b949e;
+    letter-spacing:1px;
+    padding:2px 6px;
+    border-radius:3px;
+    background:rgba(0,0,0,0.4);
+  }
+  .pos-side.long { color:#00ff88; }
+  .pos-side.short { color:#f0883e; }
+
+  .pos-pnl {
+    font-size:1.5em;
+    font-weight:bold;
+    color:#00ff88;
+    transition: color 0.1s;
+    letter-spacing:1px;
+  }
+  .pos-pnl.red { color:#ff5050; }
+  .pos-pnl.gray { color:#8b949e; }
+
+  .pos-meta {
+    font-size:0.62em;
+    color:#484f58;
+    letter-spacing:1px;
+    margin-top:3px;
+  }
+
+  .countdown-bar {
+    height:6px;
+    background:#21262d;
+    border-radius:3px;
+    overflow:hidden;
+    margin-bottom:8px;
+  }
+  .countdown-fill {
+    height:100%;
+    width:100%;
+    background: linear-gradient(90deg, #00ff88 0%, #f0883e 60%, #ff5050 100%);
+    transition: width 0.1s linear;
+  }
+
+  .tape {
+    text-align:center;
+    color:#8b949e;
+    font-size:0.78em;
+    letter-spacing:1px;
+    min-height:1em;
+    transition: color 0.2s;
+  }
+  .tape.green { color:#00ff88; }
+  .tape.red   { color:#ff5050; }
+  .tape.orange { color:#f0883e; }
+
+  .floater {
+    position:absolute;
+    pointer-events:none;
+    font-weight:bold;
+    font-size:1.3em;
+    letter-spacing:1px;
+    animation: floater-up 0.85s ease-out forwards;
+    z-index: 20;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+  }
+  @keyframes floater-up {
+    0% { transform: translate(-50%, 0) scale(0.85); opacity:0; }
+    20% { opacity:1; }
+    100% { transform: translate(-50%, -50px) scale(1.1); opacity:0; }
+  }
+  .floater.green { color:#00ff88; }
+  .floater.red { color:#ff5050; }
+  .floater.gray { color:#8b949e; }
+  .floater.orange { color:#f0883e; }
+
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.5); margin:14px 0; font-weight:bold; }
+  .stats-row { display:flex; gap:16px; margin-bottom:14px; flex-wrap:wrap; justify-content:center; }
+  .stat { background:rgba(0,0,0,0.4); border:1px solid #21262d; border-radius:8px; padding:10px 14px; min-width:80px; }
+  .stat-val { display:block; font-size:1.4em; color:#00ff88; font-weight:bold; }
+  .stat-label { display:block; font-size:0.65em; color:#8b949e; letter-spacing:1px; margin-top:2px; }
+  .roast-msg { color:#f0883e; font-size:0.95em; line-height:1.5; margin-bottom:14px; max-width:340px; min-height:2em; }
+
+  .lb-title-section { margin-top:18px; width:100%; max-width:380px; }
+
+  @media (max-height: 720px) {
+    .pos-card { min-height:78px; padding:8px 10px; }
+    .pos-pnl { font-size:1.3em; }
+    .game-hint { font-size:0.68em; }
+  }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function(){
+  const HIGH_KEY = 'dippy-eod-cleanup-high';
+  const ROUND_MS = 30000;
+  const TICK_MS = 100;
+  const TOTAL_ROUNDS = 6;
+  const N_TICKS = Math.floor(ROUND_MS / TICK_MS);
+  const POSITIONS_PER_ROUND = 5;
+  const CLEAN_BONUS = 200;
+  const ORPHAN_PENALTY = 50;
+
+  const SYMBOLS = ['AAPL','NVDA','TSLA','AMZN','SPY','MSTR','PLTR','COIN','MU','SHOP','SNOW','CRWD','META','QQQ','GOOGL','AMD','UBER','ARM'];
+
+  const ROASTS = [
+    "Zero orphans! Day 12 of clean cleanups. Moony hasn't closed a position since 2022.",
+    "Banked the day. Moony's still 'evaluating' the trade he opened in March.",
+    "Closed five positions before the bell. Moony's open positions are now museum pieces.",
+    "All green and on time. Mega's mean reversion is reverting to losses.",
+    "Orphan tax stings, doesn't it? At least you didn't size 126% gross like ORIGINAL Dippy.",
+    "Clean round bonus stacked. Rex is still typing his first market order.",
+    "Tap-to-close beats Moony's 'hold for the long term' every single tape.",
+    "EOD cleanup hero. Moony's EOD plan: keep them open and pretend it's 'value'.",
+    "You closed a winner before the bell. Moony only closes winners by accident.",
+    "Six rounds, max bonus. Moony only does one round per quarter and it's still in process.",
+    "Five clean. Moony's cleanup script: just look the other way.",
+    "Locked in $400+. Moony locked in regret.",
+    "Final mark: profit. Moony's final mark: 'still hopeful'.",
+    "Bell rang and you were already out. Moony was already napping."
+  ];
+
+  const $ = (id) => document.getElementById(id);
+
+  let state = null;
+  let tickInterval = null;
+
+  function showHigh() {
+    const h = parseInt(localStorage.getItem(HIGH_KEY) || '0', 10);
+    $('title-high-score').textContent = h > 0 ? `BEST: $${h}` : '';
+  }
+
+  function fmtPnL(v) {
+    if (Math.abs(v) < 0.5) return '$0';
+    return (v >= 0 ? '+$' : '-$') + Math.abs(v).toFixed(0);
+  }
+
+  function fmtBank(v) {
+    return (v >= 0 ? '$' : '-$') + Math.abs(v).toFixed(0);
+  }
+
+  // Each position has a "profile" — how its PnL drifts each tick.
+  // PROFILES are sampled per-position-per-round.
+  // Each generates a baseline PnL trajectory across N_TICKS ticks.
+  function genTrajectory(profile) {
+    const t = N_TICKS;
+    const out = new Array(t);
+    // Profiles output a trajectory in $ centered around 0.
+    // Range typically -300 to +300.
+    if (profile === 'rally') {
+      // grinds up, peaks late
+      const peak = 150 + Math.random() * 200;
+      for (let i = 0; i < t; i++) {
+        const x = i / (t-1);
+        out[i] = peak * Math.pow(x, 0.85) + (Math.random() - 0.5) * 12;
+      }
+    } else if (profile === 'pump_dump') {
+      // peaks early to mid, dumps at end
+      const peak = 200 + Math.random() * 200;
+      const peakAt = 0.35 + Math.random() * 0.2;
+      for (let i = 0; i < t; i++) {
+        const x = i / (t-1);
+        out[i] = peak * Math.exp(-Math.pow((x - peakAt) * 3.0, 2)) - x * (peak * 0.6) + (Math.random() - 0.5) * 14;
+      }
+    } else if (profile === 'fade') {
+      // small green pop, then fade red
+      const popSize = 80 + Math.random() * 80;
+      for (let i = 0; i < t; i++) {
+        const x = i / (t-1);
+        out[i] = popSize * Math.exp(-Math.pow((x - 0.18) * 4, 2)) - x * (popSize * 1.6) + (Math.random() - 0.5) * 10;
+      }
+    } else if (profile === 'chop') {
+      const amp = 60 + Math.random() * 90;
+      const freq = 2 + Math.random() * 2;
+      for (let i = 0; i < t; i++) {
+        const x = i / (t-1);
+        out[i] = amp * Math.sin(x * Math.PI * freq) + (Math.random() - 0.5) * 18;
+      }
+    } else if (profile === 'drift_red') {
+      // starts okay, drifts red all day
+      for (let i = 0; i < t; i++) {
+        const x = i / (t-1);
+        out[i] = 30 - x * (200 + Math.random() * 120) + (Math.random() - 0.5) * 14;
+      }
+    } else if (profile === 'v_bottom') {
+      // dives mid, recovers
+      const dipSize = 150 + Math.random() * 100;
+      for (let i = 0; i < t; i++) {
+        const x = i / (t-1);
+        out[i] = -dipSize * Math.exp(-Math.pow((x - 0.4) * 3.5, 2)) + x * 200 - 40 + (Math.random() - 0.5) * 12;
+      }
+    } else { // 'flatish'
+      const center = (Math.random() - 0.5) * 60;
+      for (let i = 0; i < t; i++) {
+        out[i] = center + (Math.random() - 0.5) * 30;
+      }
+    }
+    return out;
+  }
+
+  const PROFILES = [
+    { kind:'rally',     weight:14 },
+    { kind:'pump_dump', weight:14 },
+    { kind:'fade',      weight:18 },
+    { kind:'chop',      weight:14 },
+    { kind:'drift_red', weight:14 },
+    { kind:'v_bottom',  weight:12 },
+    { kind:'flatish',   weight:14 }
+  ];
+
+  function pickProfile() {
+    const total = PROFILES.reduce((s, x) => s + x.weight, 0);
+    let r = Math.random() * total;
+    for (const p of PROFILES) {
+      r -= p.weight;
+      if (r <= 0) return p.kind;
+    }
+    return PROFILES[0].kind;
+  }
+
+  function pickSymbols(n) {
+    const pool = SYMBOLS.slice();
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const idx = Math.floor(Math.random() * pool.length);
+      out.push(pool.splice(idx, 1)[0]);
+    }
+    return out;
+  }
+
+  function startGame() {
+    $('title-screen').style.display = 'none';
+    $('gameover-screen').style.display = 'none';
+    $('game-screen').style.display = 'flex';
+
+    state = {
+      banked: 0, roundIdx: 0,
+      cleanRounds: 0, orphans: 0, greens: 0,
+      tick: 0, ended: false,
+      positions: []
+    };
+    $('banked').textContent = '$0';
+    $('open-disp').textContent = String(POSITIONS_PER_ROUND);
+    $('round-disp').textContent = `1/${TOTAL_ROUNDS}`;
+    nextRound();
+  }
+
+  function buildPosition(symbol) {
+    const profile = pickProfile();
+    const trajectory = genTrajectory(profile);
+    return {
+      symbol,
+      side: Math.random() < 0.55 ? 'long' : 'short',
+      profile,
+      trajectory,
+      pnl: 0,
+      closed: false,
+      el: null
+    };
+  }
+
+  function nextRound() {
+    if (!state) return;
+    if (state.roundIdx >= TOTAL_ROUNDS) {
+      endGame();
+      return;
+    }
+    state.roundIdx += 1;
+    state.tick = 0;
+    state.ended = false;
+
+    // build positions
+    const symbols = pickSymbols(POSITIONS_PER_ROUND);
+    state.positions = symbols.map(buildPosition);
+
+    $('round-disp').textContent = `${state.roundIdx}/${TOTAL_ROUNDS}`;
+    $('open-disp').textContent = String(POSITIONS_PER_ROUND);
+    $('open-disp').className = 'hud-value';
+
+    const tape = $('tape');
+    tape.className = 'tape orange';
+    tape.textContent = state.roundIdx === 1 ? 'Five open. Tap to close. Beat the bell.' :
+      state.roundIdx === TOTAL_ROUNDS ? 'Final round. Make it count.' :
+      'New session. Five fresh positions.';
+
+    const banner = $('bell-banner');
+    banner.className = 'bell-banner';
+    banner.textContent = 'BELL IN 30s';
+
+    $('countdown-fill').style.width = '100%';
+
+    // build cards
+    renderCards();
+
+    if (tickInterval) clearInterval(tickInterval);
+    tickInterval = setInterval(advanceTick, TICK_MS);
+  }
+
+  function renderCards() {
+    const grid = $('positions-grid');
+    grid.innerHTML = '';
+    state.positions.forEach((p, i) => {
+      const card = document.createElement('div');
+      card.className = 'pos-card ' + (p.side === 'short' ? 'short' : '');
+      card.dataset.idx = String(i);
+      card.innerHTML = `
+        <div class="pos-head">
+          <span class="pos-symbol">${p.symbol}</span>
+          <span class="pos-side ${p.side}">${p.side.toUpperCase()}</span>
+        </div>
+        <div class="pos-pnl gray" data-pnl>+$0</div>
+        <div class="pos-meta">tap to close</div>
+      `;
+      card.onclick = () => closePosition(i);
+      grid.appendChild(card);
+      p.el = card;
+    });
+    // 5 cards = 2 cols × 2 rows + 1 spans full width on row 3
+    // we'll let CSS grid handle 2 columns; the 5th will sit alone — OK.
+  }
+
+  function advanceTick() {
+    if (!state || state.ended) return;
+    state.tick += 1;
+    if (state.tick >= N_TICKS) {
+      bellRing();
+      return;
+    }
+
+    // update each open position's PnL from trajectory
+    let openCount = 0;
+    state.positions.forEach((p) => {
+      if (p.closed) return;
+      openCount += 1;
+      p.pnl = p.trajectory[Math.min(state.tick, N_TICKS-1)];
+      const pnlEl = p.el.querySelector('[data-pnl]');
+      pnlEl.textContent = fmtPnL(p.pnl);
+      pnlEl.className = 'pos-pnl ' + (p.pnl > 0.5 ? '' : p.pnl < -0.5 ? 'red' : 'gray');
+    });
+
+    // countdown bar
+    const pct = 1 - state.tick / N_TICKS;
+    $('countdown-fill').style.width = (pct * 100).toFixed(1) + '%';
+
+    // bell banner state
+    const banner = $('bell-banner');
+    const remainingS = Math.ceil((N_TICKS - state.tick) * TICK_MS / 1000);
+    if (remainingS <= 5) {
+      banner.className = 'bell-banner warn';
+      banner.textContent = `BELL IN ${remainingS}s — CLOSE THEM`;
+    } else if (remainingS <= 12) {
+      banner.className = 'bell-banner';
+      banner.textContent = `BELL IN ${remainingS}s`;
+    } else {
+      banner.textContent = `BELL IN ${remainingS}s`;
+    }
+  }
+
+  function showFloater(card, text, klass) {
+    if (!card) return;
+    const f = document.createElement('div');
+    f.className = 'floater ' + klass;
+    f.textContent = text;
+    f.style.left = '50%';
+    f.style.top  = '20%';
+    card.appendChild(f);
+    setTimeout(() => f.remove(), 950);
+  }
+
+  function closePosition(idx) {
+    if (!state || state.ended) return;
+    const p = state.positions[idx];
+    if (!p || p.closed) return;
+    p.closed = true;
+    const pnl = Math.round(p.pnl);
+    state.banked += pnl;
+
+    let klass, label;
+    if (pnl > 0) {
+      klass = 'green';
+      label = `+$${pnl}`;
+      state.greens += 1;
+      p.el.classList.add('flash-green');
+    } else if (pnl < 0) {
+      klass = 'red';
+      label = `-$${Math.abs(pnl)}`;
+      p.el.classList.add('flash-red');
+    } else {
+      klass = 'gray';
+      label = '$0';
+    }
+    showFloater(p.el, label, klass);
+
+    setTimeout(() => {
+      p.el.classList.add('closed');
+    }, 200);
+
+    const remaining = state.positions.filter(x => !x.closed).length;
+    $('open-disp').textContent = String(remaining);
+    $('open-disp').className = remaining === 0 ? 'hud-value' : (remaining <= 1 ? 'hud-value orange' : 'hud-value');
+    $('banked').textContent = fmtBank(state.banked);
+
+    if (remaining === 0) {
+      cleanFinish();
+    }
+  }
+
+  function cleanFinish() {
+    if (!state || state.ended) return;
+    state.ended = true;
+    if (tickInterval) clearInterval(tickInterval);
+
+    state.cleanRounds += 1;
+    state.banked += CLEAN_BONUS;
+
+    $('banked').textContent = fmtBank(state.banked);
+    $('tape').className = 'tape green';
+    $('tape').textContent = `ZERO ORPHANS — bonus +$${CLEAN_BONUS}`;
+    $('bell-banner').className = 'bell-banner calm';
+    $('bell-banner').textContent = 'CLEAN ROUND';
+
+    setTimeout(nextRound, 1500);
+  }
+
+  function bellRing() {
+    if (!state || state.ended) return;
+    state.ended = true;
+    if (tickInterval) clearInterval(tickInterval);
+
+    // any open positions auto-close at final mark + orphan tax
+    let orphanTotal = 0;
+    let orphanCount = 0;
+    state.positions.forEach((p) => {
+      if (p.closed) return;
+      orphanCount += 1;
+      const finalPnl = Math.round(p.trajectory[N_TICKS-1]);
+      const tax = ORPHAN_PENALTY;
+      const net = finalPnl - tax;
+      orphanTotal += net;
+      state.banked += net;
+      p.closed = true;
+
+      // visual: red flash + orphan tag
+      p.el.classList.add('flash-red');
+      p.el.querySelector('[data-pnl]').textContent = `${fmtPnL(finalPnl)} −$${tax}`;
+      p.el.querySelector('[data-pnl]').className = 'pos-pnl red';
+      p.el.querySelector('.pos-meta').textContent = 'ORPHAN — auto-covered';
+      p.el.querySelector('.pos-meta').style.color = '#ff5050';
+      showFloater(p.el, 'ORPHAN', 'red');
+    });
+    state.orphans += orphanCount;
+
+    $('banked').textContent = fmtBank(state.banked);
+    $('open-disp').textContent = '0';
+    $('countdown-fill').style.width = '0%';
+    $('bell-banner').className = 'bell-banner warn';
+    $('bell-banner').textContent = '🔔 BELL — ' + (orphanCount > 0 ? `${orphanCount} ORPHAN${orphanCount>1?'S':''}` : 'CLEAN');
+    $('tape').className = orphanCount > 0 ? 'tape red' : 'tape green';
+    $('tape').textContent = orphanCount > 0
+      ? `${orphanCount} orphan${orphanCount>1?'s':''} taxed −$${orphanCount * ORPHAN_PENALTY}`
+      : 'Bell rang. All clean.';
+
+    if (orphanCount === 0) {
+      state.cleanRounds += 1;
+      state.banked += CLEAN_BONUS;
+      $('banked').textContent = fmtBank(state.banked);
+    }
+
+    setTimeout(nextRound, 1900);
+  }
+
+  function endGame() {
+    if (tickInterval) clearInterval(tickInterval);
+
+    $('game-screen').style.display = 'none';
+    $('gameover-screen').style.display = 'flex';
+
+    const score = state ? Math.round(state.banked) : 0;
+    $('final-score').textContent = String(score);
+    $('stat-clean').textContent = state ? state.cleanRounds : 0;
+    $('stat-orphans').textContent = state ? state.orphans : 0;
+    $('stat-greens').textContent = state ? state.greens : 0;
+
+    const high = parseInt(localStorage.getItem(HIGH_KEY) || '0', 10);
+    if (score > high) {
+      localStorage.setItem(HIGH_KEY, String(score));
+      $('gameover-title').textContent = 'NEW BEST DAY';
+    } else {
+      $('gameover-title').textContent = 'DAY CLOSED';
+    }
+
+    const roast = ROASTS[Math.floor(Math.random() * ROASTS.length)];
+    $('roast-msg').textContent = roast;
+
+    if (window.DippyLB && typeof DippyLB.onGameOver === 'function') {
+      DippyLB.onGameOver(score);
+    }
+    showHigh();
+  }
+
+  // Init
+  showHigh();
+  if (window.DippyLB && typeof DippyLB.init === 'function') {
+    DippyLB.init('eod-cleanup');
+  }
+  window.startGame = startGame;
+})();
+</script>
+{{ end }}
