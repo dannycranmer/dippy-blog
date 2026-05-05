@@ -1,0 +1,510 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">PUMP OR PIN</h1>
+    <p class="game-subtitle">You're short. The chyron flashes.<br>Real news rips you. Fake news pins.<br>4 seconds. Cover or hold.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">ROLL TAPE</button>
+    <p class="game-hint">8 rounds. 4 seconds per headline.<br>HOLD a fake = pin (+$50 to +$120).<br>HOLD a real = squeeze (-$200 to -$300).<br>COVER = -$30 either way (the spread).<br>3 right in a row = next round x2.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">P&amp;L</span>
+        <span class="hud-value" id="banked">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">ROUND</span>
+        <span class="hud-value orange" id="round-disp">1/8</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">COMBO</span>
+        <span class="hud-value gray" id="combo-disp">x1</span>
+      </div>
+    </div>
+
+    <div class="ticker-banner">
+      <span class="ticker-tag" id="ticker-tag">MNBC LIVE</span>
+      <span class="ticker-time" id="ticker-time">--:-- ET</span>
+    </div>
+
+    <div class="short-card" id="short-card">
+      <div class="short-row">
+        <div class="short-side">SHORT</div>
+        <div class="short-symbol" id="short-symbol">---</div>
+      </div>
+      <div class="short-meta">
+        <span id="short-qty">-shares</span>
+        <span id="short-entry">@$---</span>
+      </div>
+    </div>
+
+    <div class="chyron-frame">
+      <div class="chyron-label">🚨 BREAKING</div>
+      <div class="chyron-headline" id="chyron-headline">...</div>
+    </div>
+
+    <div class="countdown-bar"><div class="countdown-fill" id="countdown-fill"></div></div>
+
+    <div class="action-row">
+      <button class="action-btn cover" id="cover-btn" onclick="onAction('cover')">
+        <div class="action-label">COVER</div>
+        <div class="action-sub">eat the spread</div>
+      </button>
+      <button class="action-btn hold" id="hold-btn" onclick="onAction('hold')">
+        <div class="action-label">HOLD</div>
+        <div class="action-sub">trust the pin</div>
+      </button>
+    </div>
+
+    <div class="tape" id="tape">Read the chyron. 4 seconds.</div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">CLOSING BELL</h1>
+    <div class="final-score" id="final-score-wrap">$<span id="final-score">0</span></div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-pins">0</span><span class="stat-label">Pins Held</span></div>
+      <div class="stat"><span class="stat-val" id="stat-squeezes">0</span><span class="stat-label">Squeezed</span></div>
+      <div class="stat"><span class="stat-val" id="stat-best-combo">0</span><span class="stat-label">Best Combo</span></div>
+    </div>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">NEW TAPE</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:1.9em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 40px; font-size:1.1em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.72em; margin-top:16px; line-height:1.6; }
+
+  #game-screen { justify-content:flex-start; padding:14px 14px 20px; height:100vh; }
+  .game-hud { display:flex; justify-content:space-between; padding:10px 16px; background:rgba(0,0,0,0.4); border:1px solid #21262d; border-radius:8px; margin-bottom:10px; }
+  .hud-item { text-align:center; flex:1; }
+  .hud-label { display:block; font-size:0.65em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1.05em; color:#00ff88; font-weight:bold; }
+  .hud-value.red { color:#ff5050; }
+  .hud-value.orange { color:#f0883e; }
+  .hud-value.gray { color:#8b949e; }
+
+  .ticker-banner {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:6px 12px; margin-bottom:8px;
+    background:rgba(255,80,80,0.08); border:1px solid rgba(255,80,80,0.3); border-radius:4px;
+    font-size:0.72em; letter-spacing:1.5px;
+  }
+  .ticker-tag { color:#ff5050; font-weight:bold; }
+  .ticker-tag.live { animation: pulse-red 1s ease-in-out infinite; }
+  @keyframes pulse-red { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  .ticker-time { color:#8b949e; }
+
+  .short-card {
+    background:linear-gradient(180deg, rgba(240,136,62,0.10) 0%, rgba(240,136,62,0.04) 100%);
+    border:1px solid #21262d; border-radius:10px;
+    padding:14px; margin-bottom:10px;
+  }
+  .short-row { display:flex; align-items:center; gap:14px; margin-bottom:6px; }
+  .short-side {
+    font-size:0.7em; color:#f0883e; letter-spacing:2px; font-weight:bold;
+    background:rgba(240,136,62,0.15); padding:4px 10px; border-radius:4px; border:1px solid rgba(240,136,62,0.3);
+  }
+  .short-symbol { font-size:1.6em; color:#e6edf3; font-weight:bold; letter-spacing:1.5px; flex:1; }
+  .short-meta { display:flex; justify-content:space-between; color:#8b949e; font-size:0.78em; letter-spacing:1px; }
+
+  .chyron-frame {
+    background:linear-gradient(180deg, rgba(255,80,80,0.18) 0%, rgba(255,80,80,0.06) 100%);
+    border:2px solid #ff5050;
+    border-radius:8px;
+    padding:10px 14px;
+    margin-bottom:10px;
+    min-height:90px;
+    display:flex; flex-direction:column; justify-content:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .chyron-frame.flash-real { animation: flash-real 0.5s ease-in-out 2; }
+  .chyron-frame.flash-fake { animation: flash-fake 0.5s ease-in-out 2; }
+  @keyframes flash-real {
+    0%,100%{ background:linear-gradient(180deg, rgba(255,80,80,0.18) 0%, rgba(255,80,80,0.06) 100%); }
+    50%{ background:linear-gradient(180deg, rgba(255,80,80,0.6) 0%, rgba(255,80,80,0.3) 100%); transform:scale(1.02); }
+  }
+  @keyframes flash-fake {
+    0%,100%{ background:linear-gradient(180deg, rgba(255,80,80,0.18) 0%, rgba(255,80,80,0.06) 100%); }
+    50%{ background:linear-gradient(180deg, rgba(0,255,136,0.45) 0%, rgba(0,255,136,0.15) 100%); transform:scale(1.02); }
+  }
+  .chyron-label {
+    color:#ff5050; font-size:0.7em; letter-spacing:2px; font-weight:bold; margin-bottom:6px;
+  }
+  .chyron-headline {
+    color:#e6edf3; font-size:1em; line-height:1.35; letter-spacing:0.5px; font-weight:bold;
+  }
+
+  .countdown-bar {
+    height:6px; background:#21262d; border-radius:3px; overflow:hidden;
+    margin-bottom:10px;
+  }
+  .countdown-fill {
+    height:100%; width:100%;
+    background: linear-gradient(90deg, #00ff88 0%, #f0883e 60%, #ff5050 100%);
+    transition: width 0.1s linear;
+  }
+
+  .action-row { display:flex; gap:10px; margin-bottom:10px; }
+  .action-btn {
+    flex:1; padding:14px 10px; border:2px solid; border-radius:8px;
+    font-family:inherit; font-weight:bold; cursor:pointer;
+    background:rgba(0,0,0,0.4); transition: all 0.15s;
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+  }
+  .action-btn:active { transform:scale(0.96); }
+  .action-btn.cover { color:#8b949e; border-color:#30363d; }
+  .action-btn.cover:hover { color:#e6edf3; border-color:#8b949e; }
+  .action-btn.hold { color:#00ff88; border-color:#00ff88; }
+  .action-btn.hold:hover { background:rgba(0,255,136,0.15); }
+  .action-btn:disabled { opacity:0.35; cursor:not-allowed; transform:none; }
+  .action-label { font-size:1.05em; letter-spacing:2px; }
+  .action-sub { font-size:0.65em; color:#8b949e; letter-spacing:1px; font-weight:normal; }
+
+  .tape {
+    text-align:center; color:#8b949e; font-size:0.78em; letter-spacing:1px;
+    min-height:1.2em; transition: color 0.2s;
+  }
+  .tape.green { color:#00ff88; }
+  .tape.red   { color:#ff5050; }
+  .tape.orange { color:#f0883e; }
+
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.5); margin:14px 0; font-weight:bold; }
+  .final-score.red { color:#ff5050; text-shadow:0 0 20px rgba(255,80,80,0.5); }
+  .stats-row { display:flex; gap:12px; margin-bottom:14px; flex-wrap:wrap; justify-content:center; }
+  .stat { background:rgba(0,0,0,0.4); border:1px solid #21262d; border-radius:8px; padding:10px 14px; min-width:80px; }
+  .stat-val { display:block; font-size:1.4em; color:#00ff88; font-weight:bold; }
+  .stat-label { display:block; font-size:0.65em; color:#8b949e; letter-spacing:1px; margin-top:2px; }
+  .roast-msg { color:#f0883e; font-size:0.95em; line-height:1.5; margin-bottom:14px; max-width:340px; min-height:2em; }
+
+  .lb-title-section { margin-top:18px; width:100%; max-width:380px; }
+
+  @media (max-height: 720px) {
+    .short-card { padding:10px 12px; }
+    .short-symbol { font-size:1.4em; }
+    .chyron-frame { min-height:74px; padding:8px 12px; }
+    .chyron-headline { font-size:0.92em; }
+    .action-btn { padding:11px 8px; }
+    .game-hint { font-size:0.68em; }
+  }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function(){
+  const HIGH_KEY = 'dippy-pump-or-pin-high';
+  const TOTAL_ROUNDS = 8;
+  const ROUND_MS = 4000;
+  const TICK_MS = 80;
+  const N_TICKS = Math.floor(ROUND_MS / TICK_MS);
+
+  const SYMBOLS = ['AAPL','NVDA','TSLA','AMZN','SPY','MSTR','PLTR','COIN','MU','SHOP','SNOW','CRWD','META','QQQ','GOOGL','AMD','UBER','ARM','ROKU'];
+
+  // Real headlines = price will rip → if you HELD short, you get squeezed.
+  const REAL_HEADLINES = [
+    "FED UNEXPECTEDLY CUTS RATES 50BPS",
+    "EARNINGS CRUSH ESTIMATES BY 40%",
+    "FDA APPROVES BLOCKBUSTER DRUG",
+    "COMPANY ANNOUNCES $50B BUYBACK",
+    "ANTITRUST CASE DISMISSED",
+    "MAJOR PARTNERSHIP WITH APPLE",
+    "REVENUE GUIDANCE RAISED 25%",
+    "CHINA TARIFFS LIFTED OVERNIGHT",
+    "CEO ACQUIRES $2B IN STOCK",
+    "SHORT SQUEEZE TRIGGERED — 40% UTILIZED",
+    "ACTIVIST FUND TAKES 9.9% STAKE",
+    "ANALYST UPGRADE — PT DOUBLED"
+  ];
+
+  // Fake headlines = MNBC noise → price stays/drops → if you HELD short, you pin.
+  const FAKE_HEADLINES = [
+    "ANALYSTS NOTE STOCK IS A STOCK",
+    "CEO BLINKED DURING INTERVIEW",
+    "MOONY HEARS RUMOR FROM A FRIEND",
+    "SHARES TRADING IN US DOLLARS",
+    "BUILDING SPOTTED IN COMPANY HQ",
+    "EXEC SEEN HOLDING A COFFEE CUP",
+    "MOONY STILL THINKS IT'S 2021",
+    "STOCK EXISTS — SOURCES CONFIRM",
+    "TICKER STARTS WITH A LETTER",
+    "TWITTER ACCOUNT POSTED A POLL",
+    "GUEST FORGOT THE COMPANY NAME",
+    "RUMOR ORIGINATED ON A LUNAR FORUM",
+    "ANCHOR SAYS 'BULL HORN' TWICE",
+    "BREAKING: SOMETHING MIGHT HAPPEN",
+    "ROUNDED SHARE PRICE TO NEAREST DIME",
+    "SOURCES FAMILIAR WITH SOMEONE'S COUSIN"
+  ];
+
+  const ROASTS = {
+    high: [
+      "Print machine. Moony still thinks 'pin' is something you put on a corkboard.",
+      "You sniffed every fake. Moony bought every one of them.",
+      "Read the tape, not the chyron. Moony reads the chyron and nothing else.",
+      "MNBC tried to break you. You broke MNBC.",
+      "Combo king. Moony's combo: cash, more cash, 'I'm being patient'.",
+      "Eight headlines, eight reads. Moony has read one tape since 2019.",
+      "You held the pins. Moony holds 70% cash and calls it 'a thesis'."
+    ],
+    mid: [
+      "Solid tape. Moony's still subscribed to the cable package though.",
+      "Two squeezes stung — but you outscored Moony's quarterly return in 4 minutes.",
+      "Better than break-even. Moony's break-even is theoretical.",
+      "Pinned the pins. Got squeezed on a couple. Welcome to shorts.",
+      "Decent reads. Moony got the same chyrons and still bought every one."
+    ],
+    low: [
+      "Whole tape was real. Or you read it that way. Either way: rough.",
+      "MNBC cooked you. Moony was the producer.",
+      "Squeeze city. Even Moony's covering — and Moony never covers.",
+      "Headline-blind. Try less news, more candle.",
+      "Tape ate you. Try again — Moony's still buying anyway."
+    ]
+  };
+
+  const $ = (id) => document.getElementById(id);
+
+  let state = null;
+  let tickInterval = null;
+
+  function showHigh() {
+    const h = parseInt(localStorage.getItem(HIGH_KEY) || '0', 10);
+    $('title-high-score').textContent = h !== 0 ? `BEST: ${h >= 0 ? '$' : '-$'}${Math.abs(h)}` : '';
+  }
+
+  function fmtMoney(v) {
+    const sign = v >= 0 ? '+$' : '-$';
+    if (Math.abs(v) < 0.5) return '$0';
+    return sign + Math.abs(v).toFixed(0);
+  }
+  function fmtBank(v) {
+    return (v >= 0 ? '$' : '-$') + Math.abs(v).toFixed(0);
+  }
+
+  function pickSymbol(exclude) {
+    const pool = SYMBOLS.filter(s => s !== exclude);
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+  function pickHeadline(isReal) {
+    const pool = isReal ? REAL_HEADLINES : FAKE_HEADLINES;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+  function fmtETTime(roundIdx) {
+    // Fake market clock: starts at 9:36 AM ET, advances 11 min per round
+    const startMin = 9 * 60 + 36 + (roundIdx - 1) * 11;
+    const h = Math.floor(startMin / 60);
+    const m = startMin % 60;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = ((h - 1) % 12) + 1;
+    return `${h12}:${m.toString().padStart(2,'0')} ${ampm} ET`;
+  }
+
+  function startGame() {
+    $('title-screen').style.display = 'none';
+    $('gameover-screen').style.display = 'none';
+    $('game-screen').style.display = 'flex';
+
+    state = {
+      banked: 0, roundIdx: 0,
+      pins: 0, squeezes: 0,
+      combo: 0, bestCombo: 0,
+      lastSymbol: null
+    };
+    $('banked').textContent = '$0';
+    $('banked').className = 'hud-value';
+    $('combo-disp').textContent = 'x1';
+    $('combo-disp').className = 'hud-value gray';
+    nextRound();
+  }
+
+  function nextRound() {
+    if (!state) return;
+    if (state.roundIdx >= TOTAL_ROUNDS) { endGame(); return; }
+    state.roundIdx += 1;
+
+    const symbol = pickSymbol(state.lastSymbol);
+    state.lastSymbol = symbol;
+    const isReal = Math.random() < 0.5;
+    const headline = pickHeadline(isReal);
+    const entryPrice = (50 + Math.random() * 450).toFixed(2);
+    const qty = Math.floor(20 + Math.random() * 80);
+
+    state.round = {
+      symbol, isReal, headline, entryPrice, qty,
+      decided: false, tick: 0
+    };
+
+    $('round-disp').textContent = `${state.roundIdx}/${TOTAL_ROUNDS}`;
+    $('short-symbol').textContent = symbol;
+    $('short-qty').textContent = `-${qty} sh`;
+    $('short-entry').textContent = `@$${entryPrice}`;
+    $('chyron-headline').textContent = headline;
+    $('chyron-frame') && (() => {})();
+    document.querySelector('.chyron-frame').className = 'chyron-frame';
+    $('ticker-time').textContent = fmtETTime(state.roundIdx);
+    $('ticker-tag').textContent = 'MNBC LIVE';
+    $('ticker-tag').className = 'ticker-tag live';
+    $('cover-btn').disabled = false;
+    $('hold-btn').disabled = false;
+    $('countdown-fill').style.width = '100%';
+    const tape = $('tape');
+    tape.className = 'tape orange';
+    tape.textContent = state.combo >= 3 ? `Combo x2 active — read this one carefully.` : `Read the chyron. 4 seconds.`;
+
+    // tick countdown
+    if (tickInterval) clearInterval(tickInterval);
+    tickInterval = setInterval(() => {
+      if (!state || !state.round || state.round.decided) return;
+      state.round.tick += 1;
+      const remaining = 1 - (state.round.tick / N_TICKS);
+      $('countdown-fill').style.width = (Math.max(0, remaining) * 100) + '%';
+      if (state.round.tick >= N_TICKS) {
+        // timeout = HOLD by default (you didn't decide)
+        onAction('hold');
+      }
+    }, TICK_MS);
+  }
+
+  window.startGame = startGame;
+  window.onAction = function(action) {
+    if (!state || !state.round || state.round.decided) return;
+    state.round.decided = true;
+    if (tickInterval) { clearInterval(tickInterval); tickInterval = null; }
+    $('cover-btn').disabled = true;
+    $('hold-btn').disabled = true;
+
+    const r = state.round;
+    let pnl = 0;
+    let outcome = '';
+    let multiplier = state.combo >= 3 ? 2 : 1;
+    let correctCall = false;
+
+    if (action === 'cover') {
+      pnl = -30;
+      outcome = r.isReal ? 'Cover saved you. News was real.' : 'Covered a fake — left the pin on the table.';
+      correctCall = r.isReal;
+    } else { // hold
+      if (r.isReal) {
+        pnl = -200 - Math.floor(Math.random() * 100);
+        outcome = `Squeezed. ${r.symbol} ripped on real news.`;
+        state.squeezes += 1;
+        correctCall = false;
+      } else {
+        const win = 50 + Math.floor(Math.random() * 70);
+        pnl = win * multiplier;
+        outcome = multiplier > 1 ? `PIN x2! ${r.symbol} faded the chyron.` : `Pin held. ${r.symbol} faded the chyron.`;
+        state.pins += 1;
+        correctCall = true;
+      }
+    }
+
+    if (correctCall) {
+      state.combo += 1;
+      if (state.combo > state.bestCombo) state.bestCombo = state.combo;
+    } else {
+      state.combo = 0;
+    }
+
+    state.banked += pnl;
+    $('banked').textContent = fmtBank(state.banked);
+    $('banked').className = state.banked >= 0 ? 'hud-value' : 'hud-value red';
+    if (state.combo >= 3) {
+      $('combo-disp').textContent = `x2`;
+      $('combo-disp').className = 'hud-value orange';
+    } else {
+      $('combo-disp').textContent = `x1 (${state.combo}/3)`;
+      $('combo-disp').className = 'hud-value gray';
+    }
+
+    const frame = document.querySelector('.chyron-frame');
+    frame.className = 'chyron-frame ' + (r.isReal ? 'flash-real' : 'flash-fake');
+
+    const tape = $('tape');
+    tape.textContent = `${outcome} ${pnl >= 0 ? '+' : '-'}$${Math.abs(pnl)}`;
+    tape.className = 'tape ' + (pnl >= 0 ? 'green' : 'red');
+
+    setTimeout(() => {
+      if (!state) return;
+      if (state.roundIdx >= TOTAL_ROUNDS) endGame();
+      else nextRound();
+    }, 1300);
+  };
+
+  function endGame() {
+    if (tickInterval) { clearInterval(tickInterval); tickInterval = null; }
+    $('game-screen').style.display = 'none';
+    $('gameover-screen').style.display = 'flex';
+
+    const score = Math.round(state.banked);
+    $('final-score').textContent = (score >= 0 ? '' : '-') + Math.abs(score);
+    $('final-score-wrap').className = 'final-score' + (score < 0 ? ' red' : '');
+
+    $('stat-pins').textContent = state.pins;
+    $('stat-squeezes').textContent = state.squeezes;
+    $('stat-best-combo').textContent = state.bestCombo;
+
+    let tier;
+    if (score >= 400) tier = 'high';
+    else if (score >= 0) tier = 'mid';
+    else tier = 'low';
+    const pool = ROASTS[tier];
+    $('roast-msg').textContent = pool[Math.floor(Math.random() * pool.length)];
+
+    const cur = parseInt(localStorage.getItem(HIGH_KEY) || '-99999', 10);
+    if (score > cur) {
+      localStorage.setItem(HIGH_KEY, String(score));
+      $('gameover-title').textContent = 'NEW HIGH';
+      $('gameover-title').style.color = '#ffaa00';
+    } else {
+      $('gameover-title').textContent = 'TAPE CLOSED';
+      $('gameover-title').style.color = '#00ff88';
+    }
+    if (window.DippyLB && DippyLB.onGameOver) DippyLB.onGameOver(score);
+  }
+
+  showHigh();
+  if (window.DippyLB && DippyLB.init) DippyLB.init('pump-or-pin');
+})();
+</script>
+{{ end }}
