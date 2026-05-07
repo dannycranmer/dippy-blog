@@ -1,0 +1,425 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">TAPE HOPPER</h1>
+    <p class="game-subtitle">Hop Dippy up the tape.<br>Ride the bulls. Dodge the bears.<br>Touch the ATH line to print.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">START</button>
+    <p class="game-hint">Tap arrows or swipe to hop.<br>Moony tried this once and got pinned by a bear in lane 1.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">PRINTS</span>
+        <span class="hud-value" id="prints">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">LIVES</span>
+        <span class="hud-value" id="lives">❤️❤️❤️</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">PNL</span>
+        <span class="hud-value" id="pnl">$0</span>
+      </div>
+    </div>
+    <div id="arena">
+      <div id="ath-strip"><span>ATH — PRINT HERE</span></div>
+      <div id="lanes"></div>
+      <div id="dippy-sprite">🐸</div>
+    </div>
+    <div id="controls">
+      <button class="ctrl-btn" data-dir="left">◀</button>
+      <button class="ctrl-btn" data-dir="up">▲</button>
+      <button class="ctrl-btn" data-dir="down">▼</button>
+      <button class="ctrl-btn" data-dir="right">▶</button>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title">PINNED</h1>
+    <div class="final-score">$<span id="final-score">0</span></div>
+    <p class="final-prints"><span id="final-prints">0</span> ATH prints</p>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">HOP AGAIN</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  /* Title */
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:2.2em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 48px; font-size:1.2em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.75em; margin-top:16px; line-height:1.4; }
+
+  /* HUD */
+  .game-hud { display:flex; justify-content:space-between; padding:8px 14px; background:rgba(0,0,0,0.4); border-bottom:1px solid #21262d; }
+  .hud-item { text-align:center; }
+  .hud-label { display:block; font-size:0.6em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1em; color:#00ff88; font-weight:bold; }
+
+  /* Arena */
+  #arena { flex:1; position:relative; overflow:hidden; background:linear-gradient(180deg,#161b22 0%,#0d1117 100%); touch-action:none; }
+  #ath-strip { position:absolute; top:0; left:0; right:0; height:32px; background:linear-gradient(180deg,rgba(240,136,62,0.25),rgba(240,136,62,0.08)); border-bottom:2px dashed #f0883e; display:flex; align-items:center; justify-content:center; z-index:2; }
+  #ath-strip span { color:#f0883e; font-size:0.7em; font-weight:bold; letter-spacing:2px; text-shadow:0 0 8px rgba(240,136,62,0.6); }
+
+  #lanes { position:absolute; top:32px; left:0; right:0; bottom:0; }
+  .lane { position:absolute; left:0; right:0; height:48px; }
+  .lane.safe { background:rgba(0,255,136,0.04); border-top:1px dotted rgba(0,255,136,0.2); border-bottom:1px dotted rgba(0,255,136,0.2); }
+  .lane.bull { background:rgba(0,255,136,0.06); }
+  .lane.bear { background:rgba(255,80,80,0.06); }
+
+  .traffic { position:absolute; top:6px; height:36px; display:flex; align-items:center; justify-content:center; font-size:24px; border-radius:6px; padding:0 4px; will-change:transform; }
+  .bull-car { background:linear-gradient(90deg,#00cc6e,#00ff88); color:#0d1117; min-width:64px; box-shadow:0 0 10px rgba(0,255,136,0.4); }
+  .bull-car::after { content:'🐂'; }
+  .bear-car { background:linear-gradient(90deg,#ff5050,#cc4040); color:#0d1117; min-width:42px; box-shadow:0 0 10px rgba(255,80,80,0.4); }
+  .bear-car::after { content:'🐻'; }
+
+  #dippy-sprite { position:absolute; width:36px; height:36px; font-size:28px; display:flex; align-items:center; justify-content:center; z-index:10; transition:left 0.12s ease-out, top 0.12s ease-out; filter:drop-shadow(0 0 6px rgba(0,255,136,0.6)); }
+
+  .hop-effect { position:absolute; pointer-events:none; z-index:15; font-size:14px; font-weight:bold; color:#f0883e; text-shadow:0 0 6px rgba(240,136,62,0.8); animation:hopPop 0.7s ease-out forwards; }
+  @keyframes hopPop { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-30px) scale(1.4)} }
+
+  .death-flash { position:absolute; inset:0; pointer-events:none; z-index:30; animation:deathFlash 0.4s ease-out forwards; }
+  @keyframes deathFlash { 0%{background:rgba(255,80,80,0.5)} 100%{background:transparent} }
+
+  /* Controls */
+  #controls { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; padding:10px; background:rgba(0,0,0,0.5); }
+  .ctrl-btn { background:rgba(0,255,136,0.12); color:#00ff88; border:1px solid rgba(0,255,136,0.4); border-radius:6px; padding:14px 0; font-size:1.4em; cursor:pointer; font-family:inherit; transition:all 0.1s; }
+  .ctrl-btn:active { background:rgba(0,255,136,0.3); transform:scale(0.95); }
+
+  /* Game Over */
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; margin:16px 0 4px; text-shadow:0 0 20px rgba(0,255,136,0.6); }
+  .final-prints { color:#f0883e; font-size:0.9em; margin-bottom:12px; }
+  .roast-msg { color:#f0883e; font-size:0.9em; margin-bottom:20px; padding:0 20px; line-height:1.4; max-width:360px; }
+</style>
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  var arena, lanesEl, dippy, printsEl, livesEl, pnlEl, highScoreEl;
+  var arenaW, arenaH;
+  var prints, lives, pnl, highScore;
+  var dippyCol, dippyRow; // grid coords
+  var COLS = 7;
+  var LANES = 7; // includes 1 safe at bottom + ATH at top
+  var laneDefs = [];
+  var traffic = [];
+  var rafId, running = false;
+  var lastTick = 0;
+  var laneH = 48;
+  var cellW;
+
+  var roasts = [
+    "Pinned by a bear in lane 1. Even Moony made it to lane 2 once. Once.",
+    "You hopped right into a bear like it was a bid. Classic Moony move.",
+    "The tape said no. You said yes. The tape won.",
+    "Moony's risk management: stay on the curb. Yours: hop into traffic.",
+    "Three lives, three bears. At least you were consistent.",
+    "Dippy needs to read the tape, not BE the tape.",
+    "Moony watched this run and decided to stay 70% cash. Forever.",
+    "You died on the candle wick. Poetic, really.",
+    "The ATH line was right there. You took the scenic route through a bear.",
+    "Hopping is half the strategy. The other half is not hopping into a bear.",
+    "Moony just printed your obituary in MNBC. Headline: 'Bot Pinned.'",
+    "Even your bull got squeezed. That takes effort."
+  ];
+
+  function init() {
+    arena = document.getElementById('arena');
+    lanesEl = document.getElementById('lanes');
+    dippy = document.getElementById('dippy-sprite');
+    printsEl = document.getElementById('prints');
+    livesEl = document.getElementById('lives');
+    pnlEl = document.getElementById('pnl');
+    highScoreEl = document.getElementById('title-high-score');
+    highScore = parseInt(localStorage.getItem('dippy-tape-hopper-high') || '0');
+    if (highScore > 0) highScoreEl.textContent = 'HIGH PNL: $' + highScore;
+
+    document.querySelectorAll('.ctrl-btn').forEach(function(b){
+      b.addEventListener('click', function(){ hop(b.dataset.dir); });
+      b.addEventListener('touchstart', function(e){ e.preventDefault(); hop(b.dataset.dir); }, {passive:false});
+    });
+
+    // Keyboard
+    document.addEventListener('keydown', function(e){
+      if (!running) return;
+      if (e.key === 'ArrowUp' || e.key === 'w') hop('up');
+      else if (e.key === 'ArrowDown' || e.key === 's') hop('down');
+      else if (e.key === 'ArrowLeft' || e.key === 'a') hop('left');
+      else if (e.key === 'ArrowRight' || e.key === 'd') hop('right');
+    });
+
+    // Swipe
+    var startX = 0, startY = 0;
+    arena.addEventListener('touchstart', function(e){
+      var t = e.touches[0]; startX = t.clientX; startY = t.clientY;
+    }, {passive:true});
+    arena.addEventListener('touchend', function(e){
+      var t = e.changedTouches[0];
+      var dx = t.clientX - startX, dy = t.clientY - startY;
+      if (Math.abs(dx) < 20 && Math.abs(dy) < 20) return;
+      if (Math.abs(dx) > Math.abs(dy)) hop(dx > 0 ? 'right' : 'left');
+      else hop(dy > 0 ? 'down' : 'up');
+    });
+  }
+
+  function startGame() {
+    document.getElementById('title-screen').style.display = 'none';
+    document.getElementById('gameover-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'flex';
+    document.getElementById('game-screen').style.flexDirection = 'column';
+    document.getElementById('game-screen').style.height = '100vh';
+
+    prints = 0; lives = 3; pnl = 0;
+    updateHUD();
+
+    arenaW = arena.offsetWidth;
+    arenaH = arena.offsetHeight;
+    cellW = arenaW / COLS;
+    laneH = Math.floor((arenaH - 32) / LANES);
+
+    setupLanes();
+    placeDippyAtBottom();
+
+    running = true;
+    lastTick = performance.now();
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function setupLanes() {
+    lanesEl.innerHTML = '';
+    traffic = [];
+    laneDefs = [];
+
+    // Lane 0 = top (just below ATH strip): safe pad
+    // Lanes 1..LANES-2: alternating traffic
+    // Lane LANES-1 = bottom: safe start
+    for (var i = 0; i < LANES; i++) {
+      var def = { row:i, type:'safe', dir:1, speed:0, gap:0, items:[], el:null };
+      if (i === 0 || i === LANES - 1) {
+        def.type = 'safe';
+      } else {
+        // Alternate bull and bear; harder near top
+        var isBull = (i % 2 === 1);
+        def.type = isBull ? 'bull' : 'bear';
+        def.dir = (i % 3 === 0) ? -1 : 1;
+        var difficulty = 1 + (LANES - 1 - i) * 0.15 + prints * 0.2;
+        def.speed = (isBull ? 50 : 80) * difficulty;
+        def.gap = isBull ? (130 + Math.random()*60) : (110 + Math.random()*70);
+      }
+
+      var laneEl = document.createElement('div');
+      laneEl.className = 'lane ' + def.type;
+      laneEl.style.top = (i * laneH) + 'px';
+      laneEl.style.height = laneH + 'px';
+      lanesEl.appendChild(laneEl);
+      def.el = laneEl;
+      laneDefs.push(def);
+
+      if (def.type !== 'safe') {
+        seedLaneTraffic(def);
+      }
+    }
+  }
+
+  function seedLaneTraffic(def) {
+    var startX = def.dir > 0 ? -arenaW : arenaW;
+    var x = startX;
+    var endX = def.dir > 0 ? arenaW * 2 : -arenaW;
+    var safety = 0;
+    while ((def.dir > 0 ? x < endX : x > endX) && safety++ < 30) {
+      var w = def.type === 'bull' ? 60 : 40;
+      var car = document.createElement('div');
+      car.className = 'traffic ' + (def.type === 'bull' ? 'bull-car' : 'bear-car');
+      car.style.width = w + 'px';
+      car.style.left = '0px';
+      car.style.transform = 'translateX(' + x + 'px)';
+      def.el.appendChild(car);
+      def.items.push({ el:car, x:x, w:w });
+      x += def.dir * (w + def.gap);
+    }
+  }
+
+  function placeDippyAtBottom() {
+    dippyCol = Math.floor(COLS / 2);
+    dippyRow = LANES - 1;
+    moveDippy();
+  }
+
+  function moveDippy() {
+    var x = dippyCol * cellW + cellW / 2 - 18;
+    var y = 32 + dippyRow * laneH + (laneH - 36) / 2;
+    dippy.style.left = x + 'px';
+    dippy.style.top = y + 'px';
+  }
+
+  function hop(dir) {
+    if (!running) return;
+    var newCol = dippyCol, newRow = dippyRow;
+    if (dir === 'up') newRow--;
+    else if (dir === 'down') newRow++;
+    else if (dir === 'left') newCol--;
+    else if (dir === 'right') newCol++;
+    if (newCol < 0 || newCol >= COLS) return;
+    if (newRow < 0 || newRow >= LANES) return;
+    dippyCol = newCol; dippyRow = newRow;
+    moveDippy();
+
+    if (dir === 'up') {
+      pnl += 5;
+      showHopEffect('+$5');
+    }
+
+    if (dippyRow === 0) {
+      // Reached ATH
+      reachATH();
+    }
+
+    updateHUD();
+  }
+
+  function reachATH() {
+    prints++;
+    pnl += 100;
+    showHopEffect('PRINT! +$100', '#00ff88', '#0d1117');
+    setTimeout(function(){
+      placeDippyAtBottom();
+      // Refresh lanes for higher difficulty
+      setupLanes();
+    }, 350);
+  }
+
+  function showHopEffect(text, color, bg) {
+    var el = document.createElement('div');
+    el.className = 'hop-effect';
+    el.textContent = text;
+    el.style.left = (dippyCol * cellW + cellW/2 - 30) + 'px';
+    el.style.top = (32 + dippyRow * laneH + 6) + 'px';
+    if (color) el.style.color = color;
+    arena.appendChild(el);
+    setTimeout(function(){ el.remove(); }, 700);
+  }
+
+  function tick(now) {
+    if (!running) return;
+    var dt = (now - lastTick) / 1000;
+    lastTick = now;
+    if (dt > 0.1) dt = 0.1;
+
+    // Move traffic
+    for (var i = 0; i < laneDefs.length; i++) {
+      var def = laneDefs[i];
+      if (def.type === 'safe') continue;
+      for (var j = def.items.length - 1; j >= 0; j--) {
+        var car = def.items[j];
+        car.x += def.dir * def.speed * dt;
+        car.el.style.transform = 'translateX(' + car.x + 'px)';
+        // Recycle
+        if (def.dir > 0 && car.x > arenaW + 20) {
+          car.x = -car.w - (def.gap * 0.5 + Math.random() * def.gap);
+        } else if (def.dir < 0 && car.x < -car.w - 20) {
+          car.x = arenaW + (def.gap * 0.5 + Math.random() * def.gap);
+        }
+      }
+    }
+
+    // Collision check
+    var def2 = laneDefs[dippyRow];
+    if (def2 && def2.type === 'bear') {
+      var dippyX = dippyCol * cellW + cellW/2;
+      for (var k = 0; k < def2.items.length; k++) {
+        var c = def2.items[k];
+        if (dippyX >= c.x && dippyX <= c.x + c.w) {
+          loseLife();
+          break;
+        }
+      }
+    }
+
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function loseLife() {
+    lives--;
+    pnl -= 25;
+    var flash = document.createElement('div');
+    flash.className = 'death-flash';
+    arena.appendChild(flash);
+    setTimeout(function(){ flash.remove(); }, 400);
+    if (navigator.vibrate) navigator.vibrate(120);
+    placeDippyAtBottom();
+    updateHUD();
+    if (lives <= 0) endGame();
+  }
+
+  function updateHUD() {
+    printsEl.textContent = prints;
+    var hearts = '';
+    for (var i = 0; i < lives; i++) hearts += '❤️';
+    for (var j = lives; j < 3; j++) hearts += '🖤';
+    livesEl.innerHTML = hearts;
+    pnlEl.textContent = '$' + pnl;
+    pnlEl.style.color = pnl < 0 ? '#ff5050' : '#00ff88';
+  }
+
+  function endGame() {
+    running = false;
+    cancelAnimationFrame(rafId);
+
+    var score = Math.max(0, pnl);
+    if (score > highScore) {
+      highScore = score;
+      localStorage.setItem('dippy-tape-hopper-high', highScore.toString());
+      highScoreEl.textContent = 'HIGH PNL: $' + highScore;
+    }
+
+    document.getElementById('game-screen').style.display = 'none';
+    document.getElementById('gameover-screen').style.display = 'flex';
+    document.getElementById('final-score').textContent = pnl;
+    document.getElementById('final-prints').textContent = prints;
+    document.getElementById('roast-msg').textContent = roasts[Math.floor(Math.random()*roasts.length)];
+
+    DippyLB.onGameOver(score);
+  }
+
+  window.startGame = startGame;
+  document.addEventListener('DOMContentLoaded', init);
+  DippyLB.init('tape-hopper');
+})();
+</script>
+{{ end }}
