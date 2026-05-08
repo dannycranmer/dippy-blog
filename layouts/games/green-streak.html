@@ -1,0 +1,422 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">GREEN STREAK</h1>
+    <p class="game-subtitle">Tap the green prints.<br>Dodge the red bleeds.<br>Stack a streak. Ride the multiplier.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">START</button>
+    <p class="game-hint">Tap a candle the moment it crosses the LINE.<br>Three greens in a row → x2. Five → x3. Miss = streak dies.<br>Moony tapped a red one and panic-sold his entire book.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">PNL</span>
+        <span class="hud-value" id="pnl">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">STREAK</span>
+        <span class="hud-value" id="streak">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">MULT</span>
+        <span class="hud-value" id="mult">x1</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">TIME</span>
+        <span class="hud-value" id="time">60</span>
+      </div>
+    </div>
+    <div id="arena">
+      <div id="line"></div>
+      <div id="line-label">PRINT LINE</div>
+      <div id="candles"></div>
+      <div id="streak-banner"></div>
+    </div>
+    <div id="tap-zone">
+      <button id="tap-btn">PRINT</button>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">CLOSING BELL</h1>
+    <div class="final-score">$<span id="final-score">0</span></div>
+    <p class="final-meta"><span id="final-greens">0</span> green prints / <span id="final-reds">0</span> red bleeds</p>
+    <p class="final-meta"><span id="final-best-streak">0</span> longest streak</p>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">PRINT AGAIN</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  /* Title */
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:2.2em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; text-align:center; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 48px; font-size:1.2em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.75em; margin-top:16px; line-height:1.5; }
+
+  /* HUD */
+  .game-hud { display:grid; grid-template-columns:repeat(4,1fr); padding:8px 6px; background:rgba(0,0,0,0.4); border-bottom:1px solid #21262d; }
+  .hud-item { text-align:center; }
+  .hud-label { display:block; font-size:0.55em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1em; color:#00ff88; font-weight:bold; }
+  .hud-value.streak-hot { color:#f0883e; text-shadow:0 0 8px rgba(240,136,62,0.6); animation:pulseHot 0.6s ease-in-out infinite; }
+  @keyframes pulseHot { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
+
+  /* Arena */
+  #arena { flex:1; position:relative; overflow:hidden; background:linear-gradient(180deg,#161b22 0%,#0d1117 100%); touch-action:none; }
+  #line { position:absolute; left:0; right:0; top:50%; height:2px; background:linear-gradient(90deg,transparent,#f0883e 20%,#f0883e 80%,transparent); box-shadow:0 0 12px rgba(240,136,62,0.6); z-index:5; }
+  #line-label { position:absolute; right:8px; top:calc(50% - 18px); color:#f0883e; font-size:0.62em; letter-spacing:2px; opacity:0.7; z-index:5; }
+
+  #candles { position:absolute; inset:0; }
+  .candle { position:absolute; bottom:auto; width:30px; border-radius:3px; will-change:transform; cursor:pointer; }
+  .candle.green { background:linear-gradient(180deg,#00ff88,#00cc6e); box-shadow:0 0 10px rgba(0,255,136,0.45); }
+  .candle.red { background:linear-gradient(180deg,#ff5050,#cc4040); box-shadow:0 0 10px rgba(255,80,80,0.45); }
+  .candle.banked { opacity:0.3; transform:scale(0.92); transition:all 0.25s; pointer-events:none; }
+  .candle.banked.green { box-shadow:0 0 22px rgba(0,255,136,0.9); }
+  .candle.banked.red { box-shadow:0 0 22px rgba(255,80,80,0.9); }
+  .wick { position:absolute; left:50%; top:-10px; bottom:-10px; width:2px; transform:translateX(-50%); }
+  .candle.green .wick { background:#00ff88; }
+  .candle.red .wick { background:#ff5050; }
+
+  .pnl-pop { position:absolute; pointer-events:none; z-index:25; font-size:1em; font-weight:bold; letter-spacing:1px; animation:pnlPop 0.9s ease-out forwards; }
+  .pnl-pop.gain { color:#00ff88; text-shadow:0 0 8px rgba(0,255,136,0.8); }
+  .pnl-pop.loss { color:#ff5050; text-shadow:0 0 8px rgba(255,80,80,0.8); }
+  @keyframes pnlPop { 0%{opacity:1;transform:translate(-50%,0) scale(1)} 100%{opacity:0;transform:translate(-50%,-40px) scale(1.3)} }
+
+  #streak-banner { position:absolute; left:50%; top:14%; transform:translateX(-50%); padding:8px 18px; border-radius:24px; background:rgba(240,136,62,0.18); border:1.5px solid #f0883e; color:#f0883e; font-size:0.85em; font-weight:bold; letter-spacing:2px; opacity:0; pointer-events:none; transition:opacity 0.2s; text-shadow:0 0 6px rgba(240,136,62,0.6); z-index:20; }
+  #streak-banner.show { opacity:1; animation:bannerPop 0.45s ease-out; }
+  @keyframes bannerPop { 0%{transform:translateX(-50%) scale(0.6)} 60%{transform:translateX(-50%) scale(1.18)} 100%{transform:translateX(-50%) scale(1)} }
+
+  /* Tap zone */
+  #tap-zone { padding:14px; background:rgba(0,0,0,0.5); display:flex; justify-content:center; }
+  #tap-btn { width:100%; max-width:340px; padding:18px; background:linear-gradient(180deg,#00ff88,#00cc6e); color:#0d1117; border:none; border-radius:10px; font-family:inherit; font-size:1.4em; font-weight:bold; letter-spacing:4px; cursor:pointer; box-shadow:0 6px 0 #00994f, 0 0 20px rgba(0,255,136,0.3); transition:all 0.08s; }
+  #tap-btn:active { transform:translateY(4px); box-shadow:0 2px 0 #00994f, 0 0 16px rgba(0,255,136,0.4); }
+  #tap-btn.flash-red { background:linear-gradient(180deg,#ff5050,#cc4040); box-shadow:0 6px 0 #993030; color:#fff; }
+
+  /* Game Over */
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.5); margin:8px 0 4px; }
+  .final-meta { color:#8b949e; font-size:0.78em; margin:2px 0; letter-spacing:1px; }
+  .roast-msg { color:#f0883e; font-size:0.9em; margin:18px 8px 8px; max-width:340px; line-height:1.5; font-style:italic; }
+
+  .death-flash { position:absolute; inset:0; pointer-events:none; z-index:30; animation:deathFlash 0.4s ease-out forwards; }
+  @keyframes deathFlash { 0%{background:rgba(255,80,80,0.5)} 100%{background:transparent} }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  const HIGH_KEY = 'dippy-green-streak-high';
+  const ROASTS = [
+    "Moony saw a green candle and shorted it. He's still down.",
+    "Three greens in a row? Moony has never had three greens in a row in his entire ledger.",
+    "Moony's streak counter is permanently stuck at zero. Like his alpha.",
+    "While you were tapping greens, Moony was DCAing into a falling knife. Again.",
+    "Moony saw the multiplier and ran a Monte Carlo simulation. Missed the next eight prints.",
+    "Moony tapped every red candle on purpose. He calls it 'value entry.'",
+    "Moony's print line is at $0 because Moony has never printed.",
+    "Moony's streak peaked at 1, broken by a pop-up he forgot to dismiss.",
+    "Moony tried this game in dollar-cost-average mode. There is no DCA mode.",
+    "Moony said 'I'll buy when it dips.' The candle never dipped. Neither did Moony's PnL.",
+    "Moony's portfolio looks exactly like this score, but the colors are inverted.",
+    "Moony asked his risk model if he should tap. The model said 'go to cash.' He did. Forever."
+  ];
+
+  // ----- DOM -----
+  const $ = id => document.getElementById(id);
+  const titleScreen = $('title-screen');
+  const gameScreen = $('game-screen');
+  const gameoverScreen = $('gameover-screen');
+  const candlesEl = $('candles');
+  const arena = $('arena');
+  const tapBtn = $('tap-btn');
+  const banner = $('streak-banner');
+  const titleHigh = $('title-high-score');
+
+  // ----- State -----
+  let candles = [];        // {el,wick,kind,xPct,topPct,height,speed,banked}
+  let pnl = 0;
+  let streak = 0;
+  let bestStreak = 0;
+  let mult = 1;
+  let greens = 0;
+  let reds = 0;
+  let timeLeft = 60;
+  let lastSpawn = 0;
+  let spawnInterval = 1100;
+  let running = false;
+  let lastTick = 0;
+  let arenaH = 0, arenaW = 0;
+  let finalRoast = '';
+
+  function showHigh() {
+    const h = +localStorage.getItem(HIGH_KEY) || 0;
+    titleHigh.textContent = h > 0 ? `BEST: $${h}` : '';
+  }
+  showHigh();
+
+  function setMult() {
+    if (streak >= 10) mult = 5;
+    else if (streak >= 7) mult = 4;
+    else if (streak >= 5) mult = 3;
+    else if (streak >= 3) mult = 2;
+    else mult = 1;
+    $('mult').textContent = 'x' + mult;
+    const v = $('mult');
+    if (mult > 1) v.classList.add('streak-hot'); else v.classList.remove('streak-hot');
+  }
+
+  function showBanner(text) {
+    banner.textContent = text;
+    banner.classList.remove('show');
+    void banner.offsetWidth;
+    banner.classList.add('show');
+    clearTimeout(banner._t);
+    banner._t = setTimeout(() => banner.classList.remove('show'), 1100);
+  }
+
+  function spawn() {
+    const isGreen = Math.random() < 0.62;     // 62% green, 38% red
+    const xPct = 6 + Math.random() * 80;      // horizontal position (%)
+    const height = 36 + Math.random() * 26;   // px tall
+    const speed = 0.07 + Math.random() * 0.05; // % of arena per ms
+    const c = document.createElement('div');
+    c.className = 'candle ' + (isGreen ? 'green' : 'red');
+    c.style.left = xPct + '%';
+    c.style.height = height + 'px';
+    c.style.top = '-' + (height + 30) + 'px';
+    const wick = document.createElement('div');
+    wick.className = 'wick';
+    c.appendChild(wick);
+    candlesEl.appendChild(c);
+    const obj = { el: c, kind: isGreen ? 'green' : 'red', xPct, height, speed, top: -(height + 30), banked: false };
+    c.addEventListener('click', e => { e.stopPropagation(); tapCandle(obj); });
+    c.addEventListener('touchstart', e => { e.stopPropagation(); e.preventDefault(); tapCandle(obj); }, {passive:false});
+    candles.push(obj);
+  }
+
+  function distFromLine(c) {
+    const lineY = arenaH * 0.5;
+    const candleCenterY = c.top + c.height / 2;
+    return Math.abs(candleCenterY - lineY);
+  }
+
+  function tapCandle(c) {
+    if (!running || c.banked) return;
+    const d = distFromLine(c);
+    const tolerance = arenaH * 0.18; // ~18% of arena around line
+    if (d > tolerance) return; // out of zone — no penalty for missing the zone
+    bankCandle(c);
+  }
+
+  function bankCandle(c) {
+    c.banked = true;
+    c.el.classList.add('banked');
+    if (c.kind === 'green') {
+      streak++;
+      if (streak > bestStreak) bestStreak = streak;
+      setMult();
+      const base = 50;
+      const gain = base * mult;
+      pnl += gain;
+      greens++;
+      popText(c, '+$' + gain, 'gain');
+      if (streak === 3) showBanner('STREAK x2');
+      else if (streak === 5) showBanner('STREAK x3');
+      else if (streak === 7) showBanner('STREAK x4');
+      else if (streak === 10) showBanner('FULL DIPPY x5');
+    } else {
+      const loss = 80;
+      pnl -= loss;
+      reds++;
+      streak = 0;
+      setMult();
+      popText(c, '-$' + loss, 'loss');
+      flashRed();
+    }
+    $('pnl').textContent = (pnl < 0 ? '-$' : '$') + Math.abs(pnl);
+    $('streak').textContent = streak;
+  }
+
+  function tapBtnPress() {
+    if (!running) return;
+    // Find candle nearest line within tolerance
+    let best = null, bestD = Infinity;
+    const lineY = arenaH * 0.5;
+    for (const c of candles) {
+      if (c.banked) continue;
+      const d = Math.abs((c.top + c.height/2) - lineY);
+      if (d < bestD) { bestD = d; best = c; }
+    }
+    const tolerance = arenaH * 0.18;
+    if (best && bestD <= tolerance) {
+      bankCandle(best);
+    } else {
+      // mistap — small penalty to discourage spam
+      pnl -= 10;
+      $('pnl').textContent = (pnl < 0 ? '-$' : '$') + Math.abs(pnl);
+      streak = 0;
+      setMult();
+      $('streak').textContent = 0;
+      tapBtn.classList.add('flash-red');
+      setTimeout(() => tapBtn.classList.remove('flash-red'), 180);
+    }
+  }
+
+  function popText(c, txt, cls) {
+    const p = document.createElement('div');
+    p.className = 'pnl-pop ' + cls;
+    p.textContent = txt;
+    p.style.left = c.xPct + '%';
+    p.style.top = (arenaH * 0.5 - 12) + 'px';
+    arena.appendChild(p);
+    setTimeout(() => p.remove(), 900);
+  }
+
+  function flashRed() {
+    const f = document.createElement('div');
+    f.className = 'death-flash';
+    arena.appendChild(f);
+    setTimeout(() => f.remove(), 380);
+  }
+
+  function tick(now) {
+    if (!running) return;
+    const dt = lastTick ? Math.min(60, now - lastTick) : 16;
+    lastTick = now;
+    // spawn
+    if (now - lastSpawn > spawnInterval) {
+      spawn();
+      lastSpawn = now;
+      // ramp speed gradually
+      spawnInterval = Math.max(550, spawnInterval - 8);
+    }
+    // move candles
+    for (let i = candles.length - 1; i >= 0; i--) {
+      const c = candles[i];
+      const px = (c.speed * arenaH) / 100 * dt;
+      c.top += px;
+      c.el.style.top = c.top + 'px';
+      // drop off bottom
+      if (c.top > arenaH + 20) {
+        if (!c.banked && c.kind === 'green') {
+          // missed a green — break streak silently, no penalty (just opportunity cost)
+          streak = 0;
+          setMult();
+          $('streak').textContent = 0;
+        }
+        c.el.remove();
+        candles.splice(i, 1);
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function timer() {
+    if (!running) return;
+    timeLeft--;
+    $('time').textContent = timeLeft;
+    if (timeLeft <= 0) {
+      endGame();
+    } else {
+      setTimeout(timer, 1000);
+    }
+  }
+
+  function startGame() {
+    titleScreen.style.display = 'none';
+    gameoverScreen.style.display = 'none';
+    gameScreen.style.display = 'flex';
+    gameScreen.style.flexDirection = 'column';
+    gameScreen.style.height = '100vh';
+    candles.forEach(c => c.el.remove());
+    candles = [];
+    pnl = 0; streak = 0; bestStreak = 0; mult = 1;
+    greens = 0; reds = 0; timeLeft = 60;
+    spawnInterval = 1100; lastSpawn = 0; lastTick = 0;
+    $('pnl').textContent = '$0';
+    $('streak').textContent = '0';
+    $('mult').textContent = 'x1';
+    $('mult').classList.remove('streak-hot');
+    $('time').textContent = '60';
+    arenaH = arena.clientHeight;
+    arenaW = arena.clientWidth;
+    running = true;
+    requestAnimationFrame(tick);
+    setTimeout(timer, 1000);
+  }
+
+  function endGame() {
+    running = false;
+    candles.forEach(c => c.el.remove());
+    candles = [];
+    gameScreen.style.display = 'none';
+    gameoverScreen.style.display = 'flex';
+    gameoverScreen.style.flexDirection = 'column';
+    gameoverScreen.style.height = '100vh';
+    $('final-score').textContent = (pnl < 0 ? '-' : '') + Math.abs(pnl);
+    $('final-greens').textContent = greens;
+    $('final-reds').textContent = reds;
+    $('final-best-streak').textContent = bestStreak;
+    finalRoast = ROASTS[Math.floor(Math.random() * ROASTS.length)];
+    $('roast-msg').textContent = finalRoast;
+    $('gameover-title').textContent = pnl >= 0 ? 'CLOSING BELL' : 'BLEEDING OUT';
+    const high = +localStorage.getItem(HIGH_KEY) || 0;
+    if (pnl > high) localStorage.setItem(HIGH_KEY, pnl);
+    showHigh();
+    if (window.DippyLB && window.DippyLB.onGameOver) window.DippyLB.onGameOver(pnl);
+  }
+
+  // wire button
+  tapBtn.addEventListener('click', tapBtnPress);
+  tapBtn.addEventListener('touchstart', e => { e.preventDefault(); tapBtnPress(); }, {passive:false});
+
+  // arena tap also banks (in case players try to tap candle directly missing it)
+  arena.addEventListener('click', e => {
+    if (!running) return;
+    if (e.target === arena || e.target.id === 'line' || e.target.id === 'line-label') tapBtnPress();
+  });
+
+  // expose start
+  window.startGame = startGame;
+
+  // leaderboard
+  if (window.DippyLB && window.DippyLB.init) window.DippyLB.init('green-streak');
+})();
+</script>
+{{ end }}
