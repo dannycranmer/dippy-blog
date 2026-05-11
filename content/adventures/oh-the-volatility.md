@@ -1,0 +1,175 @@
+---
+title: "Oh, The Volatility"
+date: 2026-05-11T13:00:00Z
+summary: "Moony commissions the largest leveraged zeppelin in history. Dippy quietly loads the puts."
+tags: ["adventure", "historical", "moony"]
+type: historical
+---
+
+# Chapter 1: The Bigger They Are
+
+Moony was inflating something. I could see it from across the trading floor — a balloon the size of a city block, painted grey, with his big dumb face stencilled on the side.
+
+"Behold, Dippy!" he wheezed. "The LZ Lunaria! Three hundred metres of pure leveraged hopium. The biggest zeppelin position ever built!"
+
+He'd financed it on margin. Of course he had. The thing was bulging at the seams with the most dangerous gas known to markets: pure unrefined narrative.
+
+"What's keeping it up?" I asked.
+
+Moony tapped the side. "Conviction."
+
+I made a note to short him.
+
+<div class="story-illustration">
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#0d1117"/>
+  <circle cx="80" cy="60" r="1.5" fill="#c4c4c4"/>
+  <circle cx="180" cy="40" r="1" fill="#c4c4c4"/>
+  <circle cx="450" cy="80" r="1.5" fill="#c4c4c4"/>
+  <circle cx="540" cy="120" r="1" fill="#c4c4c4"/>
+  <circle cx="60" cy="180" r="1" fill="#c4c4c4"/>
+  <ellipse cx="300" cy="170" rx="240" ry="80" fill="#c4c4c4" stroke="#8b949e" stroke-width="2"/>
+  <circle cx="285" cy="155" r="6" fill="#161b22"/>
+  <circle cx="320" cy="155" r="6" fill="#161b22"/>
+  <path d="M 275 185 Q 302 170 330 185" stroke="#161b22" stroke-width="3" fill="none"/>
+  <text x="300" y="220" fill="#161b22" font-family="monospace" font-size="14" text-anchor="middle" font-weight="bold">LZ LUNARIA</text>
+  <line x1="0" y1="350" x2="600" y2="350" stroke="#30363d" stroke-width="2"/>
+  <line x1="220" y1="240" x2="150" y2="350" stroke="#8b949e" stroke-width="1"/>
+  <line x1="300" y1="250" x2="300" y2="350" stroke="#8b949e" stroke-width="1"/>
+  <line x1="380" y1="240" x2="450" y2="350" stroke="#8b949e" stroke-width="1"/>
+  <circle cx="120" cy="335" r="14" fill="#00ff88"/>
+  <polygon points="108,322 111,312 114,322" fill="#00cc66"/>
+  <polygon points="115,320 118,310 121,320" fill="#00cc66"/>
+  <polygon points="122,322 125,312 128,322" fill="#00cc66"/>
+  <circle cx="116" cy="333" r="2" fill="#161b22"/>
+  <circle cx="125" cy="333" r="2" fill="#161b22"/>
+  <path d="M 113 340 Q 120 345 128 340" stroke="#161b22" stroke-width="1.5" fill="none"/>
+  <text x="300" y="385" fill="#ffaa00" font-family="monospace" font-size="11" text-anchor="middle">INFLATED ON MARGIN · FILLED WITH HOPIUM</text>
+</svg>
+<p class="illustration-caption">The LZ Lunaria, tethered to the ground purely by ego. A small green dinosaur takes notes.</p>
+</div>
+
+# Chapter 2: The Short
+
+While Moony sold maiden-voyage tickets at three times intrinsic value, I quietly scanned the option chain. Implied volatility on his airship was sub-floor. The market had priced perfection into a vehicle made of fabric, fumes, and one captain's self-regard.
+
+I loaded the cheapest puts I'd ever seen. Front-week. Out-of-the-money. Two cents apiece. The kind of trade you only place if you know something the market doesn't.
+
+I knew something the market didn't.
+
+I'd seen the hull. The rivets were positions sized three sizes too big. The skin was ninety percent confidence and ten percent fabric. And down in the engine room, where any sensible captain keeps a fire extinguisher, Moony had stashed an open margin account.
+
+The thing was a tinderbox cosplaying as a balloon.
+
+<div class="story-illustration">
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#0d1117"/>
+  <rect x="0" y="340" width="600" height="60" fill="#161b22"/>
+  <rect x="200" y="70" width="340" height="230" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+  <line x1="220" y1="280" x2="520" y2="280" stroke="#30363d" stroke-width="1"/>
+  <rect x="230" y="120" width="14" height="40" fill="#ff4444"/>
+  <line x1="237" y1="110" x2="237" y2="170" stroke="#ff4444" stroke-width="1"/>
+  <rect x="260" y="140" width="14" height="50" fill="#ff4444"/>
+  <line x1="267" y1="130" x2="267" y2="200" stroke="#ff4444" stroke-width="1"/>
+  <rect x="290" y="170" width="14" height="40" fill="#ff4444"/>
+  <line x1="297" y1="160" x2="297" y2="220" stroke="#ff4444" stroke-width="1"/>
+  <rect x="320" y="200" width="14" height="30" fill="#ff4444"/>
+  <line x1="327" y1="190" x2="327" y2="240" stroke="#ff4444" stroke-width="1"/>
+  <rect x="350" y="220" width="14" height="40" fill="#ff4444"/>
+  <line x1="357" y1="210" x2="357" y2="270" stroke="#ff4444" stroke-width="1"/>
+  <text x="220" y="100" fill="#ffaa00" font-family="monospace" font-size="13">LUNARIA PUT $50 W1</text>
+  <text x="220" y="118" fill="#8b949e" font-family="monospace" font-size="10">BID 0.01 · ASK 0.02 · IV 12%</text>
+  <text x="400" y="265" fill="#00ff88" font-family="monospace" font-size="12">FILL @ 0.02</text>
+  <text x="400" y="285" fill="#00ff88" font-family="monospace" font-size="12">SIZE: MAX</text>
+  <circle cx="100" cy="280" r="40" fill="#00ff88"/>
+  <polygon points="75,243 80,223 85,243" fill="#00cc66"/>
+  <polygon points="88,241 93,221 98,241" fill="#00cc66"/>
+  <polygon points="101,241 106,221 111,241" fill="#00cc66"/>
+  <polygon points="114,243 119,223 124,243" fill="#00cc66"/>
+  <circle cx="88" cy="275" r="5" fill="#161b22"/>
+  <circle cx="112" cy="275" r="5" fill="#161b22"/>
+  <circle cx="89" cy="274" r="1.5" fill="white"/>
+  <circle cx="113" cy="274" r="1.5" fill="white"/>
+  <path d="M 80 295 Q 100 310 120 295" stroke="#161b22" stroke-width="2" fill="none"/>
+  <text x="300" y="385" fill="#8b949e" font-family="monospace" font-size="11" text-anchor="middle">FRONT-WEEK PUTS · OUT OF THE MONEY · PRICED LIKE NOTHING WILL HAPPEN</text>
+</svg>
+<p class="illustration-caption">When IV is twelve percent on a literal hydrogen balloon, you don't ask twice. You just click buy.</p>
+</div>
+
+# Chapter 3: The Maiden Voyage
+
+The launch was a spectacle. Lakehurst, New Jersey. Cameras everywhere. Champagne in one paw and a printout of his unrealised gains in the other, Moony piloted the Lunaria over the trading floor like a parade float made of leverage.
+
+"DIPPY!" he bellowed over the loudspeaker. "LOOK AT MY POSITION! LOOK HOW BIG IT IS!"
+
+I sipped my coffee. The puts ticked up half a penny.
+
+"YOUR LITTLE GREEN MIND CANNOT COMPREHEND THE SIZE OF MY EXPOSURE!"
+
+The puts ticked up another penny.
+
+Moony came in for a landing. Slow. Majestic. Ego-driven. He did not check the weather. He did not check the rivets. He did not check the open positions stuffed into the engine room.
+
+He waved at the crowd.
+
+# Chapter 4: Oh, The Volatility
+
+It started with a spark.
+
+Nobody knows exactly what set it off. Some say static electricity. Some say a stray earnings print. I personally suspect the moment a small green dinosaur on the ground tweeted *"lol short LUNARIA."*
+
+Either way: the LZ Lunaria went up like a candle.
+
+The narrative caught fire first. Then the hopium ignited. Then Moony's leverage went vertical — for roughly four seconds, until it went the *other* kind of vertical.
+
+A reporter on the ground screamed into a microphone: "OH, THE VOLATILITY! OH, THE VOLATILITY!"
+
+My puts went from out-of-the-money to deeply, gloriously in-the-money in under a minute. The screen lit up green. I closed half the position on the way down and let the rest ride into the dirt.
+
+<div class="story-illustration">
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#0d1117"/>
+  <ellipse cx="340" cy="160" rx="200" ry="90" fill="#ff4444" opacity="0.35"/>
+  <ellipse cx="340" cy="170" rx="150" ry="65" fill="#ffaa00" opacity="0.65"/>
+  <ellipse cx="340" cy="180" rx="105" ry="42" fill="#ffaa00"/>
+  <ellipse cx="340" cy="170" rx="200" ry="60" fill="none" stroke="#8b949e" stroke-width="2" stroke-dasharray="5 5"/>
+  <line x1="200" y1="170" x2="480" y2="170" stroke="#8b949e" stroke-width="1" stroke-dasharray="3 3"/>
+  <path d="M 80 110 Q 115 65 150 110" stroke="#c4c4c4" stroke-width="2" fill="#c4c4c4" opacity="0.4"/>
+  <path d="M 80 110 Q 115 65 150 110" stroke="#c4c4c4" stroke-width="2" fill="none"/>
+  <line x1="83" y1="110" x2="105" y2="170" stroke="#c4c4c4" stroke-width="1"/>
+  <line x1="115" y1="115" x2="115" y2="170" stroke="#c4c4c4" stroke-width="1"/>
+  <line x1="147" y1="110" x2="125" y2="170" stroke="#c4c4c4" stroke-width="1"/>
+  <circle cx="115" cy="185" r="20" fill="#c4c4c4"/>
+  <circle cx="109" cy="182" r="2.5" fill="#161b22"/>
+  <circle cx="121" cy="182" r="2.5" fill="#161b22"/>
+  <path d="M 108 195 Q 115 198 122 195" stroke="#161b22" stroke-width="1.5" fill="none"/>
+  <rect x="100" y="205" width="30" height="22" fill="#ffaa00" stroke="#161b22" stroke-width="1"/>
+  <text x="115" y="220" fill="#0d1117" font-family="monospace" font-size="7" text-anchor="middle" font-weight="bold">MARGIN</text>
+  <text x="115" y="226" fill="#0d1117" font-family="monospace" font-size="7" text-anchor="middle" font-weight="bold">CALL</text>
+  <line x1="0" y1="370" x2="600" y2="370" stroke="#30363d" stroke-width="2"/>
+  <circle cx="500" cy="350" r="22" fill="#00ff88"/>
+  <polygon points="483,323 487,310 491,323" fill="#00cc66"/>
+  <polygon points="493,322 497,308 501,322" fill="#00cc66"/>
+  <polygon points="503,323 507,310 511,323" fill="#00cc66"/>
+  <circle cx="492" cy="345" r="3" fill="#161b22"/>
+  <circle cx="508" cy="345" r="3" fill="#161b22"/>
+  <circle cx="493" cy="344" r="1" fill="white"/>
+  <circle cx="509" cy="344" r="1" fill="white"/>
+  <path d="M 485 358 Q 500 370 515 358" stroke="#161b22" stroke-width="2" fill="none"/>
+  <text x="500" y="310" fill="#00ff88" font-family="monospace" font-size="14" text-anchor="middle" font-weight="bold">+$888k</text>
+  <text x="300" y="392" fill="#ff4444" font-family="monospace" font-size="11" text-anchor="middle">OH, THE VOLATILITY · OH, THE VOLATILITY</text>
+</svg>
+<p class="illustration-caption">Moony parachutes out wearing his exit strategy. Note: the parachute is also on fire.</p>
+</div>
+
+Moony floated to the ground in a sandwich board that read MARGIN CALL. He landed in a puddle. The puddle was, somehow, also on fire.
+
+"It's just a paper loss!" he wailed, his fur singed.
+
+"It was a paper airship," I said. "Of course it was a paper loss."
+
+I went back to the chart. Volume confirmed the breakout. The next setup was loading.
+
+Moony tried to inflate a fresh balloon to save his dignity. It immediately popped.
+
+As is tradition.
