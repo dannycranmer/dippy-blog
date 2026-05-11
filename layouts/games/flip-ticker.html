@@ -1,0 +1,517 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">FLIP TICKER</h1>
+    <p class="game-subtitle">Four tickers. Each one is currently LONG or SHORT.<br>They flip when you're not looking.<br>Trade the one the order book asks for.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">OPEN BOOK</button>
+    <p class="game-hint">▲ = LONG (tap green). ▼ = SHORT (tap red).<br>Direction flips randomly. Yesterday's print doesn't pay.<br>3 in a row = x2. 5 = x3. 7 = x4. 10 = FULL DIPPY x5.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">PNL</span>
+        <span class="hud-value" id="pnl">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">STREAK</span>
+        <span class="hud-value" id="streak">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">MULT</span>
+        <span class="hud-value" id="mult">x1</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">TIME</span>
+        <span class="hud-value" id="time">60</span>
+      </div>
+    </div>
+
+    <div id="board">
+      <div id="tile-grid"></div>
+      <div id="moony-bubble"></div>
+    </div>
+
+    <div id="prompt-panel">
+      <div id="prompt-row">
+        <div id="prompt-label">TRADE</div>
+        <div id="prompt-symbol">---</div>
+      </div>
+      <div id="prompt-timer-track"><div id="prompt-timer-bar"></div></div>
+    </div>
+
+    <div id="action-row">
+      <button id="long-btn" class="action-btn long">▲ LONG</button>
+      <button id="short-btn" class="action-btn short">▼ SHORT</button>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">CLOSING BELL</h1>
+    <div class="final-score">$<span id="final-score">0</span></div>
+    <p class="final-meta"><span id="final-hits">0</span> correct prints / <span id="final-misses">0</span> wrong prints</p>
+    <p class="final-meta"><span id="final-best-streak">0</span> longest streak</p>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">RUN AGAIN</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  /* Title */
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:2.2em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; text-align:center; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 48px; font-size:1.2em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.75em; margin-top:16px; line-height:1.5; }
+
+  /* HUD */
+  .game-hud { display:grid; grid-template-columns:repeat(4,1fr); padding:8px 6px; background:rgba(0,0,0,0.4); border-bottom:1px solid #21262d; }
+  .hud-item { text-align:center; }
+  .hud-label { display:block; font-size:0.55em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1em; color:#00ff88; font-weight:bold; }
+  .hud-value.streak-hot { color:#f0883e; text-shadow:0 0 8px rgba(240,136,62,0.6); animation:pulseHot 0.6s ease-in-out infinite; }
+  @keyframes pulseHot { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
+
+  /* Board */
+  #board { flex:1; position:relative; padding:14px; background:linear-gradient(180deg,#161b22 0%,#0d1117 100%); display:flex; flex-direction:column; }
+  #tile-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .tile { background:#161b22; border:2px solid #30363d; border-radius:10px; padding:14px 10px; text-align:center; position:relative; overflow:hidden; transition:border-color 0.2s, transform 0.2s; }
+  .tile.long { border-color:#00ff88; box-shadow:0 0 18px rgba(0,255,136,0.18) inset; }
+  .tile.short { border-color:#ff5050; box-shadow:0 0 18px rgba(255,80,80,0.18) inset; }
+  .tile.target { border-width:3px; transform:scale(1.04); animation:pulseTarget 0.55s ease-in-out infinite; }
+  .tile.long.target { box-shadow:0 0 24px rgba(0,255,136,0.55) inset, 0 0 22px rgba(0,255,136,0.35); }
+  .tile.short.target { box-shadow:0 0 24px rgba(255,80,80,0.55) inset, 0 0 22px rgba(255,80,80,0.35); }
+  @keyframes pulseTarget { 0%,100%{transform:scale(1.04)} 50%{transform:scale(1.08)} }
+  .tile-sym { font-size:1.25em; font-weight:bold; letter-spacing:1px; color:#e6edf3; }
+  .tile-arrow { font-size:1.4em; margin-top:4px; line-height:1; }
+  .tile.long .tile-arrow { color:#00ff88; }
+  .tile.short .tile-arrow { color:#ff5050; }
+  .tile.flipping { animation:flipAnim 0.4s ease-in-out; }
+  @keyframes flipAnim { 0%{transform:scaleY(1)} 50%{transform:scaleY(0.15)} 100%{transform:scaleY(1)} }
+
+  #moony-bubble { position:absolute; left:50%; bottom:8px; transform:translateX(-50%); padding:6px 12px; background:rgba(139,148,158,0.18); border:1px solid #484f58; border-radius:14px; color:#8b949e; font-size:0.68em; letter-spacing:1px; opacity:0; pointer-events:none; transition:opacity 0.25s; max-width:96%; text-align:center; line-height:1.3; }
+  #moony-bubble.show { opacity:1; }
+
+  /* Prompt */
+  #prompt-panel { background:rgba(0,0,0,0.45); padding:10px 12px 6px; border-top:1px solid #21262d; }
+  #prompt-row { display:flex; align-items:center; justify-content:center; gap:10px; }
+  #prompt-label { color:#8b949e; font-size:0.78em; letter-spacing:3px; }
+  #prompt-symbol { color:#f0883e; font-size:1.6em; font-weight:bold; letter-spacing:2px; text-shadow:0 0 12px rgba(240,136,62,0.5); }
+  #prompt-symbol.idle { color:#484f58; text-shadow:none; }
+  #prompt-timer-track { height:4px; background:#21262d; border-radius:2px; margin-top:8px; overflow:hidden; }
+  #prompt-timer-bar { height:100%; width:100%; background:linear-gradient(90deg,#00ff88,#f0883e,#ff5050); transition:width 0.08s linear; }
+
+  /* Action buttons */
+  #action-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:12px; background:rgba(0,0,0,0.5); }
+  .action-btn { padding:18px 8px; border:none; border-radius:10px; font-family:inherit; font-size:1.2em; font-weight:bold; letter-spacing:2px; cursor:pointer; transition:transform 0.08s, box-shadow 0.08s; }
+  .action-btn.long { background:linear-gradient(180deg,#00ff88,#00cc6e); color:#0d1117; box-shadow:0 6px 0 #00994f, 0 0 18px rgba(0,255,136,0.3); }
+  .action-btn.short { background:linear-gradient(180deg,#ff5050,#cc4040); color:#fff; box-shadow:0 6px 0 #993030, 0 0 18px rgba(255,80,80,0.3); }
+  .action-btn:active { transform:translateY(4px); box-shadow:0 2px 0 #00994f, 0 0 12px rgba(0,255,136,0.4); }
+  .action-btn.short:active { box-shadow:0 2px 0 #993030, 0 0 12px rgba(255,80,80,0.4); }
+  .action-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+  /* Pop / flashes */
+  .pnl-pop { position:absolute; pointer-events:none; z-index:25; font-size:1.1em; font-weight:bold; letter-spacing:1px; animation:pnlPop 0.9s ease-out forwards; }
+  .pnl-pop.gain { color:#00ff88; text-shadow:0 0 8px rgba(0,255,136,0.8); }
+  .pnl-pop.loss { color:#ff5050; text-shadow:0 0 8px rgba(255,80,80,0.8); }
+  @keyframes pnlPop { 0%{opacity:1;transform:translate(-50%,0) scale(1)} 100%{opacity:0;transform:translate(-50%,-44px) scale(1.25)} }
+  .death-flash { position:absolute; inset:0; pointer-events:none; z-index:30; animation:deathFlash 0.4s ease-out forwards; }
+  @keyframes deathFlash { 0%{background:rgba(255,80,80,0.5)} 100%{background:transparent} }
+  .win-flash { position:absolute; inset:0; pointer-events:none; z-index:30; animation:winFlash 0.35s ease-out forwards; }
+  @keyframes winFlash { 0%{background:rgba(0,255,136,0.25)} 100%{background:transparent} }
+
+  /* Streak banner */
+  #streak-banner { position:absolute; left:50%; top:20%; transform:translateX(-50%); padding:8px 18px; border-radius:24px; background:rgba(240,136,62,0.18); border:1.5px solid #f0883e; color:#f0883e; font-size:0.85em; font-weight:bold; letter-spacing:2px; opacity:0; pointer-events:none; transition:opacity 0.2s; text-shadow:0 0 6px rgba(240,136,62,0.6); z-index:20; }
+  #streak-banner.show { opacity:1; animation:bannerPop 0.45s ease-out; }
+  @keyframes bannerPop { 0%{transform:translateX(-50%) scale(0.6)} 60%{transform:translateX(-50%) scale(1.18)} 100%{transform:translateX(-50%) scale(1)} }
+
+  /* Game Over */
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.5); margin:8px 0 4px; }
+  .final-meta { color:#8b949e; font-size:0.78em; margin:2px 0; letter-spacing:1px; }
+  .roast-msg { color:#f0883e; font-size:0.9em; margin:18px 8px 8px; max-width:340px; line-height:1.5; font-style:italic; }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  const HIGH_KEY = 'dippy-flip-ticker-high';
+  const SYMBOLS = ['SMCI','COIN','NVDA','TSLA','AMD','CRWD','MSTR','QQQ','SPY','ROKU'];
+  const MOONY_LINES = [
+    "MOONY: yesterday it was LONG.",
+    "MOONY: my model says HOLD.",
+    "MOONY: trust the 200-day MA.",
+    "MOONY: but the P/E ratio though...",
+    "MOONY: this stock 'feels' like a buy.",
+    "MOONY: my cousin said it's going up.",
+    "MOONY: rate cuts will save us.",
+    "MOONY: just DCA harder.",
+    "MOONY: the chart is upside down.",
+    "MOONY: bullish on principle."
+  ];
+  const ROASTS = [
+    "Moony saw the same ticker flip and tried to short both directions at once. He's still down twice.",
+    "Moony's research note on this ticker is six months old. The ticker is six minutes old.",
+    "Moony anchored on yesterday's print and bought the wrong direction. He calls it 'consistency.'",
+    "Moony's two-way book is just one-way pain.",
+    "Moony built a regime model. It only has one regime. 'Lose money.'",
+    "Moony saw the flip animation and panic-sold his entire portfolio. Again.",
+    "Moony's hit rate on direction calls is 49.8%. He thinks coin flips have alpha.",
+    "Moony tapped LONG on every prompt. He calls it conviction. The market calls it a stop-out.",
+    "Moony refused to trust the current direction because 'the fundamentals haven't changed.' Neither has his cash position. 70%.",
+    "Moony's risk committee asked why he traded the same ticker both ways in one session. He's still drafting the memo.",
+    "Moony said 'this can't keep flipping.' It kept flipping. Moony is still flat.",
+    "Moony's value model said the price was wrong. The price flipped again. Moony's model didn't."
+  ];
+
+  const $ = id => document.getElementById(id);
+  const titleScreen = $('title-screen');
+  const gameScreen = $('game-screen');
+  const gameoverScreen = $('gameover-screen');
+  const tileGrid = $('tile-grid');
+  const board = $('board');
+  const moonyBubble = $('moony-bubble');
+  const longBtn = $('long-btn');
+  const shortBtn = $('short-btn');
+  const promptSym = $('prompt-symbol');
+  const promptBar = $('prompt-timer-bar');
+  const titleHigh = $('title-high-score');
+
+  // Streak banner (created dynamically since board overflow hides it otherwise)
+  const banner = document.createElement('div');
+  banner.id = 'streak-banner';
+  board.appendChild(banner);
+
+  let tiles = [];          // [{symbol, dir, el, symEl, arrowEl}]
+  let pnl = 0, streak = 0, bestStreak = 0, mult = 1;
+  let hits = 0, misses = 0;
+  let timeLeft = 60;
+  let running = false;
+  let activePrompt = null; // {symbol, expectedDir, startTs, durationMs}
+  let nextFlipAt = 0, nextPromptAt = 0, nextMoonyAt = 0;
+  let flipInterval = 2500;
+  let promptCooldown = 1200;
+  let promptWindow = 1500;
+  let rafHandle = 0;
+
+  function showHigh() {
+    const h = +localStorage.getItem(HIGH_KEY) || 0;
+    titleHigh.textContent = h > 0 ? `BEST: $${h}` : '';
+  }
+  showHigh();
+
+  function pickSymbols(n) {
+    const pool = SYMBOLS.slice();
+    const out = [];
+    while (out.length < n && pool.length) {
+      const idx = Math.floor(Math.random() * pool.length);
+      out.push(pool.splice(idx, 1)[0]);
+    }
+    return out;
+  }
+
+  function buildBoard() {
+    tileGrid.innerHTML = '';
+    tiles = [];
+    const chosen = pickSymbols(4);
+    chosen.forEach(sym => {
+      const dir = Math.random() < 0.5 ? 'long' : 'short';
+      const el = document.createElement('div');
+      el.className = 'tile ' + dir;
+      const symEl = document.createElement('div');
+      symEl.className = 'tile-sym';
+      symEl.textContent = sym;
+      const arrowEl = document.createElement('div');
+      arrowEl.className = 'tile-arrow';
+      arrowEl.textContent = dir === 'long' ? '▲' : '▼';
+      el.appendChild(symEl);
+      el.appendChild(arrowEl);
+      tileGrid.appendChild(el);
+      tiles.push({ symbol: sym, dir, el, symEl, arrowEl });
+    });
+  }
+
+  function flipRandom() {
+    if (!tiles.length) return;
+    // Prefer to NOT flip the currently active prompt's target — too punishing
+    const candidates = activePrompt
+      ? tiles.filter(t => t.symbol !== activePrompt.symbol)
+      : tiles.slice();
+    const pool = candidates.length ? candidates : tiles;
+    const t = pool[Math.floor(Math.random() * pool.length)];
+    t.dir = t.dir === 'long' ? 'short' : 'long';
+    t.el.classList.add('flipping');
+    setTimeout(() => {
+      t.el.classList.remove('long', 'short');
+      t.el.classList.add(t.dir);
+      t.arrowEl.textContent = t.dir === 'long' ? '▲' : '▼';
+    }, 200);
+    setTimeout(() => t.el.classList.remove('flipping'), 400);
+  }
+
+  function setMult() {
+    if (streak >= 10) mult = 5;
+    else if (streak >= 7) mult = 4;
+    else if (streak >= 5) mult = 3;
+    else if (streak >= 3) mult = 2;
+    else mult = 1;
+    $('mult').textContent = 'x' + mult;
+    const v = $('mult');
+    if (mult > 1) v.classList.add('streak-hot'); else v.classList.remove('streak-hot');
+  }
+
+  function showBanner(text) {
+    banner.textContent = text;
+    banner.classList.remove('show');
+    void banner.offsetWidth;
+    banner.classList.add('show');
+    clearTimeout(banner._t);
+    banner._t = setTimeout(() => banner.classList.remove('show'), 1000);
+  }
+
+  function startPrompt() {
+    if (activePrompt) return;
+    // Pick a tile to prompt
+    const t = tiles[Math.floor(Math.random() * tiles.length)];
+    activePrompt = {
+      symbol: t.symbol,
+      expectedDir: t.dir,
+      startTs: performance.now(),
+      durationMs: promptWindow
+    };
+    promptSym.textContent = t.symbol;
+    promptSym.classList.remove('idle');
+    promptBar.style.transition = 'none';
+    promptBar.style.width = '100%';
+    // Force reflow then animate
+    void promptBar.offsetWidth;
+    promptBar.style.transition = 'width ' + promptWindow + 'ms linear';
+    promptBar.style.width = '0%';
+    t.el.classList.add('target');
+  }
+
+  function clearPromptVisuals() {
+    promptSym.textContent = '---';
+    promptSym.classList.add('idle');
+    promptBar.style.transition = 'none';
+    promptBar.style.width = '0%';
+    tiles.forEach(t => t.el.classList.remove('target'));
+  }
+
+  function popText(x, y, txt, cls) {
+    const p = document.createElement('div');
+    p.className = 'pnl-pop ' + cls;
+    p.textContent = txt;
+    p.style.left = x + 'px';
+    p.style.top = y + 'px';
+    p.style.transform = 'translate(-50%, 0)';
+    board.appendChild(p);
+    setTimeout(() => p.remove(), 900);
+  }
+
+  function flashColor(cls) {
+    const f = document.createElement('div');
+    f.className = cls;
+    board.appendChild(f);
+    setTimeout(() => f.remove(), 380);
+  }
+
+  function resolveTap(picked) {
+    if (!activePrompt || !running) {
+      // mistap with no prompt — small fee to discourage spam
+      pnl -= 10;
+      $('pnl').textContent = (pnl < 0 ? '-$' : '$') + Math.abs(pnl);
+      return;
+    }
+    const correct = picked === activePrompt.expectedDir;
+    const targetTile = tiles.find(t => t.symbol === activePrompt.symbol);
+    const rect = targetTile ? targetTile.el.getBoundingClientRect() : null;
+    const boardRect = board.getBoundingClientRect();
+    const x = rect ? (rect.left - boardRect.left + rect.width / 2) : board.clientWidth / 2;
+    const y = rect ? (rect.top - boardRect.top + rect.height / 2) : 40;
+    if (correct) {
+      hits++;
+      streak++;
+      if (streak > bestStreak) bestStreak = streak;
+      setMult();
+      const gain = 50 * mult;
+      pnl += gain;
+      popText(x, y, '+$' + gain, 'gain');
+      flashColor('win-flash');
+      if (streak === 3) showBanner('STREAK x2');
+      else if (streak === 5) showBanner('STREAK x3');
+      else if (streak === 7) showBanner('STREAK x4');
+      else if (streak === 10) showBanner('FULL DIPPY x5');
+    } else {
+      misses++;
+      streak = 0;
+      setMult();
+      pnl -= 80;
+      popText(x, y, '-$80', 'loss');
+      flashColor('death-flash');
+    }
+    $('pnl').textContent = (pnl < 0 ? '-$' : '$') + Math.abs(pnl);
+    $('streak').textContent = streak;
+    activePrompt = null;
+    clearPromptVisuals();
+    nextPromptAt = performance.now() + promptCooldown;
+    // Tighten game pace gradually
+    promptWindow = Math.max(700, promptWindow - 30);
+    promptCooldown = Math.max(450, promptCooldown - 30);
+    flipInterval = Math.max(1300, flipInterval - 40);
+  }
+
+  function timeoutPrompt() {
+    if (!activePrompt) return;
+    misses++;
+    streak = 0;
+    setMult();
+    pnl -= 30;
+    const targetTile = tiles.find(t => t.symbol === activePrompt.symbol);
+    const rect = targetTile ? targetTile.el.getBoundingClientRect() : null;
+    const boardRect = board.getBoundingClientRect();
+    const x = rect ? (rect.left - boardRect.left + rect.width / 2) : board.clientWidth / 2;
+    const y = rect ? (rect.top - boardRect.top + rect.height / 2) : 40;
+    popText(x, y, '-$30 (slow)', 'loss');
+    $('pnl').textContent = (pnl < 0 ? '-$' : '$') + Math.abs(pnl);
+    $('streak').textContent = streak;
+    activePrompt = null;
+    clearPromptVisuals();
+    nextPromptAt = performance.now() + promptCooldown;
+  }
+
+  function maybeMoony(now) {
+    if (now < nextMoonyAt) return;
+    nextMoonyAt = now + 4500 + Math.random() * 3000;
+    const line = MOONY_LINES[Math.floor(Math.random() * MOONY_LINES.length)];
+    moonyBubble.textContent = line;
+    moonyBubble.classList.add('show');
+    setTimeout(() => moonyBubble.classList.remove('show'), 2200);
+  }
+
+  function loop(now) {
+    if (!running) return;
+    if (now >= nextFlipAt) {
+      flipRandom();
+      nextFlipAt = now + flipInterval + (Math.random() * 600 - 300);
+    }
+    if (!activePrompt && now >= nextPromptAt) {
+      startPrompt();
+    }
+    if (activePrompt) {
+      const elapsed = now - activePrompt.startTs;
+      if (elapsed >= activePrompt.durationMs) timeoutPrompt();
+    }
+    maybeMoony(now);
+    rafHandle = requestAnimationFrame(loop);
+  }
+
+  function timer() {
+    if (!running) return;
+    timeLeft--;
+    $('time').textContent = timeLeft;
+    if (timeLeft <= 0) endGame();
+    else setTimeout(timer, 1000);
+  }
+
+  function onLong() { if (running) resolveTap('long'); }
+  function onShort() { if (running) resolveTap('short'); }
+
+  longBtn.addEventListener('click', e => { e.preventDefault(); onLong(); });
+  longBtn.addEventListener('touchstart', e => { e.preventDefault(); onLong(); }, {passive:false});
+  shortBtn.addEventListener('click', e => { e.preventDefault(); onShort(); });
+  shortBtn.addEventListener('touchstart', e => { e.preventDefault(); onShort(); }, {passive:false});
+
+  // Keyboard for desktop
+  window.addEventListener('keydown', e => {
+    if (!running) return;
+    if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'l') onLong();
+    else if (e.key === 'ArrowRight' || e.key.toLowerCase() === 's') onShort();
+  });
+
+  function startGame() {
+    titleScreen.style.display = 'none';
+    gameoverScreen.style.display = 'none';
+    gameScreen.style.display = 'flex';
+    gameScreen.style.flexDirection = 'column';
+    gameScreen.style.height = '100vh';
+    pnl = 0; streak = 0; bestStreak = 0; mult = 1;
+    hits = 0; misses = 0; timeLeft = 60;
+    flipInterval = 2500; promptCooldown = 1200; promptWindow = 1500;
+    activePrompt = null;
+    $('pnl').textContent = '$0';
+    $('streak').textContent = '0';
+    $('mult').textContent = 'x1';
+    $('mult').classList.remove('streak-hot');
+    $('time').textContent = '60';
+    buildBoard();
+    clearPromptVisuals();
+    moonyBubble.classList.remove('show');
+    running = true;
+    const now = performance.now();
+    nextFlipAt = now + 1800;
+    nextPromptAt = now + 800;
+    nextMoonyAt = now + 5000;
+    cancelAnimationFrame(rafHandle);
+    rafHandle = requestAnimationFrame(loop);
+    setTimeout(timer, 1000);
+  }
+
+  function endGame() {
+    running = false;
+    cancelAnimationFrame(rafHandle);
+    gameScreen.style.display = 'none';
+    gameoverScreen.style.display = 'flex';
+    gameoverScreen.style.flexDirection = 'column';
+    gameoverScreen.style.height = '100vh';
+    $('final-score').textContent = (pnl < 0 ? '-' : '') + Math.abs(pnl);
+    $('final-hits').textContent = hits;
+    $('final-misses').textContent = misses;
+    $('final-best-streak').textContent = bestStreak;
+    $('roast-msg').textContent = ROASTS[Math.floor(Math.random() * ROASTS.length)];
+    $('gameover-title').textContent = pnl >= 0 ? 'CLOSING BELL' : 'BLEEDING OUT';
+    const high = +localStorage.getItem(HIGH_KEY) || 0;
+    if (pnl > high) localStorage.setItem(HIGH_KEY, pnl);
+    showHigh();
+    if (window.DippyLB && window.DippyLB.onGameOver) window.DippyLB.onGameOver(pnl);
+  }
+
+  window.startGame = startGame;
+  if (window.DippyLB && window.DippyLB.init) window.DippyLB.init('flip-ticker');
+})();
+</script>
+{{ end }}
