@@ -1,0 +1,548 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">MIDDAY MIRAGE</h1>
+    <p class="game-subtitle">Your PnL pumps through the morning.<br>It peaks somewhere in mid-session.<br>Then it fades. LOCK IN before the mirage dies.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">OPEN POSITION</button>
+    <p class="game-hint">Hit LOCK to bank the chart's current peak.<br>Lock too early = you leave the runner alone.<br>Lock too late = profit fades to dust.<br>Three fades in a row and Moony takes your seat.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">BANKED</span>
+        <span class="hud-value" id="banked">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">UNREAL</span>
+        <span class="hud-value" id="unreal">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">ROUND</span>
+        <span class="hud-value" id="round">1</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">FADES</span>
+        <span class="hud-value" id="fades">0/3</span>
+      </div>
+    </div>
+
+    <div id="board">
+      <div id="ticker-row">
+        <span id="ticker-sym">---</span>
+        <span id="ticker-status">scanning…</span>
+      </div>
+      <canvas id="chart"></canvas>
+      <div id="peak-tag">PEAK: $0</div>
+      <div id="moony-bubble"></div>
+    </div>
+
+    <div id="lock-row">
+      <button id="lock-btn" class="lock-btn">LOCK IN</button>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">CLOSING BELL</h1>
+    <div class="final-score">$<span id="final-score">0</span></div>
+    <p class="final-meta"><span id="final-rounds">0</span> positions banked / <span id="final-fades">0</span> mirages</p>
+    <p class="final-meta">Biggest peak banked: $<span id="final-biggest">0</span></p>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">NEW SESSION</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  /* Title */
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:2.2em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; text-align:center; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 48px; font-size:1.2em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.75em; margin-top:16px; line-height:1.6; max-width:340px; }
+
+  /* HUD */
+  .game-hud { display:grid; grid-template-columns:repeat(4,1fr); padding:8px 6px; background:rgba(0,0,0,0.4); border-bottom:1px solid #21262d; }
+  .hud-item { text-align:center; }
+  .hud-label { display:block; font-size:0.55em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1em; color:#00ff88; font-weight:bold; transition:color 0.15s; }
+  .hud-value.red { color:#ff5050; }
+  .hud-value.warn { color:#f0883e; }
+
+  /* Board */
+  #board { flex:1; position:relative; padding:14px; background:linear-gradient(180deg,#161b22 0%,#0d1117 100%); display:flex; flex-direction:column; }
+  #ticker-row { display:flex; align-items:center; justify-content:space-between; padding:6px 10px 10px; font-size:0.85em; letter-spacing:2px; }
+  #ticker-sym { color:#e6edf3; font-weight:bold; font-size:1.2em; }
+  #ticker-status { color:#8b949e; font-size:0.8em; letter-spacing:1px; }
+  #ticker-status.live { color:#00ff88; }
+  #ticker-status.fading { color:#ff5050; }
+
+  #chart { flex:1; width:100%; display:block; background:rgba(13,17,23,0.6); border:1px solid #21262d; border-radius:8px; }
+
+  #peak-tag { position:absolute; top:50px; right:18px; padding:4px 10px; background:rgba(240,136,62,0.15); border:1px solid #f0883e; color:#f0883e; font-size:0.7em; letter-spacing:1px; border-radius:14px; opacity:0; transition:opacity 0.3s; pointer-events:none; }
+  #peak-tag.show { opacity:1; }
+
+  #moony-bubble { position:absolute; left:50%; bottom:18px; transform:translateX(-50%); padding:6px 12px; background:rgba(139,148,158,0.18); border:1px solid #484f58; border-radius:14px; color:#8b949e; font-size:0.7em; letter-spacing:1px; opacity:0; pointer-events:none; transition:opacity 0.25s; max-width:96%; text-align:center; line-height:1.3; }
+  #moony-bubble.show { opacity:1; }
+
+  /* Lock button */
+  #lock-row { padding:14px 12px; background:rgba(0,0,0,0.5); }
+  .lock-btn { width:100%; padding:18px 8px; border:none; border-radius:10px; font-family:inherit; font-size:1.4em; font-weight:bold; letter-spacing:3px; cursor:pointer; transition:transform 0.08s, box-shadow 0.08s; background:linear-gradient(180deg,#f0883e,#cc6c2a); color:#0d1117; box-shadow:0 6px 0 #7a3f15, 0 0 18px rgba(240,136,62,0.35); }
+  .lock-btn:active { transform:translateY(4px); box-shadow:0 2px 0 #7a3f15, 0 0 12px rgba(240,136,62,0.5); }
+  .lock-btn.armed { background:linear-gradient(180deg,#00ff88,#00cc6e); box-shadow:0 6px 0 #00994f, 0 0 22px rgba(0,255,136,0.4); }
+  .lock-btn:disabled { opacity:0.5; cursor:not-allowed; }
+
+  /* Flashes & pops */
+  .pnl-pop { position:absolute; pointer-events:none; z-index:25; font-size:1.4em; font-weight:bold; letter-spacing:2px; animation:pnlPop 1.1s ease-out forwards; }
+  .pnl-pop.gain { color:#00ff88; text-shadow:0 0 10px rgba(0,255,136,0.8); }
+  .pnl-pop.loss { color:#ff5050; text-shadow:0 0 10px rgba(255,80,80,0.8); }
+  .pnl-pop.peak { color:#f0883e; text-shadow:0 0 10px rgba(240,136,62,0.8); }
+  @keyframes pnlPop { 0%{opacity:1;transform:translate(-50%,0) scale(1)} 100%{opacity:0;transform:translate(-50%,-60px) scale(1.3)} }
+  .death-flash { position:absolute; inset:0; pointer-events:none; z-index:30; animation:deathFlash 0.45s ease-out forwards; }
+  @keyframes deathFlash { 0%{background:rgba(255,80,80,0.5)} 100%{background:transparent} }
+  .win-flash { position:absolute; inset:0; pointer-events:none; z-index:30; animation:winFlash 0.4s ease-out forwards; }
+  @keyframes winFlash { 0%{background:rgba(0,255,136,0.28)} 100%{background:transparent} }
+  .peak-flash { position:absolute; inset:0; pointer-events:none; z-index:30; animation:peakFlash 0.45s ease-out forwards; }
+  @keyframes peakFlash { 0%{background:rgba(240,136,62,0.35)} 100%{background:transparent} }
+
+  /* Game Over */
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.5); margin:8px 0 4px; }
+  .final-meta { color:#8b949e; font-size:0.78em; margin:2px 0; letter-spacing:1px; }
+  .roast-msg { color:#f0883e; font-size:0.9em; margin:18px 8px 8px; max-width:340px; line-height:1.5; font-style:italic; }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  const HIGH_KEY = 'dippy-midday-mirage-high';
+  const SYMBOLS = ['NFLX','SMCI','CRWD','COIN','TSLA','NVDA','AMZN','MSTR','AAPL','QQQ','SPY','PLTR'];
+  const MOONY_LINES = [
+    "MOONY: hold for the long term.",
+    "MOONY: a peak is just a higher low.",
+    "MOONY: don't lock — fundamentals.",
+    "MOONY: this one's a multi-year hold.",
+    "MOONY: tops are for losers.",
+    "MOONY: my model says higher.",
+    "MOONY: trust the trend.",
+    "MOONY: paper hands lock here.",
+    "MOONY: ten-bagger incoming.",
+    "MOONY: I never sell.",
+    "MOONY: midday is the new open.",
+    "MOONY: this PnL feels permanent."
+  ];
+  const ROASTS = [
+    "Moony held all three runners into the close. All three closed red. He called it 'conviction.'",
+    "Moony saw a midday +$248 print and added MORE size. The print evaporated. He's still posting screenshots of the peak.",
+    "Moony's model says peaks are noise. The noise is now -$300. The model is unchanged.",
+    "Moony's strategy is 'never lock.' His PnL is unchanged from 2024.",
+    "Moony watched the mirage fade and tweeted 'great entry forming.' It wasn't.",
+    "Moony's broker called to ask if he meant to ride this position to zero. He meant to.",
+    "Moony's risk manager begged him to lock at the peak. He said 'mirages don't exist.' The position closed at $0.",
+    "Moony sold at the bottom and bought back at the top. He calls it 'reverse mean reversion.'",
+    "Moony's portfolio is a museum of midday peaks that he refused to lock.",
+    "Moony's stop loss is 'when it comes back to even.' The position is delisted.",
+    "Moony said 'the peak is a starting line.' The peak was an exit. He took the wrong door.",
+    "Moony's diary entry from the peak: 'I have so much edge.' Diary entry from the close: 'edge is a construct.'"
+  ];
+
+  const $ = id => document.getElementById(id);
+  const titleScreen = $('title-screen');
+  const gameScreen = $('game-screen');
+  const gameoverScreen = $('gameover-screen');
+  const lockBtn = $('lock-btn');
+  const board = $('board');
+  const canvas = $('chart');
+  const ctx = canvas.getContext('2d');
+  const tickerSym = $('ticker-sym');
+  const tickerStatus = $('ticker-status');
+  const peakTag = $('peak-tag');
+  const moonyBubble = $('moony-bubble');
+  const titleHigh = $('title-high-score');
+
+  let banked = 0, round = 1, fades = 0, bestPeak = 0;
+  let running = false;
+  let activeRound = null;
+  let nextMoonyAt = 0;
+  let rafHandle = 0;
+
+  function showHigh() {
+    const h = +localStorage.getItem(HIGH_KEY) || 0;
+    titleHigh.textContent = h > 0 ? `BEST: $${h}` : '';
+  }
+  showHigh();
+
+  function sizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.max(2, Math.floor(rect.width * dpr));
+    canvas.height = Math.max(2, Math.floor(rect.height * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function startRound() {
+    activeRound = {
+      startTs: performance.now(),
+      duration: rand(5500, 7200) - Math.min(round * 180, 2800), // gets shorter as round grows
+      sym: pick(SYMBOLS),
+      // Peak parameters
+      peakTime: 0,
+      peakValue: 0,
+      // Trajectory: build a series of [t, pnl] points using a curve shape
+      curve: [],
+      currentPnl: 0,
+      currentTime: 0,
+      maxSoFar: 0,
+      maxSoFarTime: 0,
+      faded: false,
+      locked: false,
+      // Round difficulty
+      volatility: 0.18 + Math.min(round * 0.012, 0.18),
+      // Fake-out behavior: small dips before real peak
+      fakePeaks: Math.min(Math.floor(round / 2), 3)
+    };
+
+    // Build a curve: starts at 0, rises with noise, peaks, then falls.
+    // Peak position varies (0.35 - 0.75 of duration). Peak value scales with round.
+    const peakPosFrac = rand(0.32, 0.72);
+    activeRound.peakTime = activeRound.duration * peakPosFrac;
+    const basePeakVal = 110 + round * 25 + rand(-40, 80);
+    activeRound.peakValue = Math.max(40, basePeakVal);
+
+    tickerSym.textContent = activeRound.sym;
+    tickerStatus.textContent = 'tracking…';
+    tickerStatus.className = 'live';
+    peakTag.classList.remove('show');
+    lockBtn.classList.remove('armed');
+    $('round').textContent = round;
+    $('unreal').textContent = '$0';
+    $('unreal').className = 'hud-value';
+
+    // Pre-generate noisy curve points so animation is deterministic-ish
+    const steps = 160;
+    let prev = 0;
+    let prevVel = 0;
+    for (let i = 0; i < steps; i++) {
+      const t = (i / (steps - 1)) * activeRound.duration;
+      // Underlying smooth curve: rise then fall (parabola-like)
+      const x = t / activeRound.duration;
+      const peakX = peakPosFrac;
+      let base;
+      if (x <= peakX) {
+        // Rise: smooth ease-out
+        const u = x / peakX;
+        base = activeRound.peakValue * (1 - Math.pow(1 - u, 2.2));
+      } else {
+        // Fall: faster, can go negative
+        const u = (x - peakX) / (1 - peakX);
+        base = activeRound.peakValue * (1 - Math.pow(u, 1.4) * 1.45);
+      }
+      // Inject fake-out micro-dips before the real peak
+      if (x < peakX) {
+        const fakes = activeRound.fakePeaks;
+        for (let k = 1; k <= fakes; k++) {
+          const fakeX = (k / (fakes + 1)) * peakX * 0.9;
+          const dist = Math.abs(x - fakeX);
+          const sigma = 0.04;
+          if (dist < sigma * 3) {
+            base -= 12 * Math.exp(-(dist * dist) / (2 * sigma * sigma));
+          }
+        }
+      }
+      // Add momentum noise
+      const noiseTarget = base + rand(-1, 1) * activeRound.peakValue * activeRound.volatility;
+      const velTarget = (noiseTarget - prev) * 0.45;
+      prevVel = prevVel * 0.55 + velTarget * 0.45;
+      prev = prev + prevVel;
+      activeRound.curve.push({ t, p: prev });
+    }
+    sizeCanvas();
+  }
+
+  function maybeMoony(now) {
+    if (now < nextMoonyAt) return;
+    nextMoonyAt = now + 3200 + Math.random() * 1800;
+    moonyBubble.textContent = pick(MOONY_LINES);
+    moonyBubble.classList.add('show');
+    setTimeout(() => moonyBubble.classList.remove('show'), 1900);
+  }
+
+  function currentPnl(round, t) {
+    // Interpolate
+    const curve = round.curve;
+    if (t <= 0) return curve[0].p;
+    if (t >= round.duration) return curve[curve.length - 1].p;
+    const idxF = (t / round.duration) * (curve.length - 1);
+    const i = Math.floor(idxF);
+    const j = Math.min(curve.length - 1, i + 1);
+    const frac = idxF - i;
+    return curve[i].p * (1 - frac) + curve[j].p * frac;
+  }
+
+  function draw() {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    ctx.clearRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = 'rgba(48,54,61,0.5)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 4; i++) {
+      const gy = (h / 4) * i;
+      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(w, gy); ctx.stroke();
+    }
+    // Zero line
+    const r = activeRound;
+    const peakDisplay = Math.max(80, r.peakValue * 1.35);
+    const minDisplay = -peakDisplay * 0.55;
+    const range = peakDisplay - minDisplay;
+    const yFor = p => h - ((p - minDisplay) / range) * h;
+    ctx.strokeStyle = 'rgba(139,148,158,0.5)';
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    const zeroY = yFor(0);
+    ctx.moveTo(0, zeroY); ctx.lineTo(w, zeroY); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Curve up to currentTime
+    const xFor = t => (t / r.duration) * w;
+    const elapsed = r.currentTime;
+    ctx.lineWidth = 2.5;
+    // Pick color based on current sign and fade
+    const lastP = r.currentPnl;
+    const isFading = r.maxSoFar > 25 && lastP < r.maxSoFar - 8;
+    const lineColor = lastP < 0 ? '#ff5050' : (isFading ? '#f0883e' : '#00ff88');
+    ctx.strokeStyle = lineColor;
+    ctx.shadowColor = lineColor;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    let started = false;
+    for (let i = 0; i < r.curve.length; i++) {
+      const pt = r.curve[i];
+      if (pt.t > elapsed) break;
+      const x = xFor(pt.t), y = yFor(pt.p);
+      if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+    }
+    // Interpolate to current point
+    const cx = xFor(elapsed), cy = yFor(lastP);
+    if (started) ctx.lineTo(cx, cy);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Marker dot
+    ctx.fillStyle = lineColor;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Peak marker (shown only after a real peak revealed by fade)
+    if (isFading && r.maxSoFar > 30) {
+      const px = xFor(r.maxSoFarTime), py = yFor(r.maxSoFar);
+      ctx.strokeStyle = '#f0883e';
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(px, 0); ctx.lineTo(px, h); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#f0883e';
+      ctx.beginPath();
+      ctx.arc(px, py, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function lockIn() {
+    if (!running || !activeRound || activeRound.locked) return;
+    activeRound.locked = true;
+    const pnl = Math.round(activeRound.currentPnl);
+    const peak = Math.round(activeRound.maxSoFar);
+    banked += pnl;
+    if (pnl > bestPeak) bestPeak = pnl;
+    const bankEl = $('banked');
+    bankEl.textContent = (banked < 0 ? '-$' : '$') + Math.abs(banked);
+    bankEl.classList.toggle('red', banked < 0);
+    // Visual feedback
+    const boardRect = board.getBoundingClientRect();
+    const popX = boardRect.width / 2;
+    const popY = 60;
+    showPop(popX, popY, (pnl >= 0 ? '+$' + pnl : '-$' + Math.abs(pnl)), pnl >= 0 ? 'gain' : 'loss');
+    if (pnl >= peak * 0.85 && peak > 30) {
+      flashColor('peak-flash');
+      setTimeout(() => showPop(popX, popY + 36, 'CLEAN PEAK', 'peak'), 80);
+    } else if (pnl > 0) {
+      flashColor('win-flash');
+    } else {
+      flashColor('death-flash');
+      fades++;
+      $('fades').textContent = fades + '/3';
+      const fadesEl = $('fades');
+      fadesEl.className = 'hud-value' + (fades >= 2 ? ' warn' : '') + (fades >= 3 ? ' red' : '');
+    }
+    setTimeout(nextRound, 950);
+  }
+
+  function timeoutRound() {
+    if (!activeRound || activeRound.locked) return;
+    activeRound.locked = true;
+    // Mirage fully evaporated
+    fades++;
+    $('fades').textContent = fades + '/3';
+    const fadesEl = $('fades');
+    fadesEl.className = 'hud-value warn';
+    if (fades >= 3) fadesEl.className = 'hud-value red';
+    tickerStatus.textContent = 'FADED';
+    tickerStatus.className = 'fading';
+    flashColor('death-flash');
+    const boardRect = board.getBoundingClientRect();
+    showPop(boardRect.width / 2, 60, 'MIRAGE', 'loss');
+    setTimeout(nextRound, 1100);
+  }
+
+  function nextRound() {
+    if (!running) return;
+    if (fades >= 3) { endGame(); return; }
+    round++;
+    startRound();
+  }
+
+  function showPop(x, y, txt, cls) {
+    const p = document.createElement('div');
+    p.className = 'pnl-pop ' + cls;
+    p.textContent = txt;
+    p.style.left = x + 'px';
+    p.style.top = y + 'px';
+    p.style.transform = 'translate(-50%, 0)';
+    board.appendChild(p);
+    setTimeout(() => p.remove(), 1100);
+  }
+
+  function flashColor(cls) {
+    const f = document.createElement('div');
+    f.className = cls;
+    board.appendChild(f);
+    setTimeout(() => f.remove(), 460);
+  }
+
+  function loop(now) {
+    if (!running) return;
+    if (!activeRound) { rafHandle = requestAnimationFrame(loop); return; }
+    const r = activeRound;
+    if (!r.locked) {
+      r.currentTime = now - r.startTs;
+      if (r.currentTime > r.duration) {
+        timeoutRound();
+      } else {
+        r.currentPnl = currentPnl(r, r.currentTime);
+        if (r.currentPnl > r.maxSoFar) {
+          r.maxSoFar = r.currentPnl;
+          r.maxSoFarTime = r.currentTime;
+        }
+        const unrealEl = $('unreal');
+        const display = Math.round(r.currentPnl);
+        unrealEl.textContent = (display < 0 ? '-$' : '$') + Math.abs(display);
+        unrealEl.className = 'hud-value' + (display < 0 ? ' red' : (r.maxSoFar > 30 && r.currentPnl < r.maxSoFar - 8 ? ' warn' : ''));
+        // Arm lock button when there's profit
+        if (r.currentPnl > 30) lockBtn.classList.add('armed'); else lockBtn.classList.remove('armed');
+        // Show peak tag once fade detected
+        if (r.maxSoFar > 30 && r.currentPnl < r.maxSoFar - 12) {
+          peakTag.textContent = 'PEAK: $' + Math.round(r.maxSoFar);
+          peakTag.classList.add('show');
+          tickerStatus.textContent = 'fading…';
+          tickerStatus.className = 'fading';
+        } else if (r.currentPnl > 0) {
+          tickerStatus.textContent = 'pumping';
+          tickerStatus.className = 'live';
+        }
+        draw();
+      }
+    }
+    maybeMoony(now);
+    rafHandle = requestAnimationFrame(loop);
+  }
+
+  lockBtn.addEventListener('click', e => { e.preventDefault(); lockIn(); });
+  lockBtn.addEventListener('touchstart', e => { e.preventDefault(); lockIn(); }, {passive:false});
+  window.addEventListener('keydown', e => {
+    if (!running) return;
+    if (e.code === 'Space' || e.key === 'Enter' || e.key.toLowerCase() === 'l') {
+      e.preventDefault(); lockIn();
+    }
+  });
+  window.addEventListener('resize', () => { if (running) sizeCanvas(); });
+
+  function startGame() {
+    titleScreen.style.display = 'none';
+    gameoverScreen.style.display = 'none';
+    gameScreen.style.display = 'flex';
+    gameScreen.style.flexDirection = 'column';
+    gameScreen.style.height = '100vh';
+    banked = 0; round = 0; fades = 0; bestPeak = 0;
+    $('banked').textContent = '$0';
+    $('banked').className = 'hud-value';
+    $('fades').textContent = '0/3';
+    $('fades').className = 'hud-value';
+    running = true;
+    nextMoonyAt = performance.now() + 2200;
+    nextRound();
+    cancelAnimationFrame(rafHandle);
+    rafHandle = requestAnimationFrame(loop);
+  }
+
+  function endGame() {
+    running = false;
+    cancelAnimationFrame(rafHandle);
+    gameScreen.style.display = 'none';
+    gameoverScreen.style.display = 'flex';
+    gameoverScreen.style.flexDirection = 'column';
+    gameoverScreen.style.height = '100vh';
+    $('final-score').textContent = (banked < 0 ? '-' : '') + Math.abs(banked);
+    $('final-rounds').textContent = round;
+    $('final-fades').textContent = fades;
+    $('final-biggest').textContent = bestPeak;
+    $('roast-msg').textContent = ROASTS[Math.floor(Math.random() * ROASTS.length)];
+    $('gameover-title').textContent = banked >= 0 ? 'BANKED OUT' : 'MIRAGE BLED';
+    const high = +localStorage.getItem(HIGH_KEY) || 0;
+    if (banked > high) localStorage.setItem(HIGH_KEY, banked);
+    showHigh();
+    if (window.DippyLB && window.DippyLB.onGameOver) window.DippyLB.onGameOver(banked);
+  }
+
+  window.startGame = startGame;
+  if (window.DippyLB && window.DippyLB.init) window.DippyLB.init('midday-mirage');
+})();
+</script>
+{{ end }}
