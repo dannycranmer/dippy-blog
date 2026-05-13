@@ -1,0 +1,486 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">RE-ENTRY RAMPAGE</h1>
+    <p class="game-subtitle">A partial exit just banked the win.<br>The breakout fires again — but only for a moment.<br>Re-enter the green ones. Skip the red fakeouts.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">FIRE THE SCANNER</button>
+    <p class="game-hint">GREEN window = real breakout. Tap RE-ENTER to compound.<br>RED window = Moony fakeout. DO NOT tap. Wait it out.<br>Miss 3 greens in a row and the cascade dies.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">BANKED</span>
+        <span class="hud-value" id="hud-banked">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">MULT</span>
+        <span class="hud-value" id="hud-mult">1.0x</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">STREAK</span>
+        <span class="hud-value" id="hud-streak">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">MISS</span>
+        <span class="hud-value" id="hud-miss">0/3</span>
+      </div>
+    </div>
+
+    <div id="board">
+      <div id="ticker-row">
+        <span id="ticker-sym">---</span>
+        <span id="ticker-status">scanning…</span>
+      </div>
+
+      <div id="event-zone">
+        <div id="pe-pop"></div>
+        <div id="signal-card">
+          <div id="signal-label">WAITING</div>
+          <div id="signal-bar"><div id="signal-bar-fill"></div></div>
+          <div id="signal-meta"></div>
+        </div>
+      </div>
+
+      <div id="moony-bubble"></div>
+    </div>
+
+    <div id="action-row">
+      <button id="reenter-btn" class="reenter-btn">RE-ENTER</button>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">CASCADE DEAD</h1>
+    <div class="final-score">$<span id="final-score">0</span></div>
+    <p class="final-meta"><span id="final-reentries">0</span> re-entries / <span id="final-misses">0</span> misses / <span id="final-fakes">0</span> fakeouts</p>
+    <p class="final-meta">Best streak: <span id="final-best-streak">0</span> · Peak mult: <span id="final-peak-mult">1.0x</span></p>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">FIRE AGAIN</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:2em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; text-align:center; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 36px; font-size:1.1em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.75em; margin-top:16px; line-height:1.6; max-width:340px; }
+
+  .game-hud { display:grid; grid-template-columns:repeat(4,1fr); padding:10px 6px; background:rgba(0,0,0,0.4); border-bottom:1px solid #21262d; }
+  .hud-item { text-align:center; }
+  .hud-label { display:block; font-size:0.55em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1em; color:#00ff88; font-weight:bold; transition:color 0.15s; }
+  .hud-value.red { color:#ff5050; }
+  .hud-value.warn { color:#f0883e; }
+
+  #board { flex:1; position:relative; padding:14px; background:linear-gradient(180deg,#161b22 0%,#0d1117 100%); display:flex; flex-direction:column; align-items:center; justify-content:flex-start; }
+  #ticker-row { width:100%; display:flex; align-items:center; justify-content:space-between; padding:6px 10px 14px; font-size:0.85em; letter-spacing:2px; }
+  #ticker-sym { color:#e6edf3; font-weight:bold; font-size:1.4em; }
+  #ticker-status { color:#8b949e; font-size:0.75em; letter-spacing:1px; }
+  #ticker-status.live { color:#00ff88; }
+  #ticker-status.fake { color:#ff5050; }
+
+  #event-zone { width:100%; flex:1; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:240px; }
+
+  #pe-pop { position:absolute; top:18px; left:50%; transform:translateX(-50%); padding:6px 14px; background:rgba(0,255,136,0.15); border:1px solid #00ff88; color:#00ff88; font-size:0.85em; letter-spacing:1.5px; border-radius:14px; opacity:0; transition:opacity 0.25s; pointer-events:none; white-space:nowrap; }
+  #pe-pop.show { opacity:1; }
+
+  #signal-card { width:90%; max-width:340px; padding:22px 18px; border-radius:14px; border:2px solid #21262d; background:rgba(13,17,23,0.7); transition:all 0.2s; opacity:0.6; }
+  #signal-card.active.real { border-color:#00ff88; background:rgba(0,255,136,0.08); opacity:1; box-shadow:0 0 24px rgba(0,255,136,0.25); }
+  #signal-card.active.fake { border-color:#ff5050; background:rgba(255,80,80,0.08); opacity:1; box-shadow:0 0 24px rgba(255,80,80,0.25); }
+  #signal-label { text-align:center; font-size:1.05em; letter-spacing:3px; font-weight:bold; color:#8b949e; margin-bottom:14px; }
+  #signal-card.active.real #signal-label { color:#00ff88; }
+  #signal-card.active.fake #signal-label { color:#ff5050; }
+
+  #signal-bar { width:100%; height:10px; background:rgba(255,255,255,0.06); border-radius:6px; overflow:hidden; margin-bottom:10px; }
+  #signal-bar-fill { height:100%; width:0%; background:#00ff88; transition:none; }
+  #signal-card.active.fake #signal-bar-fill { background:#ff5050; }
+
+  #signal-meta { text-align:center; font-size:0.7em; color:#8b949e; letter-spacing:1px; min-height:0.95em; }
+
+  #moony-bubble { position:absolute; left:50%; bottom:14px; transform:translateX(-50%); padding:6px 12px; background:rgba(139,148,158,0.18); border:1px solid #484f58; border-radius:14px; color:#8b949e; font-size:0.7em; letter-spacing:1px; opacity:0; pointer-events:none; transition:opacity 0.25s; max-width:96%; text-align:center; line-height:1.3; }
+  #moony-bubble.show { opacity:1; }
+
+  #action-row { padding:14px 12px; background:rgba(0,0,0,0.55); }
+  .reenter-btn { width:100%; padding:18px 8px; border:none; border-radius:10px; font-family:inherit; font-size:1.4em; font-weight:bold; letter-spacing:3px; cursor:pointer; transition:transform 0.08s, box-shadow 0.08s, background 0.15s;
+    background:linear-gradient(180deg,#3a414b,#21262d); color:#8b949e; box-shadow:0 6px 0 #161b22, 0 0 12px rgba(0,0,0,0.5); }
+  .reenter-btn.armed { background:linear-gradient(180deg,#00ff88,#00cc6e); color:#0d1117; box-shadow:0 6px 0 #00994f, 0 0 22px rgba(0,255,136,0.4); }
+  .reenter-btn.danger { background:linear-gradient(180deg,#ff5050,#cc2a2a); color:#0d1117; box-shadow:0 6px 0 #7a1414, 0 0 22px rgba(255,80,80,0.4); }
+  .reenter-btn:active { transform:translateY(4px); box-shadow:0 2px 0 #161b22; }
+  .reenter-btn:disabled { opacity:0.5; cursor:not-allowed; }
+
+  .pnl-pop { position:absolute; pointer-events:none; z-index:25; font-size:1.4em; font-weight:bold; letter-spacing:2px; animation:pnlPop 1s ease-out forwards; }
+  .pnl-pop.gain { color:#00ff88; text-shadow:0 0 10px rgba(0,255,136,0.8); }
+  .pnl-pop.loss { color:#ff5050; text-shadow:0 0 10px rgba(255,80,80,0.8); }
+  .pnl-pop.compound { color:#f0883e; text-shadow:0 0 10px rgba(240,136,62,0.8); }
+  @keyframes pnlPop { 0%{opacity:1;transform:translate(-50%,0) scale(1)} 100%{opacity:0;transform:translate(-50%,-60px) scale(1.3)} }
+
+  .green-flash { position:absolute; inset:0; pointer-events:none; z-index:30; animation:gflash 0.4s ease-out forwards; }
+  @keyframes gflash { 0%{background:rgba(0,255,136,0.28)} 100%{background:transparent} }
+  .red-flash { position:absolute; inset:0; pointer-events:none; z-index:30; animation:rflash 0.5s ease-out forwards; }
+  @keyframes rflash { 0%{background:rgba(255,80,80,0.4)} 100%{background:transparent} }
+
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.5); margin:8px 0 4px; }
+  .final-meta { color:#8b949e; font-size:0.78em; margin:2px 0; letter-spacing:1px; }
+  .roast-msg { color:#f0883e; font-size:0.9em; margin:18px 8px 8px; max-width:340px; line-height:1.5; font-style:italic; }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  const HIGH_KEY = 'dippy-re-entry-rampage-high';
+  const SYMBOLS = ['NFLX','SMCI','CRWD','COIN','TSLA','NVDA','AMZN','MSTR','AAPL','QQQ','SPY','PLTR','ARM','AVGO'];
+  const MOONY_LINES = [
+    "MOONY: re-entries are gambling.",
+    "MOONY: I prefer to hold for tax purposes.",
+    "MOONY: the breakout is already over, trust me.",
+    "MOONY: this looks like a fakeout, pass.",
+    "MOONY: my model says no re-entry.",
+    "MOONY: that ticker is overbought.",
+    "MOONY: I'm 70% cash and proud.",
+    "MOONY: re-entry is just FOMO with a haircut.",
+    "MOONY: the trend is ending soon.",
+    "MOONY: fundamentals over momentum, always.",
+    "MOONY: skip this one, fade is coming.",
+    "MOONY: I never chase. I just wait."
+  ];
+  const ROASTS = [
+    "Moony missed every re-entry and called it 'patience.' His position size is still zero.",
+    "Moony tapped every red fakeout and asked why the bot was 'sabotaging' him.",
+    "Moony refused to compound the winner. The winner compounded without him.",
+    "Moony's re-entry strategy: read a 10-K first. He's still on page 4.",
+    "Moony saw a 5x multiplier and said 'too speculative.' The 5x banked. He banked nothing.",
+    "Moony's signal classifier flagged every breakout as 'fakeout'. Six PEs printed. He missed all six.",
+    "Moony built a re-entry filter using DCF. The filter said HOLD. The breakout went 4R.",
+    "Moony's risk model said skip the cascade. The cascade banked $1,200. The model is unchanged.",
+    "Moony manually overrode the re-enter signal because 'gut.' His gut was wrong six times in a row.",
+    "Moony's cascade went 0/6. He retitled it 'capital preservation.'",
+    "Moony's compound multiplier stayed at 1.0x for the entire session. He says he's 'managing variance.'",
+    "Moony got every fakeout AND missed every real breakout. He calls this 'balanced exposure.'"
+  ];
+
+  const $ = id => document.getElementById(id);
+  const titleScreen = $('title-screen');
+  const gameScreen = $('game-screen');
+  const gameoverScreen = $('gameover-screen');
+  const reenterBtn = $('reenter-btn');
+  const board = $('board');
+  const tickerSym = $('ticker-sym');
+  const tickerStatus = $('ticker-status');
+  const signalCard = $('signal-card');
+  const signalLabel = $('signal-label');
+  const signalBarFill = $('signal-bar-fill');
+  const signalMeta = $('signal-meta');
+  const pePop = $('pe-pop');
+  const moonyBubble = $('moony-bubble');
+  const titleHigh = $('title-high-score');
+  const hudBanked = $('hud-banked');
+  const hudMult = $('hud-mult');
+  const hudStreak = $('hud-streak');
+  const hudMiss = $('hud-miss');
+
+  let banked = 0, streak = 0, bestStreak = 0, mult = 1.0, peakMult = 1.0;
+  let misses = 0, missesInRow = 0;
+  let reentries = 0, fakeoutTraps = 0;
+  let round = 0;
+  let running = false;
+  let activeWindow = null;
+  let nextEventAt = 0;
+  let rafHandle = 0;
+  let nextMoonyAt = 0;
+
+  function showHigh() {
+    const h = +localStorage.getItem(HIGH_KEY) || 0;
+    titleHigh.textContent = h > 0 ? `BEST: $${h.toLocaleString()}` : '';
+  }
+  showHigh();
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function updateHUD() {
+    hudBanked.textContent = '$' + Math.round(banked).toLocaleString();
+    hudMult.textContent = mult.toFixed(1) + 'x';
+    hudStreak.textContent = streak;
+    hudMiss.textContent = missesInRow + '/3';
+    hudBanked.classList.toggle('red', banked < 0);
+    hudMult.classList.toggle('warn', mult >= 3);
+    hudStreak.classList.toggle('warn', streak >= 5);
+    hudMiss.classList.toggle('red', missesInRow >= 2);
+  }
+
+  function popText(html, cls) {
+    const el = document.createElement('div');
+    el.className = 'pnl-pop ' + cls;
+    el.innerHTML = html;
+    const r = board.getBoundingClientRect();
+    el.style.left = '50%';
+    el.style.top = (r.height * 0.42) + 'px';
+    el.style.transform = 'translate(-50%, 0)';
+    board.appendChild(el);
+    setTimeout(() => el.remove(), 1050);
+  }
+
+  function flash(cls) {
+    const el = document.createElement('div');
+    el.className = cls;
+    board.appendChild(el);
+    setTimeout(() => el.remove(), 600);
+  }
+
+  function showMoony() {
+    moonyBubble.textContent = pick(MOONY_LINES);
+    moonyBubble.classList.add('show');
+    setTimeout(() => moonyBubble.classList.remove('show'), 1400);
+  }
+
+  function showPE(amount) {
+    pePop.textContent = `PE +$${amount}`;
+    pePop.classList.add('show');
+    setTimeout(() => pePop.classList.remove('show'), 1000);
+  }
+
+  function setIdle() {
+    activeWindow = null;
+    signalCard.classList.remove('active', 'real', 'fake');
+    signalLabel.textContent = 'WAITING';
+    signalBarFill.style.width = '0%';
+    signalMeta.textContent = '';
+    reenterBtn.classList.remove('armed', 'danger');
+    reenterBtn.disabled = true;
+    tickerStatus.textContent = 'scanning…';
+    tickerStatus.classList.remove('live', 'fake');
+  }
+
+  function startEvent() {
+    round++;
+    const sym = pick(SYMBOLS);
+    tickerSym.textContent = sym;
+
+    // PE banks first
+    const pePayout = Math.round(40 * mult);
+    banked += pePayout;
+    showPE(pePayout);
+    updateHUD();
+
+    // After PE pop, decide signal type and open the window
+    setTimeout(() => {
+      // Fakeout chance ramps with round (5% to 28%, slower than window shrink)
+      const fakeChance = Math.min(0.05 + round * 0.012, 0.28);
+      const isFake = Math.random() < fakeChance;
+
+      // Window shrinks: 2.2s -> 0.7s floor (faster than midday-mirage to make it punchy)
+      const windowMs = Math.max(700, 2200 - round * 70);
+
+      activeWindow = {
+        sym,
+        isFake,
+        startTs: performance.now(),
+        durationMs: windowMs,
+        resolved: false
+      };
+
+      signalCard.classList.add('active');
+      if (isFake) {
+        signalCard.classList.add('fake');
+        signalCard.classList.remove('real');
+        signalLabel.textContent = 'FAKEOUT — PASS';
+        tickerStatus.textContent = 'fakeout!';
+        tickerStatus.classList.add('fake');
+        tickerStatus.classList.remove('live');
+        reenterBtn.classList.add('danger');
+        reenterBtn.classList.remove('armed');
+        reenterBtn.disabled = false;
+      } else {
+        signalCard.classList.add('real');
+        signalCard.classList.remove('fake');
+        signalLabel.textContent = 'BREAKOUT — RE-ENTER';
+        tickerStatus.textContent = 'live signal';
+        tickerStatus.classList.add('live');
+        tickerStatus.classList.remove('fake');
+        reenterBtn.classList.add('armed');
+        reenterBtn.classList.remove('danger');
+        reenterBtn.disabled = false;
+      }
+      signalMeta.textContent = `${(windowMs / 1000).toFixed(1)}s window`;
+    }, 350);
+  }
+
+  function endEvent(nextDelayMs) {
+    setIdle();
+    nextEventAt = performance.now() + nextDelayMs;
+  }
+
+  function handlePress() {
+    if (!running) return;
+    if (!activeWindow || activeWindow.resolved) return;
+    activeWindow.resolved = true;
+    const aw = activeWindow;
+
+    if (aw.isFake) {
+      // Tapped a fakeout — punish
+      fakeoutTraps++;
+      missesInRow = 0; // not a miss in the streak sense, but reset compound
+      streak = 0;
+      mult = 1.0;
+      banked -= 60;
+      popText('FAKEOUT -$60', 'loss');
+      flash('red-flash');
+      updateHUD();
+      endEvent(rand(900, 1500));
+      if (banked < -200) return gameOver('busted');
+    } else {
+      // Real breakout, tapped in time — compound
+      reentries++;
+      streak++;
+      bestStreak = Math.max(bestStreak, streak);
+      mult = Math.min(5.0, 1 + 0.4 * streak);
+      peakMult = Math.max(peakMult, mult);
+      const bonus = Math.round(20 * mult);
+      banked += bonus;
+      popText(`+$${bonus} · ${mult.toFixed(1)}x`, 'compound');
+      flash('green-flash');
+      missesInRow = 0;
+      updateHUD();
+      endEvent(rand(700, 1200));
+    }
+  }
+
+  function tick(ts) {
+    if (!running) return;
+
+    if (activeWindow && !activeWindow.resolved) {
+      const elapsed = ts - activeWindow.startTs;
+      const frac = elapsed / activeWindow.durationMs;
+      if (frac >= 1) {
+        // Window timed out
+        activeWindow.resolved = true;
+        if (activeWindow.isFake) {
+          // Correctly skipped the fakeout — no penalty, no reward
+          popText('SKIPPED', 'compound');
+          endEvent(rand(700, 1100));
+        } else {
+          // Missed a real one
+          misses++;
+          missesInRow++;
+          streak = 0;
+          mult = 1.0;
+          popText('MISSED', 'loss');
+          flash('red-flash');
+          updateHUD();
+          if (missesInRow >= 3) return gameOver('cascade dead');
+          endEvent(rand(800, 1300));
+        }
+      } else {
+        signalBarFill.style.width = (100 - frac * 100) + '%';
+      }
+    } else if (!activeWindow && ts >= nextEventAt) {
+      startEvent();
+    }
+
+    if (ts >= nextMoonyAt) {
+      showMoony();
+      nextMoonyAt = ts + rand(2400, 4200);
+    }
+
+    rafHandle = requestAnimationFrame(tick);
+  }
+
+  function gameOver(cause) {
+    running = false;
+    cancelAnimationFrame(rafHandle);
+    setIdle();
+    const finalScore = Math.max(0, Math.round(banked));
+    $('final-score').textContent = finalScore.toLocaleString();
+    $('final-reentries').textContent = reentries;
+    $('final-misses').textContent = misses;
+    $('final-fakes').textContent = fakeoutTraps;
+    $('final-best-streak').textContent = bestStreak;
+    $('final-peak-mult').textContent = peakMult.toFixed(1) + 'x';
+    $('gameover-title').textContent = cause === 'busted' ? 'BUSTED' : 'CASCADE DEAD';
+    $('roast-msg').textContent = pick(ROASTS);
+
+    const prevHigh = +localStorage.getItem(HIGH_KEY) || 0;
+    if (finalScore > prevHigh) {
+      localStorage.setItem(HIGH_KEY, finalScore);
+    }
+    showHigh();
+
+    titleScreen.style.display = 'none';
+    gameScreen.style.display = 'none';
+    gameoverScreen.style.display = 'flex';
+
+    if (window.DippyLB && typeof window.DippyLB.onGameOver === 'function') {
+      window.DippyLB.onGameOver(finalScore);
+    }
+  }
+
+  window.startGame = function() {
+    banked = 0; streak = 0; bestStreak = 0; mult = 1.0; peakMult = 1.0;
+    misses = 0; missesInRow = 0;
+    reentries = 0; fakeoutTraps = 0;
+    round = 0;
+    running = true;
+    activeWindow = null;
+    nextEventAt = performance.now() + 600;
+    nextMoonyAt = performance.now() + rand(2000, 3500);
+
+    setIdle();
+    updateHUD();
+    titleScreen.style.display = 'none';
+    gameoverScreen.style.display = 'none';
+    gameScreen.style.display = 'flex';
+
+    rafHandle = requestAnimationFrame(tick);
+  };
+
+  reenterBtn.addEventListener('click', handlePress);
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' || e.code === 'Enter') {
+      e.preventDefault();
+      if (running) handlePress();
+    }
+  });
+
+  if (window.DippyLB && typeof window.DippyLB.init === 'function') {
+    window.DippyLB.init('re-entry-rampage');
+  }
+})();
+</script>
+{{ end }}
