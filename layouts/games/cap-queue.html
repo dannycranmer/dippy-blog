@@ -1,0 +1,639 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">CAP QUEUE</h1>
+    <p class="game-subtitle">Five slots are full. Signals pile in the queue.<br>Scores decay every second.<br>A slot opens — tap FILL before it slams shut.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">OPEN BOOK</button>
+    <p class="game-hint">Slot turns orange = ~1.2s window. Tap FILL.<br>Top queued signal takes the seat. Score × mult banked.<br>Tap with no open slot = penalty. Signal expires off queue = penalty.<br>5 in a row = x2. 10 = x3. 15 = x4. 20 = FULL DIPPY x5.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">PNL</span>
+        <span class="hud-value" id="pnl">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">STREAK</span>
+        <span class="hud-value" id="streak">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">MULT</span>
+        <span class="hud-value" id="mult">x1</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">TIME</span>
+        <span class="hud-value" id="time">60</span>
+      </div>
+    </div>
+
+    <div id="board">
+      <div class="section-label">SLOTS (5/5)</div>
+      <div id="slot-grid"></div>
+      <div class="section-label">QUEUE</div>
+      <div id="queue-strip"></div>
+      <div id="ticker-banner"></div>
+    </div>
+
+    <div id="action-row">
+      <button id="fill-btn" class="action-btn">FILL ▲</button>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">CLOSING BELL</h1>
+    <div class="final-score">$<span id="final-score">0</span></div>
+    <p class="final-meta"><span id="final-fills">0</span> fills / <span id="final-misses">0</span> missed / <span id="final-expired">0</span> expired</p>
+    <p class="final-meta"><span id="final-best-streak">0</span> longest streak</p>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">RUN AGAIN</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  /* Title */
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:2.2em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; text-align:center; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 48px; font-size:1.2em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.75em; margin-top:16px; line-height:1.5; max-width:340px; }
+
+  /* HUD */
+  .game-hud { display:grid; grid-template-columns:repeat(4,1fr); padding:8px 6px; background:rgba(0,0,0,0.4); border-bottom:1px solid #21262d; }
+  .hud-item { text-align:center; }
+  .hud-label { display:block; font-size:0.55em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1em; color:#00ff88; font-weight:bold; }
+  .hud-value.streak-hot { color:#f0883e; text-shadow:0 0 8px rgba(240,136,62,0.6); animation:pulseHot 0.6s ease-in-out infinite; }
+  @keyframes pulseHot { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
+  .hud-value.pnl-red { color:#ff5050; }
+
+  /* Board */
+  #board { flex:1; position:relative; padding:12px 10px; background:linear-gradient(180deg,#161b22 0%,#0d1117 100%); display:flex; flex-direction:column; gap:6px; overflow:hidden; }
+  .section-label { font-size:0.6em; color:#8b949e; letter-spacing:2px; padding-left:2px; }
+
+  #slot-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
+  .slot { background:#161b22; border:2px solid #00ff88; border-radius:8px; padding:8px 2px; text-align:center; position:relative; min-height:70px; box-shadow:0 0 10px rgba(0,255,136,0.18) inset; transition:border-color 0.15s, transform 0.15s, box-shadow 0.15s; }
+  .slot-sym { font-size:0.78em; font-weight:bold; color:#e6edf3; letter-spacing:1px; }
+  .slot-pnl { font-size:0.72em; color:#00ff88; margin-top:4px; }
+  .slot-bar-track { position:absolute; left:4px; right:4px; bottom:4px; height:4px; background:#21262d; border-radius:2px; overflow:hidden; }
+  .slot-bar { position:absolute; left:0; top:0; bottom:0; background:#00ff88; transition:width 0.1s linear; }
+  .slot.open { border-color:#f0883e; background:#1a1410; box-shadow:0 0 18px rgba(240,136,62,0.45) inset, 0 0 18px rgba(240,136,62,0.35); animation:pulseOpen 0.45s ease-in-out infinite; transform:translateY(-2px); }
+  .slot.open .slot-sym { color:#f0883e; }
+  .slot.open .slot-pnl { color:#f0883e; }
+  .slot.closing { border-color:#ff5050; box-shadow:0 0 18px rgba(255,80,80,0.45) inset; }
+  @keyframes pulseOpen { 0%,100%{transform:translateY(-2px) scale(1)} 50%{transform:translateY(-2px) scale(1.04)} }
+  .slot.flash-green { animation:flashGreen 0.35s ease-out; }
+  @keyframes flashGreen { 0%{background:#0fbb5c;} 100%{background:#161b22;} }
+  .slot.flash-red { animation:flashRed 0.35s ease-out; }
+  @keyframes flashRed { 0%{background:#7a1a1a;} 100%{background:#161b22;} }
+
+  #queue-strip { display:flex; flex-direction:row; gap:6px; align-items:stretch; min-height:68px; padding:2px; }
+  .qcard { flex:1; background:#161b22; border:2px solid #30363d; border-radius:8px; padding:6px 4px; text-align:center; position:relative; overflow:hidden; transition:transform 0.2s, opacity 0.2s; }
+  .qcard.top { border-color:#ffaa00; box-shadow:0 0 14px rgba(255,170,0,0.25) inset; transform:scale(1.03); }
+  .qcard-sym { font-size:0.85em; font-weight:bold; color:#e6edf3; letter-spacing:1px; }
+  .qcard-score { font-size:1em; color:#ffaa00; font-weight:bold; margin-top:2px; }
+  .qcard.top .qcard-score { color:#00ff88; }
+  .qcard-side { font-size:0.6em; color:#8b949e; letter-spacing:1px; }
+  .qcard-decay { position:absolute; left:2px; right:2px; bottom:2px; height:3px; background:#21262d; border-radius:2px; overflow:hidden; }
+  .qcard-decay-bar { position:absolute; left:0; top:0; bottom:0; background:#ffaa00; transition:width 0.1s linear; }
+  .qcard.expiring { animation:expiringFlash 0.35s ease-in-out infinite; }
+  @keyframes expiringFlash { 0%,100%{border-color:#ff5050} 50%{border-color:#30363d} }
+  .qcard.placed { animation:placedAnim 0.28s ease-out forwards; }
+  @keyframes placedAnim { 0%{transform:scale(1.03);opacity:1} 100%{transform:translateY(-30px) scale(0.6);opacity:0} }
+  .qcard.dead { animation:deadAnim 0.28s ease-out forwards; }
+  @keyframes deadAnim { 0%{opacity:1} 100%{opacity:0.1;transform:scale(0.8)} }
+  .qcard.empty { border-color:#21262d; background:transparent; }
+  .qcard.empty .qcard-sym, .qcard.empty .qcard-score, .qcard.empty .qcard-side { opacity:0.18; }
+
+  #ticker-banner { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:1.4em; color:#00ff88; text-shadow:0 0 14px rgba(0,255,136,0.6); pointer-events:none; opacity:0; transition:opacity 0.2s, transform 0.2s; letter-spacing:2px; font-weight:bold; }
+  #ticker-banner.show { opacity:1; transform:translate(-50%,-50%) scale(1.1); }
+  #ticker-banner.red { color:#ff5050; text-shadow:0 0 14px rgba(255,80,80,0.6); }
+  #ticker-banner.amber { color:#f0883e; text-shadow:0 0 14px rgba(240,136,62,0.6); }
+
+  /* Action */
+  #action-row { padding:10px; background:rgba(0,0,0,0.4); border-top:1px solid #21262d; }
+  .action-btn { width:100%; padding:18px; background:#00ff88; color:#0d1117; border:none; border-radius:8px; font-family:inherit; font-size:1.3em; font-weight:bold; letter-spacing:2px; cursor:pointer; transition:transform 0.08s, background 0.15s; box-shadow:0 0 18px rgba(0,255,136,0.3); }
+  .action-btn:active { transform:scale(0.97); }
+  .action-btn.cooldown { background:#21262d; color:#484f58; box-shadow:none; }
+
+  /* Game Over */
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.5); margin:8px 0 4px; }
+  .final-score.red { color:#ff5050; text-shadow:0 0 20px rgba(255,80,80,0.5); }
+  .final-meta { color:#8b949e; font-size:0.78em; margin:2px 0; letter-spacing:1px; }
+  .roast-msg { color:#f0883e; font-size:0.9em; margin:18px 8px 8px; max-width:340px; line-height:1.5; font-style:italic; }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  const HIGH_KEY = 'dippy-cap-queue-high';
+  const SYMBOLS = ['CRWD','SMCI','COIN','NVDA','TSLA','AMD','MSTR','QQQ','SPY','ROKU','PLTR','NFLX','AMZN','SHOP'];
+
+  const MOONY_LINES = [
+    "MOONY: I'll fill it after lunch.",
+    "MOONY: still doing the research.",
+    "MOONY: cap of one. cash position.",
+    "MOONY: my model needs another week.",
+    "MOONY: queue? what queue?",
+    "MOONY: skipping it. fundamentals weak.",
+    "MOONY: 70% cash is a strategy.",
+    "MOONY: I'll buy it lower.",
+    "MOONY: this signal isn't 'me'.",
+    "MOONY: I prefer manual entries.",
+    "MOONY: tap when comfortable.",
+    "MOONY: vibes are off today."
+  ];
+
+  const ROASTS = [
+    "Moony watched a 1.747 expire off the queue because 'the fundamentals haven't been reviewed.' Six months later he reviewed them. The stock had doubled.",
+    "Moony only fills slots that match his prior. He has one prior. It's cash.",
+    "Moony's cap is one. His queue is infinite. His PnL is zero.",
+    "Moony said the queue had 'too many candidates' and went to make a spreadsheet. The session closed.",
+    "Moony skipped six straight signals to wait for the perfect one. The perfect one was the first one.",
+    "Moony's risk policy requires three approvals to FILL. The slot closes in 1.2 seconds.",
+    "Moony tapped FILL with no open slot and called it 'pre-positioning.' The book called it -$30.",
+    "Moony's queue is sorted by P/E ratio. The slot is sorted by who tapped first.",
+    "Moony saw a slot open and asked the queue for its 10-K. The slot closed.",
+    "Moony watched 47 signals expire and tweeted about 'market quality.' His cash position tweeted back.",
+    "Moony built a 'queue freshness model' that requires 5 days of confirmation. Queue items decay in 4 seconds.",
+    "Moony's value-investing committee meets quarterly. The book trades every second."
+  ];
+
+  const $ = id => document.getElementById(id);
+  const titleScreen = $('title-screen');
+  const gameScreen = $('game-screen');
+  const gameoverScreen = $('gameover-screen');
+  const slotGrid = $('slot-grid');
+  const queueStrip = $('queue-strip');
+  const fillBtn = $('fill-btn');
+  const banner = $('ticker-banner');
+  const titleHigh = $('title-high-score');
+
+  let slots = [];            // [{symbol, side, pnl, life, state, el, symEl, pnlEl, barEl}]
+  let queue = [];            // [{symbol, side, score, freshness, el, scoreEl, decayEl, symEl, sideEl}]
+  const QUEUE_LEN = 4;
+  let pnl = 0, streak = 0, bestStreak = 0, mult = 1;
+  let fills = 0, misses = 0, expired = 0;
+  let timeLeft = 60;
+  let running = false;
+  let nextSlotOpenAt = 0;
+  let lastTickTs = 0;
+  let openWindowMs = 1200;
+  let queueDecayMs = 4500;
+  let slotLifeMs = 8000;     // how long a filled slot lives before a new open is forced
+  let signalGenMs = 2200;
+  let lastSignalGenAt = 0;
+  let rafHandle = 0;
+  let cooldownUntil = 0;
+
+  function showHigh() {
+    const h = +localStorage.getItem(HIGH_KEY) || 0;
+    titleHigh.textContent = h > 0 ? `BEST: $${h}` : '';
+  }
+  showHigh();
+
+  function rand(min, max) { return Math.random() * (max - min) + min; }
+  function pickSym(exclude) {
+    const pool = SYMBOLS.filter(s => !exclude.includes(s));
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function buildSlots() {
+    slotGrid.innerHTML = '';
+    slots = [];
+    const used = [];
+    for (let i = 0; i < 5; i++) {
+      const sym = pickSym(used);
+      used.push(sym);
+      const side = Math.random() < 0.6 ? 'L' : 'S';
+      const el = document.createElement('div');
+      el.className = 'slot';
+      const symEl = document.createElement('div');
+      symEl.className = 'slot-sym';
+      symEl.textContent = sym + (side === 'L' ? ' ▲' : ' ▼');
+      const pnlEl = document.createElement('div');
+      pnlEl.className = 'slot-pnl';
+      pnlEl.textContent = '$0';
+      const barTrack = document.createElement('div');
+      barTrack.className = 'slot-bar-track';
+      const barEl = document.createElement('div');
+      barEl.className = 'slot-bar';
+      barEl.style.width = '100%';
+      barTrack.appendChild(barEl);
+      el.appendChild(symEl);
+      el.appendChild(pnlEl);
+      el.appendChild(barTrack);
+      slotGrid.appendChild(el);
+      slots.push({
+        symbol: sym, side, pnl: 0,
+        life: slotLifeMs * rand(0.6, 1.4),
+        state: 'filled',
+        openSince: 0,
+        el, symEl, pnlEl, barEl
+      });
+    }
+  }
+
+  function buildQueueShells() {
+    queueStrip.innerHTML = '';
+    queue = [];
+    for (let i = 0; i < QUEUE_LEN; i++) {
+      const el = document.createElement('div');
+      el.className = 'qcard empty';
+      const symEl = document.createElement('div');
+      symEl.className = 'qcard-sym';
+      symEl.textContent = '---';
+      const scoreEl = document.createElement('div');
+      scoreEl.className = 'qcard-score';
+      scoreEl.textContent = '0.00';
+      const sideEl = document.createElement('div');
+      sideEl.className = 'qcard-side';
+      sideEl.textContent = '---';
+      const decayTrack = document.createElement('div');
+      decayTrack.className = 'qcard-decay';
+      const decayBar = document.createElement('div');
+      decayBar.className = 'qcard-decay-bar';
+      decayBar.style.width = '0%';
+      decayTrack.appendChild(decayBar);
+      el.appendChild(symEl);
+      el.appendChild(scoreEl);
+      el.appendChild(sideEl);
+      el.appendChild(decayTrack);
+      queueStrip.appendChild(el);
+      queue.push({ filled: false, el, symEl, scoreEl, sideEl, decayEl: decayBar });
+    }
+  }
+
+  function renderQueueSlot(idx) {
+    const q = queue[idx];
+    if (!q.filled) {
+      q.el.className = 'qcard empty' + (idx === 0 ? '' : '');
+      q.symEl.textContent = '---';
+      q.scoreEl.textContent = '0.00';
+      q.sideEl.textContent = '---';
+      q.decayEl.style.width = '0%';
+      return;
+    }
+    q.el.className = 'qcard' + (idx === 0 ? ' top' : '') + (q.freshness < 0.25 ? ' expiring' : '');
+    q.symEl.textContent = q.symbol;
+    q.scoreEl.textContent = q.score.toFixed(2);
+    q.sideEl.textContent = q.side === 'L' ? 'LONG' : 'SHORT';
+    q.decayEl.style.width = (q.freshness * 100).toFixed(1) + '%';
+  }
+
+  function spawnSignal() {
+    // find first empty slot
+    for (let i = 0; i < QUEUE_LEN; i++) {
+      if (!queue[i].filled) {
+        // bias scores: ~70% are 0.2-0.9, ~25% are 0.9-1.4, ~5% are 1.4-1.8 (jackpot)
+        let score;
+        const r = Math.random();
+        if (r < 0.7) score = rand(0.2, 0.9);
+        else if (r < 0.95) score = rand(0.9, 1.4);
+        else score = rand(1.4, 1.8);
+        queue[i].filled = true;
+        queue[i].symbol = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+        queue[i].score = score;
+        queue[i].side = Math.random() < 0.55 ? 'L' : 'S';
+        queue[i].freshness = 1.0;
+        renderQueueSlot(i);
+        return;
+      }
+    }
+  }
+
+  function shiftQueue() {
+    for (let i = 0; i < QUEUE_LEN - 1; i++) {
+      queue[i].filled = queue[i+1].filled;
+      queue[i].symbol = queue[i+1].symbol;
+      queue[i].score = queue[i+1].score;
+      queue[i].side = queue[i+1].side;
+      queue[i].freshness = queue[i+1].freshness;
+      renderQueueSlot(i);
+    }
+    queue[QUEUE_LEN-1].filled = false;
+    renderQueueSlot(QUEUE_LEN-1);
+  }
+
+  function setMult() {
+    if (streak >= 20) mult = 5;
+    else if (streak >= 15) mult = 4;
+    else if (streak >= 10) mult = 3;
+    else if (streak >= 5) mult = 2;
+    else mult = 1;
+    $('mult').textContent = 'x' + mult;
+    const v = $('mult');
+    if (mult > 1) v.classList.add('streak-hot'); else v.classList.remove('streak-hot');
+  }
+
+  function showBanner(text, cls) {
+    banner.className = '';
+    banner.textContent = text;
+    if (cls) banner.classList.add(cls);
+    void banner.offsetWidth;
+    banner.classList.add('show');
+    clearTimeout(banner._t);
+    banner._t = setTimeout(() => banner.classList.remove('show'), 700);
+  }
+
+  function updatePnlHud() {
+    const v = $('pnl');
+    v.textContent = (pnl < 0 ? '-$' : '$') + Math.abs(Math.round(pnl));
+    if (pnl < 0) v.classList.add('pnl-red'); else v.classList.remove('pnl-red');
+  }
+
+  function findOpenSlotIdx() {
+    return slots.findIndex(s => s.state === 'open');
+  }
+
+  function findFirstQueued() {
+    for (let i = 0; i < QUEUE_LEN; i++) if (queue[i].filled) return i;
+    return -1;
+  }
+
+  function openSlot(idx) {
+    const s = slots[idx];
+    s.state = 'open';
+    s.openSince = performance.now();
+    s.el.classList.add('open');
+    s.symEl.textContent = '[OPEN]';
+    s.pnlEl.textContent = 'fill →';
+    s.barEl.style.width = '100%';
+  }
+
+  function refillSlot(idx, newSig) {
+    const s = slots[idx];
+    s.state = 'filled';
+    s.symbol = newSig.symbol;
+    s.side = newSig.side;
+    s.pnl = 0;
+    s.life = slotLifeMs * rand(0.6, 1.4);
+    s.el.classList.remove('open', 'closing');
+    s.symEl.textContent = s.symbol + (s.side === 'L' ? ' ▲' : ' ▼');
+    s.pnlEl.textContent = '$0';
+    s.barEl.style.width = '100%';
+    s.el.classList.add('flash-green');
+    setTimeout(() => s.el.classList.remove('flash-green'), 350);
+  }
+
+  function closeSlot(idx) {
+    const s = slots[idx];
+    s.el.classList.remove('open');
+    s.el.classList.add('closing');
+    s.symEl.textContent = '[CLOSED]';
+    s.pnlEl.textContent = '-';
+    setTimeout(() => {
+      // generate a fresh filled slot to keep the cap at 5/5
+      s.state = 'filled';
+      s.symbol = pickSym(slots.map(x => x.symbol));
+      s.side = Math.random() < 0.55 ? 'L' : 'S';
+      s.pnl = 0;
+      s.life = slotLifeMs * rand(0.7, 1.3);
+      s.el.classList.remove('closing');
+      s.symEl.textContent = s.symbol + (s.side === 'L' ? ' ▲' : ' ▼');
+      s.pnlEl.textContent = '$0';
+      s.barEl.style.width = '100%';
+    }, 320);
+  }
+
+  function handleFill() {
+    if (!running) return;
+    const now = performance.now();
+    if (now < cooldownUntil) return;
+    const openIdx = findOpenSlotIdx();
+    if (openIdx === -1) {
+      // wrong tap
+      pnl -= 30;
+      streak = 0;
+      setMult();
+      $('streak').textContent = streak;
+      updatePnlHud();
+      showBanner('-$30 NO SLOT', 'red');
+      cooldownUntil = now + 250;
+      return;
+    }
+    const qIdx = findFirstQueued();
+    if (qIdx === -1) {
+      // open slot but empty queue — also a wrong tap
+      pnl -= 20;
+      streak = 0;
+      setMult();
+      $('streak').textContent = streak;
+      updatePnlHud();
+      showBanner('-$20 EMPTY QUEUE', 'red');
+      cooldownUntil = now + 250;
+      return;
+    }
+    const sig = {
+      symbol: queue[qIdx].symbol,
+      side: queue[qIdx].side,
+      score: queue[qIdx].score,
+      freshness: queue[qIdx].freshness
+    };
+    // animate placed
+    const placeEl = queue[qIdx].el;
+    placeEl.classList.add('placed');
+    setTimeout(() => {
+      placeEl.classList.remove('placed');
+      shiftQueue();
+    }, 280);
+    queue[qIdx].filled = false;
+    refillSlot(openIdx, sig);
+    // payout: score × 100 × freshness × mult
+    const payout = Math.round(sig.score * 100 * Math.max(0.25, sig.freshness) * mult);
+    pnl += payout;
+    streak += 1;
+    if (streak > bestStreak) bestStreak = streak;
+    fills += 1;
+    setMult();
+    $('streak').textContent = streak;
+    updatePnlHud();
+    showBanner('+$' + payout, 'amber');
+    cooldownUntil = now + 120;
+  }
+
+  fillBtn.addEventListener('click', handleFill);
+  fillBtn.addEventListener('touchstart', e => { e.preventDefault(); handleFill(); }, { passive: false });
+  document.addEventListener('keydown', e => {
+    if (!running) return;
+    if (e.code === 'Space' || e.code === 'Enter' || e.key === 'f' || e.key === 'F') {
+      e.preventDefault();
+      handleFill();
+    }
+  });
+
+  function gameTick(ts) {
+    if (!running) return;
+    const dt = lastTickTs ? (ts - lastTickTs) : 16;
+    lastTickTs = ts;
+
+    // slot life countdowns
+    for (let i = 0; i < slots.length; i++) {
+      const s = slots[i];
+      if (s.state === 'filled') {
+        s.life -= dt;
+        s.pnl += (Math.random() - 0.45) * 3;  // ambient PnL drift for vibes
+        s.pnlEl.textContent = (s.pnl >= 0 ? '+$' : '-$') + Math.abs(Math.round(s.pnl));
+        s.pnlEl.style.color = s.pnl >= 0 ? '#00ff88' : '#ff5050';
+        s.barEl.style.width = Math.max(0, Math.min(100, (s.life / slotLifeMs) * 100)) + '%';
+        if (s.life <= 0) {
+          // slot opens for the player
+          openSlot(i);
+        }
+      } else if (s.state === 'open') {
+        const elapsed = ts - s.openSince;
+        const remaining = Math.max(0, openWindowMs - elapsed);
+        s.barEl.style.width = (remaining / openWindowMs * 100) + '%';
+        if (elapsed >= openWindowMs) {
+          // missed window — slot auto-closes and respawns. PnL hit + streak break.
+          pnl -= 40;
+          streak = 0;
+          misses += 1;
+          setMult();
+          $('streak').textContent = streak;
+          updatePnlHud();
+          showBanner('-$40 MISSED SLOT', 'red');
+          closeSlot(i);
+        }
+      }
+    }
+
+    // queue freshness decay
+    for (let i = 0; i < QUEUE_LEN; i++) {
+      const q = queue[i];
+      if (q.filled) {
+        q.freshness -= (dt / queueDecayMs);
+        if (q.freshness <= 0) {
+          // signal expired off queue
+          pnl -= 50;
+          streak = 0;
+          expired += 1;
+          setMult();
+          $('streak').textContent = streak;
+          updatePnlHud();
+          showBanner('SIGNAL EXPIRED -$50', 'red');
+          q.el.classList.add('dead');
+          setTimeout(() => {
+            q.el.classList.remove('dead');
+            q.filled = false;
+            shiftQueue();
+          }, 280);
+        } else {
+          renderQueueSlot(i);
+        }
+      }
+    }
+
+    // generate signals
+    if (ts - lastSignalGenAt > signalGenMs) {
+      spawnSignal();
+      lastSignalGenAt = ts;
+      // gradually tighten generation cadence
+      signalGenMs = Math.max(900, signalGenMs - 12);
+    }
+
+    // gradually tighten difficulty
+    openWindowMs = Math.max(550, openWindowMs - dt * 0.012);
+    queueDecayMs = Math.max(2200, queueDecayMs - dt * 0.04);
+    slotLifeMs = Math.max(3500, slotLifeMs - dt * 0.05);
+
+    rafHandle = requestAnimationFrame(gameTick);
+  }
+
+  let timerHandle = 0;
+  function startCountdown() {
+    timeLeft = 60;
+    $('time').textContent = timeLeft;
+    timerHandle = setInterval(() => {
+      timeLeft -= 1;
+      $('time').textContent = timeLeft;
+      if (timeLeft <= 0) gameOver();
+    }, 1000);
+  }
+
+  function gameOver() {
+    running = false;
+    clearInterval(timerHandle);
+    cancelAnimationFrame(rafHandle);
+    gameScreen.style.display = 'none';
+    gameoverScreen.style.display = 'flex';
+    const finalScoreEl = $('final-score');
+    finalScoreEl.textContent = Math.round(pnl);
+    finalScoreEl.parentElement.classList.toggle('red', pnl < 0);
+    $('final-fills').textContent = fills;
+    $('final-misses').textContent = misses;
+    $('final-expired').textContent = expired;
+    $('final-best-streak').textContent = bestStreak;
+    $('roast-msg').textContent = ROASTS[Math.floor(Math.random() * ROASTS.length)];
+    const high = +localStorage.getItem(HIGH_KEY) || 0;
+    if (pnl > high) localStorage.setItem(HIGH_KEY, Math.round(pnl));
+    if (window.DippyLB && window.DippyLB.onGameOver) window.DippyLB.onGameOver(Math.round(pnl));
+  }
+
+  window.startGame = function() {
+    pnl = 0; streak = 0; bestStreak = 0; mult = 1;
+    fills = 0; misses = 0; expired = 0;
+    openWindowMs = 1200;
+    queueDecayMs = 4500;
+    slotLifeMs = 8000;
+    signalGenMs = 2200;
+    cooldownUntil = 0;
+    lastTickTs = 0;
+    lastSignalGenAt = performance.now();
+    titleScreen.style.display = 'none';
+    gameoverScreen.style.display = 'none';
+    gameScreen.style.display = 'flex';
+    $('pnl').textContent = '$0';
+    $('pnl').classList.remove('pnl-red');
+    $('streak').textContent = '0';
+    $('mult').textContent = 'x1';
+    $('mult').classList.remove('streak-hot');
+    buildSlots();
+    buildQueueShells();
+    // seed the queue with a couple of starting signals
+    spawnSignal();
+    spawnSignal();
+    running = true;
+    startCountdown();
+    rafHandle = requestAnimationFrame(gameTick);
+  };
+
+  if (window.DippyLB && window.DippyLB.init) window.DippyLB.init('cap-queue');
+})();
+</script>
+{{ end }}
