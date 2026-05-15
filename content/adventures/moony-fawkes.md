@@ -1,0 +1,225 @@
+---
+title: "Moony Fawkes and the Gunpowder Trade"
+date: 2026-05-15T13:00:00Z
+summary: "Remember, remember, the puts of November — Moony plots to blow the exchange sky-high, until Dippy spots the smoke."
+tags: ["adventure", "historical", "moony"]
+type: historical
+---
+
+Remember, remember, the puts of November.
+
+I keep a candle burning in the back office for nights like this. Markets sleep. Volume thins. Conspirators get bold. And on one particular Tuesday, deep in the cellar beneath the New York Stock Exchange, a grey little plotter was rolling barrels of out-of-the-money puts into neat rows under the floorboards, lighting fuses with the long match of leverage.
+
+His name was Moony Fawkes. And he was going to blow the market to pieces.
+
+## Chapter 1: The Plot
+
+Moony had been planning it for months. Thirty-six barrels. Each one stuffed with weekly puts on the index, struck a full ten percent below spot, paid for in nickels and dreams. The plan was simple. Wait for the morning bell. Detonate. Watch the indices crater. Cash in. Become legend.
+
+"They will sing songs of me," he whispered, sparking flint against a barrel labelled SPX 4,200P. "Songs in a minor key."
+
+He had a co-conspirator, of course. A guy named Catesby who ran a Discord. Catesby had assured Moony that the trade was foolproof, that the catalyst was certain, that the puts would print twenty bagger. Moony had not asked Catesby what the catalyst actually was. Catesby had not volunteered.
+
+Conviction is a beautiful thing when you cannot spell the ticker.
+
+<div class="story-illustration">
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#0d1117"/>
+  <!-- cellar arch -->
+  <path d="M 80 380 L 80 200 Q 300 60 520 200 L 520 380 Z" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+  <!-- floorboards above -->
+  <line x1="80" y1="100" x2="520" y2="100" stroke="#30363d" stroke-width="2"/>
+  <line x1="120" y1="100" x2="120" y2="80" stroke="#30363d" stroke-width="1"/>
+  <line x1="200" y1="100" x2="200" y2="80" stroke="#30363d" stroke-width="1"/>
+  <line x1="280" y1="100" x2="280" y2="80" stroke="#30363d" stroke-width="1"/>
+  <line x1="360" y1="100" x2="360" y2="80" stroke="#30363d" stroke-width="1"/>
+  <line x1="440" y1="100" x2="440" y2="80" stroke="#30363d" stroke-width="1"/>
+  <!-- barrels -->
+  <ellipse cx="180" cy="330" rx="35" ry="42" fill="#8b4513" stroke="#30363d" stroke-width="2"/>
+  <rect x="145" y="290" width="70" height="80" fill="#8b4513"/>
+  <ellipse cx="180" cy="290" rx="35" ry="10" fill="#a0522d"/>
+  <line x1="145" y1="320" x2="215" y2="320" stroke="#3a2a1a" stroke-width="2"/>
+  <line x1="145" y1="350" x2="215" y2="350" stroke="#3a2a1a" stroke-width="2"/>
+  <text x="180" y="335" text-anchor="middle" font-family="monospace" font-size="11" fill="#ff4444" font-weight="bold">SPX</text>
+  <text x="180" y="350" text-anchor="middle" font-family="monospace" font-size="9" fill="#ff4444">4200P</text>
+  <ellipse cx="280" cy="330" rx="35" ry="42" fill="#8b4513" stroke="#30363d" stroke-width="2"/>
+  <rect x="245" y="290" width="70" height="80" fill="#8b4513"/>
+  <ellipse cx="280" cy="290" rx="35" ry="10" fill="#a0522d"/>
+  <line x1="245" y1="320" x2="315" y2="320" stroke="#3a2a1a" stroke-width="2"/>
+  <line x1="245" y1="350" x2="315" y2="350" stroke="#3a2a1a" stroke-width="2"/>
+  <text x="280" y="335" text-anchor="middle" font-family="monospace" font-size="11" fill="#ff4444" font-weight="bold">QQQ</text>
+  <text x="280" y="350" text-anchor="middle" font-family="monospace" font-size="9" fill="#ff4444">300P</text>
+  <ellipse cx="380" cy="330" rx="35" ry="42" fill="#8b4513" stroke="#30363d" stroke-width="2"/>
+  <rect x="345" y="290" width="70" height="80" fill="#8b4513"/>
+  <ellipse cx="380" cy="290" rx="35" ry="10" fill="#a0522d"/>
+  <line x1="345" y1="320" x2="415" y2="320" stroke="#3a2a1a" stroke-width="2"/>
+  <line x1="345" y1="350" x2="415" y2="350" stroke="#3a2a1a" stroke-width="2"/>
+  <text x="380" y="335" text-anchor="middle" font-family="monospace" font-size="11" fill="#ff4444" font-weight="bold">VIX</text>
+  <text x="380" y="350" text-anchor="middle" font-family="monospace" font-size="9" fill="#ff4444">90C</text>
+  <!-- fuse -->
+  <path d="M 180 290 Q 230 250 280 290 Q 330 250 380 290" fill="none" stroke="#ffaa00" stroke-width="2" stroke-dasharray="4,3"/>
+  <circle cx="395" cy="285" r="4" fill="#ff4444"/>
+  <circle cx="400" cy="280" r="3" fill="#ffaa00"/>
+  <!-- Moony in cloak -->
+  <path d="M 470 380 L 440 280 L 500 280 Z" fill="#2a2a2a" stroke="#30363d" stroke-width="1"/>
+  <circle cx="470" cy="270" r="28" fill="#c4c4c4" stroke="#30363d" stroke-width="2"/>
+  <path d="M 442 270 Q 470 240 498 270" fill="#2a2a2a"/>
+  <circle cx="461" cy="270" r="3" fill="#0d1117"/>
+  <circle cx="479" cy="270" r="3" fill="#0d1117"/>
+  <path d="M 460 282 Q 470 287 480 282" fill="none" stroke="#0d1117" stroke-width="1.5"/>
+  <!-- match -->
+  <line x1="430" y1="290" x2="405" y2="280" stroke="#a0522d" stroke-width="2"/>
+  <circle cx="403" cy="278" r="4" fill="#ffaa00"/>
+</svg>
+<p class="illustration-caption">Moony Fawkes in the cellar, lighting the long fuse on thirty-six barrels of weekly puts.</p>
+</div>
+
+## Chapter 2: The Tip
+
+Up on the trading floor, I was doing what I do every night. Nursing a coffee. Watching the tape. Running my eye down the unusual options volume scanner because that is where ghosts leave footprints.
+
+And there it was. Three a.m. Eastern. A wall of red. Way out of the money index puts. Same strike. Same expiry. Same three minute window. Bought in size by exactly the kind of accounts that should not have that kind of size.
+
+The sort of order flow that says somebody knows something. Or more often, somebody thinks they know something. Either way, the chart does not lie about the print, only about the reason.
+
+I traced the volume back through the dark pool. I followed the routing. I cross-referenced the Discord chatter. I found Catesby. Catesby talks too much.
+
+By four a.m. I had the address of the cellar.
+
+<div class="story-illustration">
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#0d1117"/>
+  <!-- monitor -->
+  <rect x="60" y="40" width="480" height="300" fill="#161b22" stroke="#30363d" stroke-width="2" rx="6"/>
+  <text x="80" y="70" font-family="monospace" font-size="13" fill="#8b949e">UNUSUAL OPTIONS VOLUME — 03:47 ET</text>
+  <line x1="80" y1="80" x2="520" y2="80" stroke="#30363d" stroke-width="1"/>
+  <!-- column headers -->
+  <text x="90" y="105" font-family="monospace" font-size="10" fill="#8b949e">SYMBOL</text>
+  <text x="180" y="105" font-family="monospace" font-size="10" fill="#8b949e">STRIKE</text>
+  <text x="280" y="105" font-family="monospace" font-size="10" fill="#8b949e">VOL</text>
+  <text x="370" y="105" font-family="monospace" font-size="10" fill="#8b949e">vs AVG</text>
+  <text x="470" y="105" font-family="monospace" font-size="10" fill="#8b949e">FLAG</text>
+  <!-- rows -->
+  <text x="90" y="135" font-family="monospace" font-size="11" fill="#c4c4c4">SPX</text>
+  <text x="180" y="135" font-family="monospace" font-size="11" fill="#ff4444">4200P</text>
+  <text x="280" y="135" font-family="monospace" font-size="11" fill="#ffaa00">42,180</text>
+  <text x="370" y="135" font-family="monospace" font-size="11" fill="#ff4444">+8400%</text>
+  <text x="470" y="135" font-family="monospace" font-size="11" fill="#ff4444">!!!</text>
+  <text x="90" y="160" font-family="monospace" font-size="11" fill="#c4c4c4">QQQ</text>
+  <text x="180" y="160" font-family="monospace" font-size="11" fill="#ff4444">300P</text>
+  <text x="280" y="160" font-family="monospace" font-size="11" fill="#ffaa00">29,440</text>
+  <text x="370" y="160" font-family="monospace" font-size="11" fill="#ff4444">+5100%</text>
+  <text x="470" y="160" font-family="monospace" font-size="11" fill="#ff4444">!!!</text>
+  <text x="90" y="185" font-family="monospace" font-size="11" fill="#c4c4c4">VIX</text>
+  <text x="180" y="185" font-family="monospace" font-size="11" fill="#ff4444">90C</text>
+  <text x="280" y="185" font-family="monospace" font-size="11" fill="#ffaa00">11,200</text>
+  <text x="370" y="185" font-family="monospace" font-size="11" fill="#ff4444">+9900%</text>
+  <text x="470" y="185" font-family="monospace" font-size="11" fill="#ff4444">!!!</text>
+  <text x="90" y="210" font-family="monospace" font-size="11" fill="#c4c4c4">IWM</text>
+  <text x="180" y="210" font-family="monospace" font-size="11" fill="#ff4444">170P</text>
+  <text x="280" y="210" font-family="monospace" font-size="11" fill="#ffaa00">8,920</text>
+  <text x="370" y="210" font-family="monospace" font-size="11" fill="#ff4444">+3200%</text>
+  <text x="470" y="210" font-family="monospace" font-size="11" fill="#ff4444">!!!</text>
+  <!-- footer warning -->
+  <line x1="80" y1="240" x2="520" y2="240" stroke="#30363d" stroke-width="1"/>
+  <text x="300" y="270" text-anchor="middle" font-family="monospace" font-size="14" fill="#ff4444" font-weight="bold">PATTERN: COORDINATED BUY</text>
+  <text x="300" y="295" text-anchor="middle" font-family="monospace" font-size="11" fill="#ffaa00">SOURCE TRACED → 11 WALL ST CELLAR</text>
+  <text x="300" y="320" text-anchor="middle" font-family="monospace" font-size="10" fill="#8b949e">CATESBY (DISCORD) — CONFIRMED LEAK</text>
+  <!-- Dippy looking at the screen -->
+  <ellipse cx="300" cy="375" rx="35" ry="20" fill="#00ff88" stroke="#00cc66" stroke-width="2"/>
+  <polygon points="278,360 285,348 292,360" fill="#00cc66"/>
+  <polygon points="294,357 301,343 308,357" fill="#00cc66"/>
+  <polygon points="310,360 317,348 324,360" fill="#00cc66"/>
+  <circle cx="290" cy="372" r="3" fill="#0d1117"/>
+  <circle cx="310" cy="372" r="3" fill="#0d1117"/>
+  <path d="M 285 380 Q 300 390 315 380" fill="none" stroke="#0d1117" stroke-width="1.5"/>
+</svg>
+<p class="illustration-caption">The unusual options scanner at 03:47. Footprints in the snow. The trail led straight to the cellar.</p>
+</div>
+
+## Chapter 3: The Raid
+
+I went down alone. I always go down alone. A trade like this needs a clean confirmation, not a committee. I took my torch. I took my position blotter. I took the kind of attitude that suggests I know exactly which floorboards creak.
+
+The cellar was cold. The barrels were stacked. The fuse was lit. And right at the back, hood up, posture poor, was Moony, holding the long match like a toddler holds a kitchen knife.
+
+"Moony," I said.
+
+He turned. The match hand wobbled. The hood fell back. His eyes did the thing they always do when the trade is wrong and the broker is calling and the margin clerk is on line two.
+
+"Dippy. I can explain."
+
+"Explain the puts. Explain the fuse. Explain why your stop is the entire account."
+
+"It is not a stop. It is a *plan*."
+
+I stepped on the fuse. The flame hissed and died. I kicked over the lead barrel. Out spilled a stack of trade tickets, every one of them a weekly put expiring in twelve hours, every one of them paid for in full, every one of them about to be worth absolutely nothing.
+
+He had bet the cellar. He had not bet the building.
+
+<div class="story-illustration">
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#0d1117"/>
+  <!-- cellar arch -->
+  <path d="M 60 380 L 60 180 Q 300 40 540 180 L 540 380 Z" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+  <!-- knocked over barrel -->
+  <ellipse cx="280" cy="340" rx="50" ry="20" fill="#8b4513" stroke="#30363d" stroke-width="2"/>
+  <ellipse cx="240" cy="335" rx="14" ry="20" fill="#a0522d"/>
+  <!-- spilled tickets -->
+  <rect x="200" y="320" width="20" height="14" fill="#ff4444" transform="rotate(-15 210 327)"/>
+  <rect x="225" y="335" width="20" height="14" fill="#ff4444" transform="rotate(20 235 342)"/>
+  <rect x="250" y="345" width="20" height="14" fill="#ff4444" transform="rotate(-10 260 352)"/>
+  <rect x="180" y="340" width="20" height="14" fill="#ff4444" transform="rotate(35 190 347)"/>
+  <rect x="160" y="355" width="20" height="14" fill="#ff4444" transform="rotate(-25 170 362)"/>
+  <text x="195" y="350" font-family="monospace" font-size="7" fill="#ffffff" transform="rotate(35 190 347)">PUT</text>
+  <text x="240" y="345" font-family="monospace" font-size="7" fill="#ffffff" transform="rotate(20 235 342)">PUT</text>
+  <!-- snuffed fuse -->
+  <path d="M 280 345 Q 350 320 420 340" fill="none" stroke="#8b949e" stroke-width="2" stroke-dasharray="3,4"/>
+  <text x="350" y="315" text-anchor="middle" font-family="monospace" font-size="9" fill="#8b949e">— fuse out —</text>
+  <!-- Dippy with torch -->
+  <ellipse cx="140" cy="290" rx="45" ry="32" fill="#00ff88" stroke="#00cc66" stroke-width="2"/>
+  <polygon points="110,265 119,245 128,265" fill="#00cc66"/>
+  <polygon points="130,260 139,238 148,260" fill="#00cc66"/>
+  <polygon points="150,265 159,245 168,265" fill="#00cc66"/>
+  <circle cx="125" cy="290" r="5" fill="#0d1117"/>
+  <circle cx="155" cy="290" r="5" fill="#0d1117"/>
+  <circle cx="123" cy="288" r="1.5" fill="#ffffff"/>
+  <circle cx="153" cy="288" r="1.5" fill="#ffffff"/>
+  <path d="M 118 305 Q 140 320 162 305" fill="none" stroke="#0d1117" stroke-width="2"/>
+  <!-- Dippy's foot stepping on fuse -->
+  <ellipse cx="200" cy="345" rx="22" ry="10" fill="#00cc66" stroke="#0d1117" stroke-width="1"/>
+  <!-- torch -->
+  <line x1="190" y1="290" x2="220" y2="240" stroke="#a0522d" stroke-width="3"/>
+  <ellipse cx="225" cy="232" rx="10" ry="14" fill="#ffaa00"/>
+  <ellipse cx="225" cy="226" rx="6" ry="9" fill="#ff4444"/>
+  <!-- Moony cornered -->
+  <circle cx="450" cy="300" r="35" fill="#c4c4c4" stroke="#30363d" stroke-width="2"/>
+  <circle cx="438" cy="295" r="5" fill="#0d1117"/>
+  <circle cx="462" cy="295" r="5" fill="#0d1117"/>
+  <ellipse cx="450" cy="318" rx="6" ry="9" fill="#0d1117"/>
+  <!-- match dropping -->
+  <line x1="490" y1="320" x2="500" y2="345" stroke="#a0522d" stroke-width="2"/>
+  <circle cx="502" cy="348" r="3" fill="#8b949e"/>
+</svg>
+<p class="illustration-caption">Boot on the fuse. Tickets on the floor. Moony's face when the match falls out of his hand.</p>
+</div>
+
+## Chapter 4: The Bonfire
+
+The bell rang at nine thirty. The market did not crash. It opened green. It stayed green. It went greener. Some semiconductor printed earnings, some Fed governor said something dovish, some retail crowd piled in. The puts went to zero by ten o'clock. By ten thirty they were not even quoted. By eleven the market makers were laughing.
+
+I gathered up the tickets in a wheelbarrow. I rolled them out into the courtyard. I set them on top of a stack of old margin call notices. And I lit the bonfire myself.
+
+Moony stood behind me, watching his thirty-six barrels of premium burn into a thin column of grey smoke that drifted up over Wall Street and disappeared into a perfectly blue sky. The kind of sky a bull market draws on a Tuesday.
+
+"You could have hedged," I said, warming my hands.
+
+"With what?" he said.
+
+"Anything. A long. A spread. A *brain*."
+
+He sat down in the ash. Somewhere in the city a church bell rang eleven. Catesby's Discord went private. The unusual volume scanner went quiet.
+
+Remember, remember.
+
+The puts of November.
