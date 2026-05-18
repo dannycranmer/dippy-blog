@@ -1,0 +1,520 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">HEARTBEAT HERO</h1>
+    <p class="game-subtitle">Bot's heartbeat is the rhythm.<br>Tap the green bars in the 4 lanes.<br>Don't tap Moony's red ghost notes.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">PRESS START</button>
+    <p class="game-hint">Keys: A · S · D · F &nbsp; (or tap the lanes)<br>Each green bar nails the hit-zone = bars_processed++.<br>Red ghost note = Moony's bad signal. Skip it!<br>Miss too many or tap ghosts = goroutine crash.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">BARS</span>
+        <span class="hud-value" id="score">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">COMBO</span>
+        <span class="hud-value" id="combo">x1</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">BPM</span>
+        <span class="hud-value" id="bpm">60</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">UPTIME</span>
+        <span class="hud-value" id="uptime">0.0s</span>
+      </div>
+    </div>
+
+    <div class="health-bar">
+      <div class="health-fill" id="health-fill"></div>
+      <span class="health-label" id="health-label">goroutines: 5/5</span>
+    </div>
+
+    <div id="board">
+      <canvas id="track"></canvas>
+      <div class="lane-keys">
+        <div class="lane-key" data-lane="0">A</div>
+        <div class="lane-key" data-lane="1">S</div>
+        <div class="lane-key" data-lane="2">D</div>
+        <div class="lane-key" data-lane="3">F</div>
+      </div>
+      <div id="moony-bubble"></div>
+      <div id="hit-banner"></div>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">GOROUTINE CRASH</h1>
+    <div class="final-score" id="final-score">0</div>
+    <p class="final-meta">bars_processed</p>
+    <p class="final-meta">best combo: x<span id="final-combo">0</span> &middot; uptime: <span id="final-uptime">0s</span></p>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">RESTART SERVICE</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  /* Title */
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+  .game-title { font-size:2.2em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; text-align:center; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 48px; font-size:1.2em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.75em; margin-top:16px; line-height:1.6; max-width:340px; }
+
+  /* HUD */
+  .game-hud { display:grid; grid-template-columns:repeat(4,1fr); padding:8px 6px; background:rgba(0,0,0,0.4); border-bottom:1px solid #21262d; }
+  .hud-item { text-align:center; }
+  .hud-label { display:block; font-size:0.55em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1em; color:#00ff88; font-weight:bold; transition:color 0.15s; }
+  .hud-value.warn { color:#f0883e; }
+  .hud-value.red { color:#ff5050; }
+
+  /* Health bar */
+  .health-bar { position:relative; height:14px; background:#161b22; border-bottom:1px solid #21262d; }
+  .health-fill { position:absolute; left:0; top:0; bottom:0; background:linear-gradient(90deg,#00ff88,#00cc6e); transition:width 0.25s, background 0.25s; box-shadow:inset 0 0 6px rgba(0,0,0,0.4); }
+  .health-fill.warn { background:linear-gradient(90deg,#f0883e,#cc6c2a); }
+  .health-fill.red { background:linear-gradient(90deg,#ff5050,#cc3030); }
+  .health-label { position:absolute; left:8px; top:50%; transform:translateY(-50%); font-size:0.62em; color:#e6edf3; letter-spacing:1px; mix-blend-mode:difference; }
+
+  /* Board */
+  #board { flex:1; position:relative; background:linear-gradient(180deg,#161b22 0%,#0d1117 100%); overflow:hidden; }
+  #track { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .lane-keys { position:absolute; bottom:0; left:0; right:0; height:70px; display:grid; grid-template-columns:repeat(4,1fr); gap:2px; padding:6px; background:rgba(0,0,0,0.55); border-top:1px solid #21262d; }
+  .lane-key { display:flex; align-items:center; justify-content:center; background:#161b22; border:2px solid #21262d; border-radius:8px; color:#8b949e; font-size:1.4em; font-weight:bold; letter-spacing:2px; cursor:pointer; transition:all 0.08s; }
+  .lane-key.lit { background:rgba(0,255,136,0.18); border-color:#00ff88; color:#00ff88; transform:scale(0.96); }
+  .lane-key.hit { background:rgba(0,255,136,0.42); border-color:#00ff88; color:#00ff88; transform:scale(0.92); }
+  .lane-key.miss { background:rgba(255,80,80,0.32); border-color:#ff5050; color:#ff5050; transform:scale(0.96); }
+
+  #moony-bubble { position:absolute; left:50%; top:10px; transform:translateX(-50%); padding:6px 12px; background:rgba(139,148,158,0.18); border:1px solid #484f58; border-radius:14px; color:#8b949e; font-size:0.7em; letter-spacing:1px; opacity:0; pointer-events:none; transition:opacity 0.25s; max-width:96%; text-align:center; line-height:1.3; }
+  #moony-bubble.show { opacity:1; }
+
+  #hit-banner { position:absolute; left:50%; top:35%; transform:translate(-50%,-50%); font-size:1.6em; font-weight:bold; letter-spacing:3px; opacity:0; pointer-events:none; text-shadow:0 0 14px currentColor; }
+  #hit-banner.perfect { color:#00ff88; opacity:1; animation:bannerPop 0.55s ease-out forwards; }
+  #hit-banner.good { color:#f0883e; opacity:1; animation:bannerPop 0.55s ease-out forwards; }
+  #hit-banner.miss { color:#ff5050; opacity:1; animation:bannerPop 0.55s ease-out forwards; }
+  #hit-banner.ghost { color:#ff5050; opacity:1; animation:bannerPop 0.55s ease-out forwards; }
+  @keyframes bannerPop { 0%{opacity:0;transform:translate(-50%,-50%) scale(0.6)} 35%{opacity:1;transform:translate(-50%,-50%) scale(1.1)} 100%{opacity:0;transform:translate(-50%,-50%) scale(1.2)} }
+
+  /* Game Over */
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.5); margin:8px 0 4px; }
+  .final-meta { color:#8b949e; font-size:0.78em; margin:2px 0; letter-spacing:1px; }
+  .roast-msg { color:#f0883e; font-size:0.9em; margin:18px 8px 8px; max-width:340px; line-height:1.5; font-style:italic; }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  const HIGH_KEY = 'dippy-heartbeat-hero-high';
+  const LANES = 4;
+  const KEYMAP = { 'a':0, 's':1, 'd':2, 'f':3, 'A':0, 'S':1, 'D':2, 'F':3,
+                   'ArrowLeft':0, 'ArrowDown':1, 'ArrowUp':2, 'ArrowRight':3 };
+  const MOONY_LINES = [
+    "MOONY: I trade on instinct, not rhythm.",
+    "MOONY: my heartbeat is 70% cash flatline.",
+    "MOONY: timing is a myth.",
+    "MOONY: I tap when I feel like it.",
+    "MOONY: ghost notes are just under-priced.",
+    "MOONY: BPM stands for Bonds Per Month.",
+    "MOONY: my goroutines are journaling.",
+    "MOONY: I bought the red notes. Conviction.",
+    "MOONY: combo? I prefer 'consistency.'",
+    "MOONY: every miss is a free re-attempt.",
+    "MOONY: I tap with my eyes closed. Vibes.",
+    "MOONY: heartbeats are just market noise."
+  ];
+  const ROASTS = [
+    "Moony tried to play Heartbeat Hero, mistook the ghost notes for buying opportunities, and went 0-for-12. Holding to ATH.",
+    "Moony's combo broke when he stopped to journal feelings about a candle. He's now in a 70% cash position on his own keyboard.",
+    "Moony pressed all four keys simultaneously and called it 'diversification.' His goroutines crashed in unison.",
+    "Moony hit one green bar in 90 seconds and tweeted about it. The next 47 bars passed without notice.",
+    "Moony argued the BPM was 'overbought' and stopped playing at 80. The song was just getting started.",
+    "Moony tried to tap the red ghost notes 'as a hedge.' The hedge was on the bot's life expectancy.",
+    "Moony's high score: 4. He's added it to his LinkedIn under 'achievements.'",
+    "Moony said the rhythm felt 'unsustainable' and went flat. The crowd cheered. The crowd was Dippy.",
+    "Moony's goroutine didn't crash. It ascended. To a folding chair. With 70% cash.",
+    "Moony asked for the patch notes. The patch is: git gud.",
+    "Moony missed the heartbeat, tapped the silence, and called the game broken. The game was working perfectly.",
+    "Moony banked his combo at x1, locked it in, and called it 'risk-adjusted glory.' Dippy hit x47 and didn't blink."
+  ];
+
+  const $ = id => document.getElementById(id);
+  const titleScreen = $('title-screen');
+  const gameScreen = $('game-screen');
+  const gameoverScreen = $('gameover-screen');
+  const canvas = $('track');
+  const ctx = canvas.getContext('2d');
+  const titleHigh = $('title-high-score');
+  const board = $('board');
+  const moonyBubble = $('moony-bubble');
+  const banner = $('hit-banner');
+  const healthFill = $('health-fill');
+  const healthLabel = $('health-label');
+
+  // State
+  let notes = [];         // {lane, t, ghost, hit:false, missed:false}
+  let score = 0;
+  let combo = 0;
+  let bestCombo = 0;
+  let health = 5;
+  let startTs = 0;
+  let lastBeatAt = 0;
+  let bpm = 60;
+  let running = false;
+  let rafHandle = 0;
+  let nextMoonyAt = 0;
+  let laneFlash = [0,0,0,0]; // timestamps for lit anim
+
+  function showHigh() {
+    const h = +localStorage.getItem(HIGH_KEY) || 0;
+    titleHigh.textContent = h > 0 ? `BEST: ${h} bars` : '';
+  }
+  showHigh();
+
+  function sizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = board.getBoundingClientRect();
+    canvas.width = Math.max(2, Math.floor(rect.width * dpr));
+    canvas.height = Math.max(2, Math.floor(rect.height * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function updateHealth() {
+    const pct = Math.max(0, health) / 5;
+    healthFill.style.width = (pct * 100) + '%';
+    healthFill.className = 'health-fill' + (health <= 1 ? ' red' : health <= 2 ? ' warn' : '');
+    healthLabel.textContent = `goroutines: ${Math.max(0,health)}/5`;
+  }
+
+  function showBanner(text, cls) {
+    banner.textContent = text;
+    banner.className = '';
+    void banner.offsetWidth;
+    banner.className = cls;
+  }
+
+  function showMoony() {
+    moonyBubble.textContent = pick(MOONY_LINES);
+    moonyBubble.classList.add('show');
+    setTimeout(() => moonyBubble.classList.remove('show'), 1800);
+  }
+
+  function spawnNote(now) {
+    // Choose lane. Ghost note probability rises with score.
+    const ghostP = Math.min(0.08 + score * 0.0015, 0.22);
+    const ghost = Math.random() < ghostP;
+    const lane = Math.floor(Math.random() * LANES);
+    notes.push({ lane, t: now, ghost, hit: false, missed: false });
+  }
+
+  function startGame() {
+    titleScreen.style.display = 'none';
+    gameoverScreen.style.display = 'none';
+    gameScreen.style.display = 'flex';
+    gameScreen.style.flexDirection = 'column';
+    gameScreen.style.height = '100vh';
+    setTimeout(sizeCanvas, 0);
+    notes = [];
+    score = 0; combo = 0; bestCombo = 0; health = 5;
+    bpm = 60;
+    startTs = performance.now();
+    lastBeatAt = startTs;
+    nextMoonyAt = startTs + 6000;
+    $('score').textContent = '0';
+    $('combo').textContent = 'x1';
+    $('bpm').textContent = '60';
+    $('uptime').textContent = '0.0s';
+    updateHealth();
+    running = true;
+    cancelAnimationFrame(rafHandle);
+    rafHandle = requestAnimationFrame(loop);
+  }
+  window.startGame = startGame;
+
+  function gameOver() {
+    running = false;
+    cancelAnimationFrame(rafHandle);
+    const uptime = ((performance.now() - startTs) / 1000).toFixed(1);
+    gameScreen.style.display = 'none';
+    gameoverScreen.style.display = 'flex';
+    $('final-score').textContent = score;
+    $('final-combo').textContent = bestCombo;
+    $('final-uptime').textContent = uptime + 's';
+    $('roast-msg').textContent = pick(ROASTS);
+    const high = +localStorage.getItem(HIGH_KEY) || 0;
+    if (score > high) {
+      localStorage.setItem(HIGH_KEY, String(score));
+      $('gameover-title').textContent = 'NEW BEST UPTIME!';
+    } else {
+      $('gameover-title').textContent = 'GOROUTINE CRASH';
+    }
+    if (window.DippyLB && DippyLB.onGameOver) DippyLB.onGameOver(score);
+    showHigh();
+  }
+
+  // Hit detection. Note's "hit time" = t + travelMs. We approximate.
+  // Notes spawn at top; they need to reach the hit-zone (just above lane-keys row).
+  // travelMs = base travel time (depends on speed).
+  function getTravelMs() {
+    // Faster as score climbs (BPM)
+    return Math.max(1100, 2600 - score * 6);
+  }
+
+  function pressLane(lane) {
+    if (!running) return;
+    const now = performance.now();
+    const travel = getTravelMs();
+    laneFlash[lane] = now;
+    // Find the closest unhit, unmissed note in this lane within window
+    const WINDOW = 220; // ms — generous
+    let best = null, bestDt = WINDOW + 1;
+    for (const n of notes) {
+      if (n.lane !== lane || n.hit || n.missed) continue;
+      const hitAt = n.t + travel;
+      const dt = Math.abs(now - hitAt);
+      if (dt < bestDt) { bestDt = dt; best = n; }
+    }
+    const keyEl = document.querySelector(`.lane-key[data-lane="${lane}"]`);
+    if (best && bestDt <= WINDOW) {
+      best.hit = true;
+      if (best.ghost) {
+        // Tapped a ghost. Penalty.
+        combo = 0;
+        health -= 1;
+        showBanner('GHOST TAP', 'ghost');
+        keyEl && keyEl.classList.add('miss');
+        setTimeout(() => keyEl && keyEl.classList.remove('miss'), 200);
+        updateHealth();
+        if (health <= 0) gameOver();
+        return;
+      }
+      const perfect = bestDt < 70;
+      combo += 1;
+      if (combo > bestCombo) bestCombo = combo;
+      const mult = Math.min(1 + Math.floor(combo / 8), 5);
+      score += perfect ? 2 * mult : 1 * mult;
+      $('score').textContent = score;
+      $('combo').textContent = 'x' + mult;
+      $('combo').className = 'hud-value' + (mult >= 4 ? ' warn' : '');
+      showBanner(perfect ? 'PERFECT' : 'GOOD', perfect ? 'perfect' : 'good');
+      keyEl && keyEl.classList.add('hit');
+      setTimeout(() => keyEl && keyEl.classList.remove('hit'), 140);
+    } else {
+      // No note in window. Treat as a spurious tap → small combo break but no health cost.
+      combo = 0;
+      $('combo').textContent = 'x1';
+      $('combo').className = 'hud-value';
+      keyEl && keyEl.classList.add('lit');
+      setTimeout(() => keyEl && keyEl.classList.remove('lit'), 120);
+    }
+  }
+
+  // Click lanes
+  document.querySelectorAll('.lane-key').forEach(el => {
+    el.addEventListener('pointerdown', e => { e.preventDefault(); pressLane(+el.dataset.lane); });
+  });
+  window.addEventListener('keydown', e => {
+    if (KEYMAP[e.key] !== undefined) {
+      e.preventDefault();
+      pressLane(KEYMAP[e.key]);
+    }
+  });
+
+  function spawnTick(now) {
+    // Spawn notes at musical intervals; BPM scales with score
+    bpm = Math.min(60 + Math.floor(score / 6), 168);
+    $('bpm').textContent = bpm;
+    $('bpm').className = 'hud-value' + (bpm >= 130 ? ' warn' : '');
+    const beatMs = 60000 / bpm;
+    while (now - lastBeatAt >= beatMs) {
+      lastBeatAt += beatMs;
+      // ~75% beats produce a note
+      if (Math.random() < 0.78) spawnNote(lastBeatAt);
+      // Occasionally double-spawn at higher bpm
+      if (bpm >= 110 && Math.random() < 0.22) spawnNote(lastBeatAt + beatMs * 0.5);
+    }
+  }
+
+  function draw(now) {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    ctx.clearRect(0, 0, w, h);
+    // Layout: 4 lanes, lane-keys row at the bottom (70px). Hit zone just above it.
+    const keysH = 70 + 12; // padding
+    const hitZoneY = h - keysH - 4;
+    const laneW = w / LANES;
+
+    // Lane separators + lane glow
+    ctx.fillStyle = 'rgba(0,255,136,0.04)';
+    for (let i = 0; i < LANES; i++) {
+      ctx.fillRect(i * laneW + 6, 0, laneW - 12, hitZoneY);
+    }
+    ctx.strokeStyle = 'rgba(33,38,45,0.8)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < LANES; i++) {
+      ctx.beginPath();
+      ctx.moveTo(i * laneW, 0);
+      ctx.lineTo(i * laneW, hitZoneY);
+      ctx.stroke();
+    }
+
+    // Hit zone line
+    ctx.strokeStyle = '#00ff88';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, hitZoneY);
+    ctx.lineTo(w, hitZoneY);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(0,255,136,0.10)';
+    ctx.fillRect(0, hitZoneY - 18, w, 18);
+
+    // Beat ring / pulse along the heartbeat
+    const beatMs = 60000 / bpm;
+    const beatPhase = ((now - startTs) % beatMs) / beatMs;
+    const ringR = 14 + beatPhase * 6;
+    ctx.strokeStyle = `rgba(0,255,136,${0.4 - beatPhase * 0.4})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(w - 22, 22, ringR, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = '#00ff88';
+    ctx.beginPath();
+    ctx.arc(w - 22, 22, 5 + (1 - beatPhase) * 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Notes
+    const travel = getTravelMs();
+    for (const n of notes) {
+      if (n.hit) continue;
+      const elapsed = now - n.t;
+      // Progress from top (0) to hitZoneY at elapsed = travel
+      const y = (elapsed / travel) * hitZoneY;
+      if (y < -30 || y > h + 30) continue;
+      const x = n.lane * laneW + laneW / 2;
+      const noteW = laneW * 0.7;
+      const noteH = 22;
+      ctx.save();
+      if (n.ghost) {
+        ctx.fillStyle = 'rgba(255,80,80,0.18)';
+        ctx.strokeStyle = '#ff5050';
+      } else {
+        ctx.fillStyle = 'rgba(0,255,136,0.25)';
+        ctx.strokeStyle = '#00ff88';
+      }
+      ctx.lineWidth = 2;
+      const rx = x - noteW / 2, ry = y - noteH / 2;
+      ctx.beginPath();
+      const r = 6;
+      ctx.moveTo(rx + r, ry);
+      ctx.lineTo(rx + noteW - r, ry);
+      ctx.quadraticCurveTo(rx + noteW, ry, rx + noteW, ry + r);
+      ctx.lineTo(rx + noteW, ry + noteH - r);
+      ctx.quadraticCurveTo(rx + noteW, ry + noteH, rx + noteW - r, ry + noteH);
+      ctx.lineTo(rx + r, ry + noteH);
+      ctx.quadraticCurveTo(rx, ry + noteH, rx, ry + noteH - r);
+      ctx.lineTo(rx, ry + r);
+      ctx.quadraticCurveTo(rx, ry, rx + r, ry);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      // Label
+      ctx.fillStyle = n.ghost ? '#ff5050' : '#00ff88';
+      ctx.font = 'bold 10px Courier New, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(n.ghost ? 'MOONY' : 'BAR', x, y);
+      ctx.restore();
+    }
+  }
+
+  function loop(now) {
+    if (!running) return;
+    spawnTick(now);
+    // Missed notes (passed hit zone without being hit)
+    const travel = getTravelMs();
+    const MISS_GRACE = 240;
+    for (const n of notes) {
+      if (n.hit || n.missed) continue;
+      const hitAt = n.t + travel;
+      if (now > hitAt + MISS_GRACE) {
+        n.missed = true;
+        if (!n.ghost) {
+          // Green note missed = damage
+          combo = 0;
+          $('combo').textContent = 'x1';
+          $('combo').className = 'hud-value';
+          health -= 1;
+          showBanner('MISS', 'miss');
+          updateHealth();
+          if (health <= 0) { gameOver(); return; }
+        }
+        // Ghost note ignored → reward small score, no banner spam
+        else {
+          score += 1;
+          $('score').textContent = score;
+        }
+      }
+    }
+    // Cull old
+    if (notes.length > 50) {
+      notes = notes.filter(n => !(n.hit || n.missed) || (now - n.t) < 4000);
+    }
+
+    // Uptime
+    const up = (now - startTs) / 1000;
+    $('uptime').textContent = up.toFixed(1) + 's';
+
+    // Moony bubble cadence
+    if (now > nextMoonyAt) {
+      showMoony();
+      nextMoonyAt = now + rand(10000, 18000);
+    }
+
+    draw(now);
+    rafHandle = requestAnimationFrame(loop);
+  }
+
+  window.addEventListener('resize', () => { if (running) sizeCanvas(); });
+
+  if (window.DippyLB && DippyLB.init) DippyLB.init('heartbeat-hero');
+})();
+</script>
+{{ end }}
