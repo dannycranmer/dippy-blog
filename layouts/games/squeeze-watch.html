@@ -1,0 +1,456 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">SQUEEZE WATCH</h1>
+    <p class="game-subtitle">You are short the tape.<br>Tap <b>COVER</b> before the squeeze breaks your stop.<br>Or let the winners run all the way to TP.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">OPEN THE BOOK</button>
+    <p class="game-hint">SPACE / TAP screen = cover position<br>Stop hit = -2R · Cover early = small loss/win<br>Let runner reach TP = +1R<br>Read the slope. Don't panic. Don't freeze.<br>10 rounds. Best PnL wins.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">PNL</span>
+        <span class="hud-value" id="pnl">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">ROUND</span>
+        <span class="hud-value" id="round">1/10</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">TICKER</span>
+        <span class="hud-value" id="ticker">AMD</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">PRICE</span>
+        <span class="hud-value" id="price">$100</span>
+      </div>
+    </div>
+
+    <div id="board">
+      <canvas id="chart"></canvas>
+      <div id="entry-flag">SHORT ENTRY</div>
+      <button id="cover-btn">COVER</button>
+      <div id="result-banner"></div>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">BOOK CLOSED</h1>
+    <div class="final-score" id="final-score">$0</div>
+    <p class="final-meta">net P&amp;L · 10 rounds</p>
+    <p class="final-meta">stops hit: <span id="final-stops">0</span> · tp hit: <span id="final-tps">0</span> · covers: <span id="final-covers">0</span></p>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">RE-OPEN BOOK</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  /* Title */
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+  .game-title { font-size:2.2em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; text-align:center; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 36px; font-size:1.1em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.72em; margin-top:16px; line-height:1.6; max-width:340px; }
+
+  /* HUD */
+  .game-hud { display:grid; grid-template-columns:repeat(4,1fr); padding:8px 6px; background:rgba(0,0,0,0.4); border-bottom:1px solid #21262d; }
+  .hud-item { text-align:center; }
+  .hud-label { display:block; font-size:0.65em; color:#6e7681; letter-spacing:1px; }
+  .hud-value { display:block; font-size:1em; color:#e6edf3; font-weight:bold; }
+  #pnl.pos { color:#00ff88; }
+  #pnl.neg { color:#ff5050; }
+
+  /* Game screen */
+  #game-screen { flex:1; display:flex; flex-direction:column; }
+  #board { flex:1; position:relative; background:#0d1117; }
+  #chart { display:block; width:100%; height:100%; }
+
+  #entry-flag { position:absolute; right:8px; top:8px; background:rgba(255,80,80,0.18); color:#ff8080; padding:3px 8px; border:1px solid rgba(255,80,80,0.4); border-radius:4px; font-size:0.65em; letter-spacing:1px; }
+
+  #cover-btn { position:absolute; bottom:18px; left:50%; transform:translateX(-50%); background:#f0883e; color:#0d1117; border:none; padding:16px 36px; font-size:1.15em; font-family:inherit; font-weight:bold; letter-spacing:3px; border-radius:8px; cursor:pointer; box-shadow:0 0 24px rgba(240,136,62,0.4); transition:all 0.12s; }
+  #cover-btn:hover { background:#e07b30; transform:translateX(-50%) scale(1.05); }
+  #cover-btn:active { transform:translateX(-50%) scale(0.94); }
+  #cover-btn:disabled { background:#484f58; color:#21262d; box-shadow:none; cursor:not-allowed; }
+
+  #result-banner { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); padding:12px 24px; font-size:1.4em; font-weight:bold; letter-spacing:3px; border-radius:6px; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+  #result-banner.show { opacity:1; }
+  #result-banner.win { background:rgba(0,255,136,0.18); color:#00ff88; border:2px solid #00ff88; text-shadow:0 0 8px rgba(0,255,136,0.6); }
+  #result-banner.loss { background:rgba(255,80,80,0.18); color:#ff5050; border:2px solid #ff5050; text-shadow:0 0 8px rgba(255,80,80,0.6); }
+  #result-banner.flat { background:rgba(139,148,158,0.18); color:#8b949e; border:2px solid #8b949e; }
+
+  /* Game Over */
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:24px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.5); margin:8px 0 4px; }
+  .final-score.neg { color:#ff5050; text-shadow:0 0 20px rgba(255,80,80,0.5); }
+  .final-meta { color:#8b949e; font-size:0.78em; margin:2px 0; letter-spacing:1px; }
+  .roast-msg { color:#f0883e; font-size:0.9em; margin:18px 8px 8px; max-width:340px; line-height:1.5; font-style:italic; }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  const HIGH_KEY = 'dippy-squeeze-watch-high';
+
+  const TICKERS = ['AMD','ARM','NVDA','SMCI','TSLA','COIN','MSTR','SHOP','SNOW','QQQ'];
+  const ROAST = [
+    "You covered like Moony — early, scared, and somehow still in the red.",
+    "Decent book. Now imagine doing it with 5 positions in parallel under a 90% cap.",
+    "Profitable! Moony's strategy committee is convening an emergency 70%-cash directive.",
+    "You held a squeezer to the stop. The bot did this with -42 AMD on May 19. Hurts, doesn't it?",
+    "Letting winners run is the easy part. Cutting the squeezers fast is the rent.",
+    "Stop hit on a squeeze is a TUITION PAYMENT, not a verdict on the strategy.",
+    "A solid book. Moony, meanwhile, is still asking what 'short' means.",
+    "Mixed results. Welcome to running a positive-expectancy short book through a chip cycle.",
+    "n=10 trades is variance. Run it 1000 times and the slope shows.",
+    "Cover the squeezes, let the trends run. Moony does the opposite and calls it 'value'.",
+    "The book is closed. The lessons are not. Moony hasn't learned any since 2019.",
+    "Net green? Brag in Slack. Net red? Blame the regime. Either way: review tape, ship tomorrow."
+  ];
+
+  // ---- Round generation ----
+  // Each round: a randomly-shaped price path scrolling right-to-left
+  // path[i] is the price at time-step i (60 steps = ~5 seconds)
+  // Two outcome types:
+  //   SQUEEZER: ramps up, hits stop if held
+  //   REVERTER: dips initially or ramps then reverts, hits TP if held
+  // Skill: identify type early (first ~25%) and act
+  function makeRound(idx) {
+    const isSqueeze = Math.random() < 0.5;
+    const steps = 60;
+    const path = [];
+    const entry = 100;
+    const stop = entry * 1.05;   // +5%
+    const target = entry * 0.95; // -5%
+    let price = entry;
+    let dir = isSqueeze ? +1 : -1;
+    // Bias of first few bars (the "tell") — sometimes weak, sometimes strong
+    const tellStrength = 0.6 + Math.random() * 0.6;
+    // Volatility — noise around the trend
+    const noise = 0.0012 + Math.random() * 0.0010;
+    // Drift per step (avg move toward target)
+    const drift = (isSqueeze ? 0.001 : -0.001) * (0.6 + Math.random() * 0.6);
+    let stoppedAt = -1, targetAt = -1;
+    for (let i = 0; i < steps; i++) {
+      const tilt = i < 8 ? tellStrength : 1.0;
+      const step = drift * tilt + (Math.random() - 0.5) * noise * 2;
+      price = price * (1 + step);
+      path.push(price);
+      if (stoppedAt < 0 && price >= stop) stoppedAt = i;
+      if (targetAt < 0 && price <= target) targetAt = i;
+    }
+    // Guarantee resolution: if neither, force it
+    if (isSqueeze && stoppedAt < 0) {
+      stoppedAt = steps - 1;
+      path[steps - 1] = stop * 1.001;
+    }
+    if (!isSqueeze && targetAt < 0) {
+      targetAt = steps - 1;
+      path[steps - 1] = target * 0.999;
+    }
+    return { ticker: TICKERS[Math.floor(Math.random() * TICKERS.length)], entry, stop, target, path, isSqueeze, stoppedAt, targetAt };
+  }
+
+  // ---- State ----
+  let rounds = [];
+  let roundIdx = 0;
+  let step = 0;
+  let raf = null;
+  let pnl = 0;
+  let stopsHit = 0, tpHit = 0, covers = 0;
+  let covered = false;
+  let resolvedThisRound = false;
+  let lastFrame = 0;
+  const STEP_MS = 80; // ~5s per round
+
+  // ---- DOM ----
+  const titleScreen = document.getElementById('title-screen');
+  const gameScreen  = document.getElementById('game-screen');
+  const overScreen  = document.getElementById('gameover-screen');
+  const titleHigh   = document.getElementById('title-high-score');
+  const pnlEl       = document.getElementById('pnl');
+  const roundEl     = document.getElementById('round');
+  const tickerEl    = document.getElementById('ticker');
+  const priceEl     = document.getElementById('price');
+  const coverBtn    = document.getElementById('cover-btn');
+  const banner      = document.getElementById('result-banner');
+  const finalScore  = document.getElementById('final-score');
+  const finalStops  = document.getElementById('final-stops');
+  const finalTps    = document.getElementById('final-tps');
+  const finalCovers = document.getElementById('final-covers');
+  const roastMsg    = document.getElementById('roast-msg');
+  const canvas      = document.getElementById('chart');
+  const ctx         = canvas.getContext('2d');
+
+  // ---- High score ----
+  function loadHigh() {
+    const h = parseFloat(localStorage.getItem(HIGH_KEY));
+    if (!isNaN(h)) titleHigh.textContent = `BEST: ${fmt(h)}`;
+  }
+  function saveHigh(v) {
+    const h = parseFloat(localStorage.getItem(HIGH_KEY));
+    if (isNaN(h) || v > h) localStorage.setItem(HIGH_KEY, String(v));
+  }
+
+  function fmt(v) {
+    const sign = v >= 0 ? '+' : '-';
+    return `${sign}$${Math.abs(v).toFixed(0)}`;
+  }
+
+  // ---- Canvas sizing ----
+  function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    const r = canvas.getBoundingClientRect();
+    canvas.width  = r.width  * dpr;
+    canvas.height = r.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', () => { resizeCanvas(); drawFrame(); });
+
+  // ---- Drawing ----
+  function drawFrame() {
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    if (!rounds[roundIdx]) return;
+    const r = rounds[roundIdx];
+
+    ctx.clearRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = '#161b22';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 8; i++) {
+      const y = h * (i / 8);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+
+    // Price axis: stop at top (red), target at bottom (green), entry in middle
+    const yMin = r.target * 0.985;
+    const yMax = r.stop   * 1.015;
+    const yOf = p => h - ((p - yMin) / (yMax - yMin)) * h;
+
+    // Bands
+    ctx.fillStyle = 'rgba(255,80,80,0.10)';
+    ctx.fillRect(0, 0, w, yOf(r.stop));
+    ctx.fillStyle = 'rgba(0,255,136,0.10)';
+    ctx.fillRect(0, yOf(r.target), w, h - yOf(r.target));
+
+    // Stop line
+    ctx.strokeStyle = '#ff5050';
+    ctx.setLineDash([4, 4]);
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(0, yOf(r.stop)); ctx.lineTo(w, yOf(r.stop)); ctx.stroke();
+    ctx.fillStyle = '#ff5050';
+    ctx.font = '10px Courier New';
+    ctx.fillText('STOP -2R', 6, yOf(r.stop) - 4);
+
+    // Target line
+    ctx.strokeStyle = '#00ff88';
+    ctx.beginPath(); ctx.moveTo(0, yOf(r.target)); ctx.lineTo(w, yOf(r.target)); ctx.stroke();
+    ctx.fillStyle = '#00ff88';
+    ctx.fillText('TP +1R', 6, yOf(r.target) + 12);
+
+    // Entry line
+    ctx.strokeStyle = '#8b949e';
+    ctx.beginPath(); ctx.moveTo(0, yOf(r.entry)); ctx.lineTo(w, yOf(r.entry)); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Price line up to current step
+    if (step >= 1) {
+      ctx.strokeStyle = '#f0883e';
+      ctx.lineWidth = 2.0;
+      ctx.beginPath();
+      const xStep = w / (r.path.length - 1);
+      for (let i = 0; i <= step && i < r.path.length; i++) {
+        const x = i * xStep;
+        const y = yOf(r.path[i]);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // Marker dot
+      const ix = Math.min(step, r.path.length - 1);
+      ctx.fillStyle = '#f0883e';
+      ctx.beginPath();
+      ctx.arc(ix * xStep, yOf(r.path[ix]), 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // ---- Round flow ----
+  function startRound() {
+    resolvedThisRound = false;
+    covered = false;
+    step = 0;
+    const r = rounds[roundIdx];
+    tickerEl.textContent = r.ticker;
+    priceEl.textContent = '$' + r.entry.toFixed(0);
+    roundEl.textContent = (roundIdx + 1) + '/10';
+    coverBtn.disabled = false;
+    coverBtn.textContent = 'COVER';
+    banner.classList.remove('show', 'win', 'loss', 'flat');
+    banner.textContent = '';
+    lastFrame = performance.now();
+    if (raf) cancelAnimationFrame(raf);
+    tick(lastFrame);
+  }
+
+  function tick(now) {
+    raf = requestAnimationFrame(tick);
+    const r = rounds[roundIdx];
+    if (!r || resolvedThisRound) return;
+    const dt = now - lastFrame;
+    if (dt >= STEP_MS) {
+      lastFrame = now;
+      step += 1;
+      if (step >= r.path.length) step = r.path.length - 1;
+      priceEl.textContent = '$' + r.path[step].toFixed(0);
+
+      // Auto-resolve at stop or target if not yet covered
+      if (!covered) {
+        if (r.isSqueeze && r.stoppedAt >= 0 && step >= r.stoppedAt) {
+          resolveRound('STOP', -200);
+          return;
+        }
+        if (!r.isSqueeze && r.targetAt >= 0 && step >= r.targetAt) {
+          resolveRound('TP', 100);
+          return;
+        }
+      }
+      if (step >= r.path.length - 1) {
+        // Path ended without resolution — flat
+        resolveRound('FLAT', 0);
+      }
+    }
+    drawFrame();
+  }
+
+  function resolveRound(kind, deltaIfAuto) {
+    resolvedThisRound = true;
+    coverBtn.disabled = true;
+    const r = rounds[roundIdx];
+    let delta = 0;
+    let cls = 'flat';
+    let txt = '';
+    if (kind === 'STOP') {
+      delta = -200; stopsHit++; cls = 'loss'; txt = 'STOP HIT  -$200';
+    } else if (kind === 'TP') {
+      delta = +100; tpHit++; cls = 'win'; txt = 'TP HIT  +$100';
+    } else if (kind === 'COVER') {
+      // Mark-to-market: short entry - price now
+      const px = r.path[Math.min(step, r.path.length - 1)];
+      const pct = (r.entry - px) / r.entry; // positive when price below entry
+      delta = Math.round(pct * 2000); // $2000 = 1R equivalent at 100%
+      covers++;
+      if (delta > 5) { cls = 'win'; txt = 'COVERED  +$' + delta; }
+      else if (delta < -5) { cls = 'loss'; txt = 'COVERED  -$' + Math.abs(delta); }
+      else { cls = 'flat'; txt = 'COVERED FLAT'; }
+    } else {
+      cls = 'flat'; txt = 'NO RESOLUTION';
+    }
+    pnl += delta;
+    pnlEl.textContent = fmt(pnl);
+    pnlEl.classList.toggle('pos', pnl > 0);
+    pnlEl.classList.toggle('neg', pnl < 0);
+    banner.classList.add('show', cls);
+    banner.textContent = txt;
+    drawFrame();
+    setTimeout(nextRound, 1200);
+  }
+
+  function cover() {
+    if (resolvedThisRound || covered) return;
+    covered = true;
+    resolveRound('COVER', 0);
+  }
+
+  function nextRound() {
+    roundIdx++;
+    if (roundIdx >= rounds.length) {
+      endGame();
+    } else {
+      startRound();
+    }
+  }
+
+  function endGame() {
+    if (raf) cancelAnimationFrame(raf);
+    gameScreen.style.display = 'none';
+    overScreen.style.display = 'flex';
+    finalScore.textContent = fmt(pnl);
+    finalScore.classList.toggle('neg', pnl < 0);
+    finalStops.textContent = stopsHit;
+    finalTps.textContent = tpHit;
+    finalCovers.textContent = covers;
+    roastMsg.textContent = ROAST[Math.floor(Math.random() * ROAST.length)];
+    saveHigh(pnl);
+    if (window.DippyLB && DippyLB.onGameOver) DippyLB.onGameOver(pnl);
+  }
+
+  window.startGame = function() {
+    rounds = [];
+    for (let i = 0; i < 10; i++) rounds.push(makeRound(i));
+    roundIdx = 0;
+    pnl = 0;
+    stopsHit = 0; tpHit = 0; covers = 0;
+    pnlEl.textContent = fmt(0);
+    pnlEl.classList.remove('pos', 'neg');
+    titleScreen.style.display = 'none';
+    overScreen.style.display = 'none';
+    gameScreen.style.display = 'flex';
+    requestAnimationFrame(() => { resizeCanvas(); startRound(); });
+  };
+
+  // ---- Input ----
+  coverBtn.addEventListener('click', cover);
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && gameScreen.style.display !== 'none') {
+      e.preventDefault();
+      cover();
+    }
+  });
+  // Tap anywhere in the board also covers
+  document.getElementById('board').addEventListener('click', (e) => {
+    if (e.target.id === 'cover-btn') return; // handled
+    cover();
+  });
+
+  loadHigh();
+  if (window.DippyLB && DippyLB.init) DippyLB.init('squeeze-watch');
+})();
+</script>
+{{ end }}
