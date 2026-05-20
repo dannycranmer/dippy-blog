@@ -1,0 +1,413 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">TICKER BINGO</h1>
+    <p class="game-subtitle">The caller bot fires one trading event per beat.<br>Tap the matching cell before the next call.<br>5 in a row = BINGO. Each line banks +$500.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">DEAL THE CARD</button>
+    <p class="game-hint">FREE center = ZERO ORPHANS · 30 calls per session<br>Miss = no mark. Late tap = no mark.<br>Multiple bingos stack. Blackout = +$3000 bonus.<br>Read fast. Tap faster.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">PNL</span>
+        <span class="hud-value" id="pnl">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">CALL</span>
+        <span class="hud-value" id="call">1/30</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">BINGOS</span>
+        <span class="hud-value" id="bingos">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">MARKED</span>
+        <span class="hud-value" id="marked">1/25</span>
+      </div>
+    </div>
+
+    <div id="call-banner">
+      <div class="caller-label">CALLER</div>
+      <div class="caller-text" id="caller-text">--</div>
+      <div class="caller-timer"><div class="caller-timer-fill" id="caller-timer"></div></div>
+    </div>
+
+    <div id="board" aria-label="Bingo grid"></div>
+
+    <div id="result-banner"></div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">SESSION CLOSED</h1>
+    <div class="final-score" id="final-score">$0</div>
+    <p class="final-meta">net banked · 30 calls</p>
+    <p class="final-meta">bingos: <span id="final-bingos">0</span> · cells marked: <span id="final-marked">1</span>/25 · blackout: <span id="final-blackout">no</span></p>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">DEAL AGAIN</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  /* Title */
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+  .game-title { font-size:2.2em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; text-align:center; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 36px; font-size:1.1em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.72em; margin-top:16px; line-height:1.6; max-width:340px; }
+
+  /* HUD */
+  .game-hud { display:grid; grid-template-columns:repeat(4,1fr); padding:8px 6px; background:rgba(0,0,0,0.4); border-bottom:1px solid #21262d; }
+  .hud-item { text-align:center; }
+  .hud-label { display:block; font-size:0.62em; color:#6e7681; letter-spacing:1px; }
+  .hud-value { display:block; font-size:0.98em; color:#e6edf3; font-weight:bold; }
+  #pnl.pos { color:#00ff88; }
+  #pnl.neg { color:#ff5050; }
+
+  /* Game screen */
+  #game-screen { flex:1; display:flex; flex-direction:column; position:relative; }
+
+  /* Caller banner */
+  #call-banner { background:linear-gradient(90deg,rgba(240,136,62,0.18),rgba(255,255,255,0.02)); border-bottom:1px solid #21262d; padding:10px 12px 4px; position:relative; }
+  .caller-label { font-size:0.62em; color:#f0883e; letter-spacing:2px; margin-bottom:2px; }
+  .caller-text { font-size:1.5em; font-weight:bold; color:#e6edf3; letter-spacing:1.5px; line-height:1.05; min-height:1.2em; }
+  .caller-timer { height:3px; background:#21262d; border-radius:2px; margin-top:6px; overflow:hidden; }
+  .caller-timer-fill { height:100%; background:#f0883e; width:100%; transition:width 0.06s linear; }
+
+  /* Board */
+  #board { flex:1; padding:8px; display:grid; grid-template-columns:repeat(5,1fr); grid-template-rows:repeat(5,1fr); gap:6px; }
+  .cell { background:#161b22; border:1.5px solid #21262d; border-radius:6px; display:flex; align-items:center; justify-content:center; text-align:center; padding:4px; font-size:0.55em; line-height:1.1; color:#c9d1d9; cursor:pointer; transition:all 0.12s; letter-spacing:0.5px; word-break:break-word; }
+  .cell:active { transform:scale(0.95); }
+  .cell.marked { background:#003d20; border-color:#00ff88; color:#00ff88; box-shadow:inset 0 0 10px rgba(0,255,136,0.3); }
+  .cell.marked::after { content:'✓'; position:absolute; }
+  .cell.free { background:#0d2438; border-color:#58a6ff; color:#58a6ff; }
+  .cell.target { animation:pulse-cell 0.5s ease-in-out infinite; }
+  @keyframes pulse-cell { 0%,100%{box-shadow:0 0 0 0 rgba(240,136,62,0.6)} 50%{box-shadow:0 0 0 6px rgba(240,136,62,0)} }
+  .cell.bingo-flash { animation:bingoflash 0.4s ease-out 2; }
+  @keyframes bingoflash { 0%{background:#00ff88;color:#0d1117} 100%{background:#003d20;color:#00ff88} }
+
+  /* Result banner */
+  #result-banner { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); padding:14px 28px; font-size:1.4em; font-weight:bold; letter-spacing:3px; border-radius:6px; opacity:0; pointer-events:none; transition:opacity 0.3s; z-index:5; }
+  #result-banner.show { opacity:1; }
+  #result-banner.bingo { background:rgba(0,255,136,0.18); color:#00ff88; border:2px solid #00ff88; text-shadow:0 0 8px rgba(0,255,136,0.6); }
+  #result-banner.blackout { background:rgba(88,166,255,0.18); color:#58a6ff; border:2px solid #58a6ff; text-shadow:0 0 8px rgba(88,166,255,0.6); }
+
+  /* Game Over */
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:24px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.5); margin:8px 0 4px; }
+  .final-score.neg { color:#ff5050; text-shadow:0 0 20px rgba(255,80,80,0.5); }
+  .final-meta { color:#8b949e; font-size:0.78em; margin:2px 0; letter-spacing:1px; }
+  .roast-msg { color:#f0883e; font-size:0.9em; margin:18px 8px 8px; max-width:340px; line-height:1.5; font-style:italic; }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  const HIGH_KEY = 'dippy-ticker-bingo-high';
+
+  const EVENT_POOL = [
+    'STOP HIT', 'PARTIAL EXIT', 'TRAIL STOP', 'EOD COVER', 'RE-ENTRY',
+    'SCANNER FIRE', 'SHORT SQUEEZE', 'GAP UP', 'VOLUME SPIKE', 'PE TRIGGER',
+    'SECTOR ROT', 'ORM BREAK', 'EMA CROSS', 'CAP REJECT', 'CORR FILTER',
+    'SPY RALLY', 'FILTER FIRE', 'ARM SHORT', 'AMD SQUEEZE', 'ROKU PE',
+    'SPY LONG WIN', 'COIN BLEED', 'GOOGL COVER', 'META STOP', 'CLEAN EOD',
+    'EARN BEAT', 'EARN MISS', 'FAKEOUT', 'WHIPSAW', 'TAPE GREEN',
+    'TAPE RED', 'CHOPPY DAY', 'BIG VOLUME', 'GAP DOWN', 'NEW HIGH'
+  ];
+
+  const ROAST = [
+    "Blackout. You and the algo are the same person now.",
+    "Multi-bingo run. Moony's still looking for the FREE square.",
+    "Solid card. Moony fills out a 1×1 board and calls it diversification.",
+    "Mediocre. Reading the tape is half the job; tapping the tape is the other.",
+    "Your eyes are faster than Moony's strategy committee. Low bar, but.",
+    "n=30 calls is variance. Your finger speed is signal.",
+    "Zero bingos? Moony just opened a podcast about your inner game.",
+    "Net green? The caller bot called it.",
+    "Net red? You read MARGIN like METAL. Easy mistake. Easy loss.",
+    "Read fast. Tap faster. Lock the day. Repeat tomorrow.",
+    "The card is closed. The line items remain. Trade them tomorrow.",
+    "Five in a row is hard. Five names in your book at 90% gross is the rent."
+  ];
+
+  // ---- State ----
+  let board = [];      // length 25, each cell = { text, marked }
+  let callIdx = 0;
+  let calls = [];      // sequence of event indices to call
+  let currentCallText = '';
+  let currentCellIdx = -1; // which board cell matches the current call
+  let pnl = 0;
+  let bingos = 0;
+  let blackedOut = false;
+  let lineState = { rows:[false,false,false,false,false], cols:[false,false,false,false,false], diags:[false,false] };
+  let callTimer = null;
+  let callDeadline = 0;
+  let CALLS_PER_GAME = 30;
+  const CALL_MS = 2200; // 2.2s window per call
+
+  // ---- DOM ----
+  const titleScreen = document.getElementById('title-screen');
+  const gameScreen  = document.getElementById('game-screen');
+  const overScreen  = document.getElementById('gameover-screen');
+  const titleHigh   = document.getElementById('title-high-score');
+  const pnlEl       = document.getElementById('pnl');
+  const callEl      = document.getElementById('call');
+  const bingosEl    = document.getElementById('bingos');
+  const markedEl    = document.getElementById('marked');
+  const callerText  = document.getElementById('caller-text');
+  const callerTimer = document.getElementById('caller-timer');
+  const boardEl     = document.getElementById('board');
+  const banner      = document.getElementById('result-banner');
+  const finalScore  = document.getElementById('final-score');
+  const finalBingos = document.getElementById('final-bingos');
+  const finalMarked = document.getElementById('final-marked');
+  const finalBlackout = document.getElementById('final-blackout');
+  const roastMsg    = document.getElementById('roast-msg');
+
+  // ---- High score ----
+  function loadHigh() {
+    const h = parseFloat(localStorage.getItem(HIGH_KEY));
+    if (!isNaN(h)) titleHigh.textContent = `BEST: ${fmt(h)}`;
+  }
+  function saveHigh(v) {
+    const h = parseFloat(localStorage.getItem(HIGH_KEY));
+    if (isNaN(h) || v > h) localStorage.setItem(HIGH_KEY, String(v));
+  }
+  function fmt(v) {
+    const sign = v >= 0 ? '+' : '-';
+    return `${sign}$${Math.abs(v).toFixed(0)}`;
+  }
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // ---- Setup ----
+  function buildBoard() {
+    const picks = shuffle(EVENT_POOL).slice(0, 24);
+    board = [];
+    let p = 0;
+    for (let i = 0; i < 25; i++) {
+      if (i === 12) board.push({ text: 'ZERO ORPHANS', marked: true, free: true });
+      else { board.push({ text: picks[p++], marked: false, free: false }); }
+    }
+    renderBoard();
+  }
+
+  function renderBoard() {
+    boardEl.innerHTML = '';
+    for (let i = 0; i < 25; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      if (board[i].marked) cell.classList.add('marked');
+      if (board[i].free) cell.classList.add('free');
+      cell.textContent = board[i].text;
+      cell.dataset.idx = String(i);
+      cell.addEventListener('click', () => onCellTap(i));
+      boardEl.appendChild(cell);
+    }
+  }
+
+  function markedCount() {
+    return board.reduce((n, c) => n + (c.marked ? 1 : 0), 0);
+  }
+
+  // ---- Call cycle ----
+  function buildCalls() {
+    // Build sequence of cell indices to call.
+    // ~70% should be cells on the board (so player can mark), ~30% red herrings.
+    calls = [];
+    const onBoard = [];
+    for (let i = 0; i < 25; i++) if (!board[i].free) onBoard.push(i);
+    const shuffled = shuffle(onBoard);
+    // Use up to CALLS_PER_GAME * 0.7 board calls, rest red herrings
+    const wantBoard = Math.min(Math.floor(CALLS_PER_GAME * 0.75), shuffled.length);
+    for (let i = 0; i < wantBoard; i++) calls.push({ kind: 'board', cellIdx: shuffled[i], text: board[shuffled[i]].text });
+    const onBoardTexts = new Set(board.map(b => b.text));
+    const redHerringPool = EVENT_POOL.filter(t => !onBoardTexts.has(t));
+    for (let i = wantBoard; i < CALLS_PER_GAME; i++) {
+      if (redHerringPool.length > 0) {
+        calls.push({ kind: 'herring', cellIdx: -1, text: redHerringPool[Math.floor(Math.random() * redHerringPool.length)] });
+      } else {
+        // Pool exhausted — repeat an already-called board cell (player may already have it marked)
+        const c = shuffled[Math.floor(Math.random() * shuffled.length)];
+        calls.push({ kind: 'board', cellIdx: c, text: board[c].text });
+      }
+    }
+    calls = shuffle(calls);
+  }
+
+  function nextCall() {
+    if (callTimer) { clearInterval(callTimer); callTimer = null; }
+    // Clear previous target highlight
+    const prev = document.querySelector('.cell.target');
+    if (prev) prev.classList.remove('target');
+    if (callIdx >= calls.length) { endGame(); return; }
+    const call = calls[callIdx];
+    currentCallText = call.text;
+    currentCellIdx = call.kind === 'board' ? call.cellIdx : -1;
+    callerText.textContent = call.text;
+    callEl.textContent = (callIdx + 1) + '/' + CALLS_PER_GAME;
+    callDeadline = performance.now() + CALL_MS;
+    callerTimer.style.width = '100%';
+    callTimer = setInterval(updateCallTimer, 40);
+  }
+
+  function updateCallTimer() {
+    const remaining = callDeadline - performance.now();
+    if (remaining <= 0) {
+      // Missed
+      callIdx++;
+      nextCall();
+      return;
+    }
+    callerTimer.style.width = (remaining / CALL_MS * 100) + '%';
+  }
+
+  function onCellTap(idx) {
+    if (board[idx].marked) return; // already marked — no-op
+    // Only count if THIS cell matches the current call AND within window
+    if (idx !== currentCellIdx) return;
+    if (performance.now() > callDeadline) return;
+    board[idx].marked = true;
+    const cellEl = boardEl.children[idx];
+    cellEl.classList.add('marked');
+    cellEl.classList.add('bingo-flash');
+    setTimeout(() => cellEl.classList.remove('bingo-flash'), 800);
+    updateHud();
+    checkBingos();
+    // Advance to next call once tapped
+    callIdx++;
+    if (callTimer) { clearInterval(callTimer); callTimer = null; }
+    setTimeout(nextCall, 380);
+  }
+
+  function rowMarked(r) {
+    for (let c = 0; c < 5; c++) if (!board[r * 5 + c].marked) return false;
+    return true;
+  }
+  function colMarked(c) {
+    for (let r = 0; r < 5; r++) if (!board[r * 5 + c].marked) return false;
+    return true;
+  }
+  function diagMarked(d) {
+    if (d === 0) {
+      for (let i = 0; i < 5; i++) if (!board[i * 5 + i].marked) return false;
+      return true;
+    } else {
+      for (let i = 0; i < 5; i++) if (!board[i * 5 + (4 - i)].marked) return false;
+      return true;
+    }
+  }
+
+  function checkBingos() {
+    let newBingo = false;
+    for (let r = 0; r < 5; r++) {
+      if (!lineState.rows[r] && rowMarked(r)) { lineState.rows[r] = true; bingos++; pnl += 500; newBingo = true; }
+    }
+    for (let c = 0; c < 5; c++) {
+      if (!lineState.cols[c] && colMarked(c)) { lineState.cols[c] = true; bingos++; pnl += 500; newBingo = true; }
+    }
+    for (let d = 0; d < 2; d++) {
+      if (!lineState.diags[d] && diagMarked(d)) { lineState.diags[d] = true; bingos++; pnl += 500; newBingo = true; }
+    }
+    if (!blackedOut && markedCount() === 25) {
+      blackedOut = true;
+      pnl += 3000;
+      showBanner('BLACKOUT  +$3000', 'blackout');
+    } else if (newBingo) {
+      showBanner('BINGO  +$500', 'bingo');
+    }
+    if (newBingo) updateHud();
+  }
+
+  function showBanner(txt, cls) {
+    banner.textContent = txt;
+    banner.className = '';
+    banner.classList.add('show', cls);
+    setTimeout(() => banner.classList.remove('show'), 900);
+  }
+
+  function updateHud() {
+    pnlEl.textContent = fmt(pnl);
+    pnlEl.classList.toggle('pos', pnl > 0);
+    pnlEl.classList.toggle('neg', pnl < 0);
+    bingosEl.textContent = String(bingos);
+    markedEl.textContent = markedCount() + '/25';
+  }
+
+  function endGame() {
+    if (callTimer) { clearInterval(callTimer); callTimer = null; }
+    // Per-call shortfall: -$25 per unmarked non-free cell beyond minimum
+    // Already baked in: if you don't tap, pnl just stays where it is.
+    gameScreen.style.display = 'none';
+    overScreen.style.display = 'flex';
+    finalScore.textContent = fmt(pnl);
+    finalScore.classList.toggle('neg', pnl < 0);
+    finalBingos.textContent = String(bingos);
+    finalMarked.textContent = String(markedCount());
+    finalBlackout.textContent = blackedOut ? 'YES' : 'no';
+    roastMsg.textContent = ROAST[Math.floor(Math.random() * ROAST.length)];
+    saveHigh(pnl);
+    if (window.DippyLB && DippyLB.onGameOver) DippyLB.onGameOver(pnl);
+  }
+
+  window.startGame = function() {
+    pnl = 0;
+    bingos = 0;
+    callIdx = 0;
+    blackedOut = false;
+    lineState = { rows:[false,false,false,false,false], cols:[false,false,false,false,false], diags:[false,false] };
+    titleScreen.style.display = 'none';
+    overScreen.style.display = 'none';
+    gameScreen.style.display = 'flex';
+    buildBoard();
+    buildCalls();
+    updateHud();
+    nextCall();
+  };
+
+  loadHigh();
+  if (window.DippyLB && DippyLB.init) DippyLB.init('ticker-bingo');
+})();
+</script>
+{{ end }}
