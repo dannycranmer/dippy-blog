@@ -1,0 +1,431 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">DOUBLE TAP</h1>
+    <p class="game-subtitle">Two shorts. Two charts. One squeezer, one reverter.<br>Tap the squeezer before its stop. Hold the reverter to TP.<br>Get both right. Get rich.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">OPEN THE BOOK</button>
+    <p class="game-hint">LEFT half of screen = cover LEFT ticker<br>RIGHT half = cover RIGHT ticker<br>One side is a squeezer (drifts up — stops at +5% for -2R)<br>Other side is a reverter (drifts down — TP at -5% for +1R)<br>Cover early = small win/loss. Stop hit = -2R. TP reached = +1R.<br>10 rounds. Read both slopes. Decide fast.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">PNL</span>
+        <span class="hud-value" id="pnl">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">ROUND</span>
+        <span class="hud-value" id="round">1/10</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">STREAK</span>
+        <span class="hud-value" id="streak">0</span>
+      </div>
+    </div>
+
+    <div id="board">
+      <div class="side" id="side-left">
+        <div class="side-label">
+          <span class="ticker-name" id="ticker-l">AMD</span>
+          <span class="price-tag" id="price-l">$100.00</span>
+        </div>
+        <canvas class="chart" id="chart-l"></canvas>
+        <div class="side-status" id="status-l">SHORT</div>
+        <div class="result-banner" id="banner-l"></div>
+      </div>
+      <div class="side" id="side-right">
+        <div class="side-label">
+          <span class="ticker-name" id="ticker-r">SMCI</span>
+          <span class="price-tag" id="price-r">$100.00</span>
+        </div>
+        <canvas class="chart" id="chart-r"></canvas>
+        <div class="side-status" id="status-r">SHORT</div>
+        <div class="result-banner" id="banner-r"></div>
+      </div>
+    </div>
+
+    <div id="round-summary"></div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title">BOOK CLOSED</h1>
+    <div class="final-score">$<span id="final-score">0</span></div>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">TRADE AGAIN</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:2.2em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 48px; font-size:1.2em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.72em; margin-top:14px; line-height:1.45; }
+
+  .game-hud { display:flex; justify-content:space-between; padding:10px 16px; background:rgba(0,0,0,0.4); border-bottom:1px solid #21262d; }
+  .hud-item { text-align:center; }
+  .hud-label { display:block; font-size:0.65em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1.1em; color:#00ff88; font-weight:bold; }
+
+  #board { flex:1; display:flex; flex-direction:row; position:relative; }
+  .side { flex:1; position:relative; display:flex; flex-direction:column; cursor:pointer; touch-action:manipulation; }
+  .side:first-child { border-right:2px dashed #30363d; }
+  .side-label { display:flex; justify-content:space-between; padding:8px 10px; background:rgba(0,0,0,0.4); border-bottom:1px solid #21262d; align-items:center; }
+  .ticker-name { font-weight:bold; font-size:1.0em; color:#e6edf3; letter-spacing:1px; }
+  .price-tag { font-size:0.85em; color:#00ff88; }
+  .chart { flex:1; width:100%; display:block; background:linear-gradient(180deg,#0d1117 0%,#161b22 100%); }
+  .side-status { text-align:center; padding:6px 0; font-size:0.75em; letter-spacing:2px; color:#f0883e; background:rgba(240,136,62,0.08); border-top:1px solid #21262d; }
+  .side.covered .side-status { color:#8b949e; background:rgba(50,50,50,0.2); }
+  .side.tap-flash { background:rgba(0,255,136,0.06); }
+
+  .result-banner { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#0d1117; border:2px solid #00ff88; padding:8px 12px; font-size:0.95em; font-weight:bold; border-radius:4px; opacity:0; pointer-events:none; z-index:10; min-width:80px; text-align:center; }
+  .result-banner.show { opacity:1; animation:pop 0.4s ease-out; }
+  .result-banner.bad { border-color:#ff5050; color:#ff5050; }
+  .result-banner.good { border-color:#00ff88; color:#00ff88; }
+  .result-banner.meh { border-color:#f0883e; color:#f0883e; }
+  @keyframes pop { 0%{transform:translate(-50%,-50%) scale(0.6);opacity:0} 60%{transform:translate(-50%,-50%) scale(1.15);opacity:1} 100%{transform:translate(-50%,-50%) scale(1);opacity:1} }
+
+  #round-summary { position:absolute; bottom:14px; left:50%; transform:translateX(-50%); background:rgba(13,17,23,0.95); padding:10px 18px; border:1px solid #30363d; border-radius:8px; font-size:0.9em; text-align:center; opacity:0; transition:opacity 0.3s; min-width:240px; z-index:20; }
+  #round-summary.show { opacity:1; }
+  #round-summary .summary-net { font-size:1.1em; font-weight:bold; }
+  #round-summary .summary-detail { color:#8b949e; font-size:0.8em; margin-top:4px; }
+
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; margin:16px 0; text-shadow:0 0 20px rgba(0,255,136,0.6); }
+  .roast-msg { color:#f0883e; font-size:0.9em; margin-bottom:20px; padding:0 20px; line-height:1.4; max-width:360px; }
+</style>
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  var TICKERS = ['AMD','SMCI','ARM','NVDA','MU','SHOP','TSLA','MSFT','META','AAPL','COIN','SNOW','ROKU','QQQ'];
+  var ROUNDS = 10;
+  var ROUND_TICKS = 60;
+  var TICK_MS = 50;
+  var ENTRY = 100;
+  var STOP_PCT = 0.05;
+  var TP_PCT = -0.05;
+
+  var roasts = [
+    "Two shorts. Two squeezes. Two reasons Moony's 70% cash looks reasonable.",
+    "You covered the wrong one. Twice. Moony made a meme about it.",
+    "Stop loss is a feature, not a bug. Tell that to your PnL.",
+    "Moony watched this and felt seen.",
+    "Sector squeezes don't care about your conviction.",
+    "The book is closed. So is hope. Moony is laughing.",
+    "Reverters reward patience. You don't have any. Neither does Moony.",
+    "Two charts. Two stops. Moony's cumulative win rate? Higher.",
+    "You held the squeezer. Of course you did. Moony approves.",
+    "Double tap. Double red. Moony's printing this for its office wall.",
+    "If you'd just sat in cash like Moony, you'd be flat. Not great, but flat.",
+    "Covered both at the wrong time. Symmetry is beautiful in design, not in PnL."
+  ];
+
+  var pnl, round, streak, highScore;
+  var leftCovered, rightCovered;
+  var leftPath, rightPath, leftIdx, rightIdx;
+  var leftSquezer, rightSquezer;
+  var leftDone, rightDone, leftPnL, rightPnL;
+  var tickHandle, roundFinishHandle;
+  var els = {};
+
+  function init() {
+    els.pnl = document.getElementById('pnl');
+    els.round = document.getElementById('round');
+    els.streak = document.getElementById('streak');
+    els.tickerL = document.getElementById('ticker-l');
+    els.tickerR = document.getElementById('ticker-r');
+    els.priceL = document.getElementById('price-l');
+    els.priceR = document.getElementById('price-r');
+    els.chartL = document.getElementById('chart-l');
+    els.chartR = document.getElementById('chart-r');
+    els.statusL = document.getElementById('status-l');
+    els.statusR = document.getElementById('status-r');
+    els.bannerL = document.getElementById('banner-l');
+    els.bannerR = document.getElementById('banner-r');
+    els.summary = document.getElementById('round-summary');
+    els.sideL = document.getElementById('side-left');
+    els.sideR = document.getElementById('side-right');
+    highScore = parseInt(localStorage.getItem('dippy-double-tap-high') || '0');
+    document.getElementById('title-high-score').textContent = highScore > 0 ? 'HIGH SCORE: $' + highScore : '';
+  }
+
+  function startGame() {
+    document.getElementById('title-screen').style.display = 'none';
+    document.getElementById('gameover-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'flex';
+    document.getElementById('game-screen').style.flexDirection = 'column';
+    document.getElementById('game-screen').style.height = '100vh';
+
+    pnl = 0; round = 0; streak = 0;
+    updateHUD();
+    els.sideL.addEventListener('click', function(){ cover('L'); });
+    els.sideR.addEventListener('click', function(){ cover('R'); });
+    nextRound();
+  }
+
+  function nextRound() {
+    if (round >= ROUNDS) { endGame(); return; }
+    round++;
+    leftCovered = false; rightCovered = false;
+    leftDone = false; rightDone = false;
+    leftPnL = 0; rightPnL = 0;
+    leftPath = []; rightPath = [];
+    leftIdx = 0; rightIdx = 0;
+
+    // Pick two distinct tickers
+    var t1 = TICKERS[Math.floor(Math.random()*TICKERS.length)];
+    var t2;
+    do { t2 = TICKERS[Math.floor(Math.random()*TICKERS.length)]; } while (t2 === t1);
+    els.tickerL.textContent = t1;
+    els.tickerR.textContent = t2;
+
+    // Pick which side is the squeezer (one each round; sometimes both squeezers or both reverters)
+    var roll = Math.random();
+    if (roll < 0.5) { leftSquezer = true; rightSquezer = false; }
+    else if (roll < 0.8) { leftSquezer = false; rightSquezer = true; }
+    else if (roll < 0.9) { leftSquezer = true; rightSquezer = true; }
+    else { leftSquezer = false; rightSquezer = false; }
+
+    leftPath = genPath(leftSquezer);
+    rightPath = genPath(rightSquezer);
+
+    els.sideL.classList.remove('covered','tap-flash');
+    els.sideR.classList.remove('covered','tap-flash');
+    els.statusL.textContent = 'SHORT';
+    els.statusR.textContent = 'SHORT';
+    els.bannerL.classList.remove('show','good','bad','meh');
+    els.bannerL.textContent = '';
+    els.bannerR.classList.remove('show','good','bad','meh');
+    els.bannerR.textContent = '';
+    els.summary.classList.remove('show');
+
+    els.round.textContent = round + '/' + ROUNDS;
+    drawChart(els.chartL, [ENTRY], false);
+    drawChart(els.chartR, [ENTRY], false);
+    els.priceL.textContent = '$' + ENTRY.toFixed(2);
+    els.priceR.textContent = '$' + ENTRY.toFixed(2);
+
+    tickHandle = setInterval(tickFn, TICK_MS);
+  }
+
+  function genPath(isSqueezer) {
+    var path = [ENTRY];
+    var drift = isSqueezer ? 0.0009 : -0.0009;
+    var noise = 0.0035;
+    var p = ENTRY;
+    for (var i = 1; i < ROUND_TICKS; i++) {
+      p = p * (1 + drift + (Math.random() - 0.5) * noise);
+      path.push(p);
+    }
+    return path;
+  }
+
+  function tickFn() {
+    if (!leftCovered && !leftDone) advanceSide('L');
+    if (!rightCovered && !rightDone) advanceSide('R');
+    if (leftDone && rightDone) {
+      clearInterval(tickHandle);
+      roundFinishHandle = setTimeout(nextRound, 1500);
+    }
+  }
+
+  function advanceSide(side) {
+    var path = (side === 'L') ? leftPath : rightPath;
+    var idx = (side === 'L') ? ++leftIdx : ++rightIdx;
+    if (idx >= path.length) {
+      // Round end without cover — settle at last price
+      settle(side, path[path.length-1], 'EOD');
+      return;
+    }
+    var price = path[idx];
+    var pctMove = (price - ENTRY) / ENTRY;
+    if (pctMove >= STOP_PCT) {
+      settle(side, ENTRY * (1 + STOP_PCT), 'STOP');
+      return;
+    }
+    if (pctMove <= TP_PCT) {
+      settle(side, ENTRY * (1 + TP_PCT), 'TP');
+      return;
+    }
+    // Update visuals
+    var canvas = (side === 'L') ? els.chartL : els.chartR;
+    var priceEl = (side === 'L') ? els.priceL : els.priceR;
+    drawChart(canvas, path.slice(0, idx+1), false);
+    priceEl.textContent = '$' + price.toFixed(2);
+    priceEl.style.color = pctMove > 0 ? '#ff5050' : '#00ff88';
+  }
+
+  function cover(side) {
+    if (side === 'L' && (leftCovered || leftDone)) return;
+    if (side === 'R' && (rightCovered || rightDone)) return;
+    var path = (side === 'L') ? leftPath : rightPath;
+    var idx = (side === 'L') ? leftIdx : rightIdx;
+    var price = path[Math.max(0, idx)];
+    if (side === 'L') leftCovered = true; else rightCovered = true;
+    settle(side, price, 'COVER');
+  }
+
+  function settle(side, exitPrice, exitType) {
+    var pctMove = (exitPrice - ENTRY) / ENTRY;
+    // Short PnL = -(exit-entry)/entry; we express as R where 1R = 0.05 (TP magnitude)
+    var rMultiple = -pctMove / Math.abs(TP_PCT); // long-direction R; for short reverse sign
+    rMultiple = -rMultiple; // because short -> reverse
+    // Actually: short profits when price goes down. pctMove<0 (reverter) = +R. pctMove>0 (squeezer) = -R.
+    // Convention: 1R = 5% (the TP/SL magnitude). rMultiple = (entry - exit) / entry / 0.05
+    rMultiple = (ENTRY - exitPrice) / ENTRY / Math.abs(TP_PCT);
+    // STOP enforces -2R (stop is at +5%, so (-0.05)/0.05 = -1R only). Force STOP/TP labels:
+    var dollarPnL;
+    var label;
+    var bannerClass;
+    if (exitType === 'STOP') { dollarPnL = -200; label = 'STOP -2R'; bannerClass = 'bad'; }
+    else if (exitType === 'TP') { dollarPnL = 100; label = 'TP +1R'; bannerClass = 'good'; }
+    else if (exitType === 'COVER') {
+      dollarPnL = Math.round(rMultiple * 100);
+      if (dollarPnL > 30) { label = 'COVER +$' + dollarPnL; bannerClass = 'good'; }
+      else if (dollarPnL < -30) { label = 'COVER ' + (dollarPnL < 0 ? '-$' + Math.abs(dollarPnL) : '+$' + dollarPnL); bannerClass = 'bad'; }
+      else { label = (dollarPnL >= 0 ? 'FLAT +$' : 'FLAT -$') + Math.abs(dollarPnL); bannerClass = 'meh'; }
+    } else { // EOD
+      dollarPnL = Math.round(rMultiple * 100);
+      label = 'EOD ' + (dollarPnL >= 0 ? '+$' : '-$') + Math.abs(dollarPnL);
+      bannerClass = dollarPnL >= 0 ? 'good' : 'bad';
+    }
+
+    if (side === 'L') { leftDone = true; leftPnL = dollarPnL; }
+    else { rightDone = true; rightPnL = dollarPnL; }
+    pnl += dollarPnL;
+
+    var banner = (side === 'L') ? els.bannerL : els.bannerR;
+    var statusEl = (side === 'L') ? els.statusL : els.statusR;
+    var sideEl = (side === 'L') ? els.sideL : els.sideR;
+    var canvas = (side === 'L') ? els.chartL : els.chartR;
+    var fullPath = (side === 'L') ? leftPath : rightPath;
+    var idx = (side === 'L') ? leftIdx : rightIdx;
+
+    drawChart(canvas, fullPath.slice(0, idx+1), true, exitType);
+    banner.textContent = label;
+    banner.classList.add('show', bannerClass);
+    statusEl.textContent = exitType;
+    sideEl.classList.add('covered');
+    if (navigator.vibrate && (bannerClass === 'bad' || exitType === 'TP')) {
+      navigator.vibrate(exitType === 'STOP' ? 120 : 60);
+    }
+    updateHUD();
+
+    if (leftDone && rightDone) {
+      var net = leftPnL + rightPnL;
+      var summary = '<div class="summary-net" style="color:' + (net >= 0 ? '#00ff88' : '#ff5050') + '">ROUND ' + round + ': ' + (net >= 0 ? '+$' : '-$') + Math.abs(net) + '</div>';
+      summary += '<div class="summary-detail">L: ' + (leftPnL >= 0 ? '+$' : '-$') + Math.abs(leftPnL) + ' · R: ' + (rightPnL >= 0 ? '+$' : '-$') + Math.abs(rightPnL) + '</div>';
+      els.summary.innerHTML = summary;
+      els.summary.classList.add('show');
+      if (net > 0) streak++; else streak = 0;
+      updateHUD();
+    }
+  }
+
+  function drawChart(canvas, path, done, exitType) {
+    var w = canvas.clientWidth, h = canvas.clientHeight;
+    canvas.width = w; canvas.height = h;
+    var ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, w, h);
+
+    // Entry baseline + stop/TP zones
+    var minP = ENTRY * (1 + TP_PCT) * 0.985;
+    var maxP = ENTRY * (1 + STOP_PCT) * 1.015;
+    function y(p) { return h - ((p - minP) / (maxP - minP)) * h; }
+
+    // Stop zone (red, top)
+    ctx.fillStyle = 'rgba(255,80,80,0.08)';
+    ctx.fillRect(0, 0, w, y(ENTRY * (1 + STOP_PCT)));
+    // TP zone (green, bottom)
+    ctx.fillStyle = 'rgba(0,255,136,0.06)';
+    ctx.fillRect(0, y(ENTRY * (1 + TP_PCT)), w, h - y(ENTRY * (1 + TP_PCT)));
+
+    // Entry line
+    ctx.strokeStyle = '#30363d';
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(0, y(ENTRY));
+    ctx.lineTo(w, y(ENTRY));
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Path
+    if (path.length < 2) return;
+    ctx.strokeStyle = done && exitType === 'STOP' ? '#ff5050' : done && exitType === 'TP' ? '#00ff88' : '#f0883e';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (var i = 0; i < path.length; i++) {
+      var x = (i / (ROUND_TICKS - 1)) * w;
+      var yp = y(path[i]);
+      if (i === 0) ctx.moveTo(x, yp); else ctx.lineTo(x, yp);
+    }
+    ctx.stroke();
+
+    // Last dot
+    var lx = ((path.length - 1) / (ROUND_TICKS - 1)) * w;
+    var ly = y(path[path.length - 1]);
+    ctx.fillStyle = done && exitType === 'STOP' ? '#ff5050' : done && exitType === 'TP' ? '#00ff88' : '#f0883e';
+    ctx.beginPath();
+    ctx.arc(lx, ly, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function updateHUD() {
+    els.pnl.textContent = (pnl >= 0 ? '$' : '-$') + Math.abs(pnl);
+    els.pnl.style.color = pnl >= 0 ? '#00ff88' : '#ff5050';
+    els.streak.textContent = streak;
+    els.streak.style.color = streak >= 3 ? '#f0883e' : '#00ff88';
+  }
+
+  function endGame() {
+    document.getElementById('game-screen').style.display = 'none';
+    document.getElementById('gameover-screen').style.display = 'flex';
+    document.getElementById('final-score').textContent = pnl;
+    if (pnl > highScore) {
+      highScore = pnl;
+      localStorage.setItem('dippy-double-tap-high', highScore.toString());
+    }
+    document.getElementById('roast-msg').textContent = roasts[Math.floor(Math.random()*roasts.length)];
+    DippyLB.onGameOver(pnl);
+  }
+
+  window.startGame = startGame;
+  document.addEventListener('DOMContentLoaded', init);
+  DippyLB.init('double-tap');
+})();
+</script>
+{{ end }}
