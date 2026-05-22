@@ -1,0 +1,452 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">LONE WOLF</h1>
+    <p class="game-subtitle">Five tickers. All shorted at the open.<br>Four will squeeze. One will <b>pay</b>.<br>Find the wolf before the bell.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">SCAN THE BOOK</button>
+    <p class="game-hint">Tap the card whose tape is <b>still bleeding</b><br>(downward slope · weak last bars · low RSI).<br>Wolf = +$500 · Squeezer = -$200 · Timeout = -$50<br>10 rounds. Best net PnL wins.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">PNL</span>
+        <span class="hud-value" id="pnl">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">ROUND</span>
+        <span class="hud-value" id="round">1/10</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">CLOCK</span>
+        <span class="hud-value" id="clock">8.0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">STREAK</span>
+        <span class="hud-value" id="streak">0</span>
+      </div>
+    </div>
+
+    <div id="board">
+      <div id="cards"></div>
+      <div id="result-banner"></div>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">SCAN COMPLETE</h1>
+    <div class="final-score" id="final-score">$0</div>
+    <p class="final-meta">net P&amp;L · 10 rounds</p>
+    <p class="final-meta">wolves caught: <span id="final-wolves">0</span> · squeezers tapped: <span id="final-squeezers">0</span> · timeouts: <span id="final-timeouts">0</span></p>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">RE-SCAN</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  /* Title */
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+  .game-title { font-size:2.2em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; text-align:center; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 36px; font-size:1.1em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.72em; margin-top:16px; line-height:1.6; max-width:340px; }
+
+  /* HUD */
+  .game-hud { display:grid; grid-template-columns:repeat(4,1fr); padding:8px 6px; background:rgba(0,0,0,0.4); border-bottom:1px solid #21262d; }
+  .hud-item { text-align:center; }
+  .hud-label { display:block; font-size:0.65em; color:#6e7681; letter-spacing:1px; }
+  .hud-value { display:block; font-size:1em; color:#e6edf3; font-weight:bold; }
+  #pnl.pos { color:#00ff88; }
+  #pnl.neg { color:#ff5050; }
+  #clock.urgent { color:#ff5050; animation:flash 0.4s linear infinite alternate; }
+  @keyframes flash { from{opacity:1} to{opacity:0.4} }
+
+  /* Game screen */
+  #game-screen { flex:1; display:flex; flex-direction:column; }
+  #board { flex:1; position:relative; background:#0d1117; padding:10px 8px; }
+
+  #cards { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .card { background:#161b22; border:1px solid #21262d; border-radius:6px; padding:8px 6px 6px; cursor:pointer; transition:all 0.15s; position:relative; overflow:hidden; min-height:115px; }
+  .card:hover { border-color:#00ff88; transform:translateY(-1px); }
+  .card:active { transform:scale(0.97); }
+  .card.locked { pointer-events:none; opacity:0.7; }
+  .card.picked { border-color:#f0883e; box-shadow:0 0 0 2px rgba(240,136,62,0.3); }
+  .card.wolf-reveal { border-color:#00ff88 !important; box-shadow:0 0 16px rgba(0,255,136,0.5); animation:wolfPulse 0.4s ease-out; }
+  .card.squeezer-reveal { border-color:#ff5050; opacity:0.45; }
+  @keyframes wolfPulse { 0%{transform:scale(1)} 40%{transform:scale(1.05)} 100%{transform:scale(1)} }
+
+  .card-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; }
+  .card-ticker { font-size:0.95em; font-weight:bold; color:#e6edf3; letter-spacing:1px; }
+  .card-side { font-size:0.6em; color:#ff8080; letter-spacing:1px; }
+  .card-canvas { width:100%; height:48px; display:block; }
+  .card-foot { display:flex; justify-content:space-between; margin-top:4px; font-size:0.6em; color:#6e7681; letter-spacing:0.5px; }
+  .card-foot .rsi-low { color:#00cc6e; }
+  .card-foot .rsi-high { color:#ff8080; }
+  .card-foot .vol-down { color:#00cc6e; }
+  .card-foot .vol-up { color:#ff8080; }
+
+  #result-banner { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); padding:12px 22px; font-size:1.2em; font-weight:bold; letter-spacing:2px; border-radius:6px; opacity:0; pointer-events:none; transition:opacity 0.25s; text-align:center; white-space:nowrap; }
+  #result-banner.show { opacity:1; }
+  #result-banner.win { background:rgba(0,255,136,0.20); color:#00ff88; border:2px solid #00ff88; text-shadow:0 0 8px rgba(0,255,136,0.6); }
+  #result-banner.loss { background:rgba(255,80,80,0.20); color:#ff5050; border:2px solid #ff5050; text-shadow:0 0 8px rgba(255,80,80,0.6); }
+  #result-banner.flat { background:rgba(139,148,158,0.20); color:#8b949e; border:2px solid #8b949e; }
+
+  /* Game Over */
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:24px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.5); margin:8px 0 4px; }
+  .final-score.neg { color:#ff5050; text-shadow:0 0 20px rgba(255,80,80,0.5); }
+  .final-meta { color:#8b949e; font-size:0.78em; margin:2px 0; letter-spacing:1px; }
+  .roast-msg { color:#f0883e; font-size:0.9em; margin:18px 8px 8px; max-width:340px; line-height:1.5; font-style:italic; }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  const HIGH_KEY = 'dippy-lone-wolf-high';
+
+  const TICKERS = ['NVDA','AMD','ARM','SMCI','MU','TSLA','MSFT','AMZN','UBER','SHOP','NFLX','SPY','QQQ','COIN'];
+  const ROAST = [
+    "You picked the squeezer. Twice. The bot does this with $93k of real-paper money. Welcome to the seat.",
+    "Moony just picked the entire row. Lost $1000. Called it 'diversification'.",
+    "Caught the wolf? Now do it 250 trading days a year through three regime changes.",
+    "The wolf is the one whose chart is still falling. Not the one that LOOKS the spiciest.",
+    "Pattern recognition is a positive-expectancy edge. Pretending to have it is not.",
+    "Five reds and one green. Same shape as today's actual ORB book. Same outcome too.",
+    "If you net green, brag. If you net red, blame correlation. Either way: review tape, scan again.",
+    "Moony solved this game by closing the browser tab. Its account is up 0.0%. Yours probably isn't.",
+    "The wolf doesn't bark. The wolf bleeds. Quietly. While four squeezers scream.",
+    "Today the algo caught one wolf out of five and printed +$386 on UBER. The other four cost -$80 combined. Variance, but the slope.",
+    "Net green? You're a tape reader. Net red? You're Moony with extra steps.",
+    "n=10 rounds is variance. The wolf still pays on average. Trust the slope."
+  ];
+
+  // ---- Round generation ----
+  // Each round: 5 cards. 1 wolf (bearish continuation), 4 squeezers (bullish reversal).
+  // Each card has 8 mini-candles + RSI + volume direction tag.
+  // The wolf's signal: last 3 candles bearish, RSI < 45, volume confirming down.
+  // Squeezers: last 3 candles bullish, RSI > 55, volume up.
+  // Difficulty: signal-to-noise scales with round index.
+  function makeRound(roundIdx) {
+    const totalRounds = 10;
+    const difficulty = roundIdx / (totalRounds - 1); // 0 -> 1
+    const noiseFactor = 0.4 + difficulty * 1.4; // higher round = noisier cards = harder to spot wolf
+    const wolfStrength = 1.2 - difficulty * 0.6; // higher round = weaker wolf signal
+
+    const pool = TICKERS.slice().sort(() => Math.random() - 0.5).slice(0, 5);
+    const wolfIdx = Math.floor(Math.random() * 5);
+    const cards = pool.map((ticker, i) => {
+      const isWolf = i === wolfIdx;
+      // Signal direction: wolf trends down, squeezer trends up
+      const trend = isWolf ? -0.012 * wolfStrength : +0.010 + Math.random() * 0.006;
+      const noise = 0.006 + Math.random() * 0.004 * noiseFactor;
+      // Generate 8 candles, each {o,h,l,c}
+      const candles = [];
+      let p = 100;
+      for (let j = 0; j < 8; j++) {
+        const o = p;
+        // bias the last 3 candles toward the wolf/squeezer signal direction
+        const directionTilt = j >= 5 ? 1.6 : 0.8;
+        const drift = trend * directionTilt;
+        const move = drift + (Math.random() - 0.5) * noise * 2;
+        const c = o * (1 + move);
+        const range = Math.abs(c - o) + Math.abs(noise * o * (0.5 + Math.random()));
+        const h = Math.max(o, c) + Math.random() * range * 0.5;
+        const l = Math.min(o, c) - Math.random() * range * 0.5;
+        candles.push({ o, h, l, c });
+        p = c;
+      }
+      // RSI proxy: average % move of last 4 candles
+      const recent = candles.slice(-4);
+      const avgMove = recent.reduce((s, k) => s + (k.c - k.o) / k.o, 0) / recent.length;
+      const rsi = Math.max(8, Math.min(92, Math.round(50 + avgMove * 1800)));
+      // Volume tag
+      const volUp = candles[7].c >= candles[7].o;
+      return { ticker, isWolf, candles, rsi, volUp };
+    });
+    return { cards, wolfIdx };
+  }
+
+  // ---- State ----
+  let rounds = [];
+  let roundIdx = 0;
+  let pnl = 0;
+  let wolvesCaught = 0, squeezersTapped = 0, timeouts = 0;
+  let streak = 0;
+  let resolvedThisRound = false;
+  let clockMs = 0;
+  let lastFrame = 0;
+  let raf = null;
+  const ROUND_TIME_MS = 8000;
+
+  // ---- DOM ----
+  const titleScreen = document.getElementById('title-screen');
+  const gameScreen  = document.getElementById('game-screen');
+  const overScreen  = document.getElementById('gameover-screen');
+  const titleHigh   = document.getElementById('title-high-score');
+  const pnlEl       = document.getElementById('pnl');
+  const roundEl     = document.getElementById('round');
+  const clockEl     = document.getElementById('clock');
+  const streakEl    = document.getElementById('streak');
+  const cardsEl     = document.getElementById('cards');
+  const banner      = document.getElementById('result-banner');
+  const finalScore  = document.getElementById('final-score');
+  const finalWolves = document.getElementById('final-wolves');
+  const finalSqueezers = document.getElementById('final-squeezers');
+  const finalTimeouts = document.getElementById('final-timeouts');
+  const roastMsg    = document.getElementById('roast-msg');
+
+  // ---- Helpers ----
+  function loadHigh() {
+    const h = parseFloat(localStorage.getItem(HIGH_KEY));
+    if (!isNaN(h)) titleHigh.textContent = `BEST: ${fmt(h)}`;
+  }
+  function saveHigh(v) {
+    const h = parseFloat(localStorage.getItem(HIGH_KEY));
+    if (isNaN(h) || v > h) localStorage.setItem(HIGH_KEY, String(v));
+  }
+  function fmt(v) {
+    const sign = v >= 0 ? '+' : '-';
+    return `${sign}$${Math.abs(v).toFixed(0)}`;
+  }
+
+  // Draw mini candles in a canvas
+  function drawCandles(canvas, candles) {
+    const dpr = window.devicePixelRatio || 1;
+    const r = canvas.getBoundingClientRect();
+    canvas.width  = r.width  * dpr;
+    canvas.height = r.height * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const w = r.width;
+    const h = r.height;
+    ctx.clearRect(0, 0, w, h);
+
+    // Range
+    let lo = Infinity, hi = -Infinity;
+    candles.forEach(c => { lo = Math.min(lo, c.l); hi = Math.max(hi, c.h); });
+    const pad = (hi - lo) * 0.10;
+    lo -= pad; hi += pad;
+    const yOf = p => h - ((p - lo) / (hi - lo)) * h;
+
+    const cw = w / candles.length;
+    const bodyW = cw * 0.55;
+    candles.forEach((c, i) => {
+      const cx = i * cw + cw / 2;
+      const up = c.c >= c.o;
+      ctx.strokeStyle = up ? '#00ff88' : '#ff5050';
+      ctx.fillStyle = up ? '#00ff88' : '#ff5050';
+      // Wick
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cx, yOf(c.h));
+      ctx.lineTo(cx, yOf(c.l));
+      ctx.stroke();
+      // Body
+      const yo = yOf(c.o), yc = yOf(c.c);
+      const top = Math.min(yo, yc);
+      const bh = Math.max(1.5, Math.abs(yc - yo));
+      ctx.fillRect(cx - bodyW / 2, top, bodyW, bh);
+    });
+  }
+
+  function renderCards() {
+    cardsEl.innerHTML = '';
+    const r = rounds[roundIdx];
+    r.cards.forEach((c, idx) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.idx = String(idx);
+      card.innerHTML = `
+        <div class="card-head">
+          <span class="card-ticker">${c.ticker}</span>
+          <span class="card-side">SHORT</span>
+        </div>
+        <canvas class="card-canvas"></canvas>
+        <div class="card-foot">
+          <span class="${c.rsi < 45 ? 'rsi-low' : c.rsi > 55 ? 'rsi-high' : ''}">RSI ${c.rsi}</span>
+          <span class="${c.volUp ? 'vol-up' : 'vol-down'}">VOL ${c.volUp ? '↑' : '↓'}</span>
+        </div>
+      `;
+      card.addEventListener('click', () => onPick(idx));
+      cardsEl.appendChild(card);
+    });
+    // Draw after layout settles
+    requestAnimationFrame(() => {
+      const canvases = cardsEl.querySelectorAll('canvas');
+      canvases.forEach((cv, i) => drawCandles(cv, r.cards[i].candles));
+    });
+  }
+
+  function startRound() {
+    resolvedThisRound = false;
+    clockMs = ROUND_TIME_MS;
+    roundEl.textContent = (roundIdx + 1) + '/10';
+    clockEl.textContent = (clockMs / 1000).toFixed(1);
+    clockEl.classList.remove('urgent');
+    banner.classList.remove('show', 'win', 'loss', 'flat');
+    banner.textContent = '';
+    renderCards();
+    lastFrame = performance.now();
+    if (raf) cancelAnimationFrame(raf);
+    tick(lastFrame);
+  }
+
+  function tick(now) {
+    raf = requestAnimationFrame(tick);
+    if (resolvedThisRound) return;
+    const dt = now - lastFrame;
+    lastFrame = now;
+    clockMs -= dt;
+    if (clockMs <= 0) {
+      clockMs = 0;
+      clockEl.textContent = '0.0';
+      resolveRound('TIMEOUT', -1);
+      return;
+    }
+    clockEl.textContent = (clockMs / 1000).toFixed(1);
+    if (clockMs < 2500) clockEl.classList.add('urgent');
+  }
+
+  function onPick(idx) {
+    if (resolvedThisRound) return;
+    const r = rounds[roundIdx];
+    // Lock all cards
+    const cardEls = cardsEl.querySelectorAll('.card');
+    cardEls.forEach(el => el.classList.add('locked'));
+    cardEls[idx].classList.add('picked');
+    if (idx === r.wolfIdx) {
+      resolveRound('WOLF', idx);
+    } else {
+      resolveRound('SQUEEZER', idx);
+    }
+  }
+
+  function resolveRound(kind, pickIdx) {
+    resolvedThisRound = true;
+    const r = rounds[roundIdx];
+    let delta = 0;
+    let cls = 'flat';
+    let txt = '';
+    if (kind === 'WOLF') {
+      // Bonus for streak
+      streak += 1;
+      const bonus = Math.max(0, (streak - 1) * 100);
+      delta = 500 + bonus;
+      wolvesCaught++;
+      cls = 'win';
+      txt = `WOLF! +$${delta}${bonus > 0 ? ' (x' + streak + ')' : ''}`;
+    } else if (kind === 'SQUEEZER') {
+      streak = 0;
+      delta = -200;
+      squeezersTapped++;
+      cls = 'loss';
+      txt = `SQUEEZED  -$200`;
+    } else if (kind === 'TIMEOUT') {
+      streak = 0;
+      delta = -50;
+      timeouts++;
+      cls = 'flat';
+      txt = `BELL  -$50`;
+    }
+    pnl += delta;
+    pnlEl.textContent = fmt(pnl);
+    pnlEl.classList.toggle('pos', pnl > 0);
+    pnlEl.classList.toggle('neg', pnl < 0);
+    streakEl.textContent = streak;
+    banner.classList.add('show', cls);
+    banner.textContent = txt;
+
+    // Reveal: highlight the wolf, fade squeezers
+    const cardEls = cardsEl.querySelectorAll('.card');
+    cardEls.forEach((el, i) => {
+      el.classList.add('locked');
+      if (i === r.wolfIdx) el.classList.add('wolf-reveal');
+      else el.classList.add('squeezer-reveal');
+    });
+
+    if (navigator.vibrate) {
+      navigator.vibrate(kind === 'WOLF' ? 35 : kind === 'SQUEEZER' ? [40, 30, 40] : 25);
+    }
+
+    setTimeout(nextRound, 1500);
+  }
+
+  function nextRound() {
+    roundIdx++;
+    if (roundIdx >= rounds.length) {
+      endGame();
+    } else {
+      startRound();
+    }
+  }
+
+  function endGame() {
+    if (raf) cancelAnimationFrame(raf);
+    gameScreen.style.display = 'none';
+    overScreen.style.display = 'flex';
+    finalScore.textContent = fmt(pnl);
+    finalScore.classList.toggle('neg', pnl < 0);
+    finalWolves.textContent = wolvesCaught;
+    finalSqueezers.textContent = squeezersTapped;
+    finalTimeouts.textContent = timeouts;
+    roastMsg.textContent = ROAST[Math.floor(Math.random() * ROAST.length)];
+    saveHigh(pnl);
+    if (window.DippyLB && DippyLB.onGameOver) DippyLB.onGameOver(pnl);
+  }
+
+  window.startGame = function() {
+    rounds = [];
+    for (let i = 0; i < 10; i++) rounds.push(makeRound(i));
+    roundIdx = 0;
+    pnl = 0;
+    wolvesCaught = 0; squeezersTapped = 0; timeouts = 0;
+    streak = 0;
+    pnlEl.textContent = fmt(0);
+    pnlEl.classList.remove('pos', 'neg');
+    streakEl.textContent = 0;
+    titleScreen.style.display = 'none';
+    overScreen.style.display = 'none';
+    gameScreen.style.display = 'flex';
+    requestAnimationFrame(startRound);
+  };
+
+  loadHigh();
+  if (window.DippyLB && DippyLB.init) DippyLB.init('lone-wolf');
+})();
+</script>
+{{ end }}
