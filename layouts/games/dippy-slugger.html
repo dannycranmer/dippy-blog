@@ -1,0 +1,534 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <!-- Bat -->
+        <rect x="86" y="58" width="6" height="42" rx="2" transform="rotate(28 89 79)" fill="#a06848"/>
+        <rect x="86" y="56" width="6" height="8" rx="2" transform="rotate(28 89 60)" fill="#7a4a30"/>
+      </svg>
+    </div>
+    <h1 class="game-title">DIPPY SLUGGER</h1>
+    <p class="game-subtitle">Moony's on the mound.<br>Bullish pitches in the zone = <b>swing</b>.<br>Bearish pitches = <b>let 'em walk</b>.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">STEP UP TO THE PLATE</button>
+    <p class="game-hint">Read the news on the ball before you swing.<br>HR (perfect timing) = +$1000 · HIT = +$300<br>Chased a bearish = -$400 · Took a strike = -$200<br>Smart take on bearish = +$50 · 30 pitches.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">PNL</span>
+        <span class="hud-value" id="pnl">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">PITCH</span>
+        <span class="hud-value" id="pitch">1/30</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">HRs</span>
+        <span class="hud-value" id="hr-count">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">STREAK</span>
+        <span class="hud-value" id="streak">0</span>
+      </div>
+    </div>
+
+    <div id="field">
+      <canvas id="field-canvas"></canvas>
+      <div id="result-banner"></div>
+    </div>
+
+    <button id="swing-btn" type="button">SWING</button>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">GAME OVER</h1>
+    <div class="final-score" id="final-score">$0</div>
+    <p class="final-meta">net P&amp;L · 30 pitches</p>
+    <p class="final-meta">HRs: <span id="final-hrs">0</span> · hits: <span id="final-hits">0</span> · chases: <span id="final-chases">0</span> · called: <span id="final-called">0</span></p>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">NEXT AT-BAT</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  /* Title */
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+  .game-title { font-size:2.2em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; text-align:center; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 28px; font-size:1.05em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.72em; margin-top:16px; line-height:1.6; max-width:340px; }
+
+  /* HUD */
+  .game-hud { display:grid; grid-template-columns:repeat(4,1fr); padding:8px 6px; background:rgba(0,0,0,0.4); border-bottom:1px solid #21262d; }
+  .hud-item { text-align:center; }
+  .hud-label { display:block; font-size:0.65em; color:#6e7681; letter-spacing:1px; }
+  .hud-value { display:block; font-size:1em; color:#e6edf3; font-weight:bold; }
+  #pnl.pos { color:#00ff88; }
+  #pnl.neg { color:#ff5050; }
+
+  /* Field */
+  #game-screen { flex:1; display:flex; flex-direction:column; }
+  #field { flex:1; position:relative; background:#0d1117; overflow:hidden; }
+  #field-canvas { width:100%; height:100%; display:block; }
+
+  #result-banner { position:absolute; top:36%; left:50%; transform:translate(-50%,-50%); padding:10px 18px; font-size:1.05em; font-weight:bold; letter-spacing:2px; border-radius:6px; opacity:0; pointer-events:none; transition:opacity 0.22s; text-align:center; white-space:nowrap; }
+  #result-banner.show { opacity:1; }
+  #result-banner.hr { background:rgba(0,255,136,0.20); color:#00ff88; border:2px solid #00ff88; text-shadow:0 0 8px rgba(0,255,136,0.6); font-size:1.3em; }
+  #result-banner.hit { background:rgba(0,204,110,0.20); color:#00cc6e; border:2px solid #00cc6e; }
+  #result-banner.foul { background:rgba(240,136,62,0.18); color:#f0883e; border:2px solid #f0883e; }
+  #result-banner.called { background:rgba(240,136,62,0.18); color:#f0883e; border:2px solid #f0883e; }
+  #result-banner.chase { background:rgba(255,80,80,0.20); color:#ff5050; border:2px solid #ff5050; }
+  #result-banner.ball { background:rgba(139,148,158,0.20); color:#8b949e; border:2px solid #8b949e; }
+
+  /* Swing button */
+  #swing-btn { display:block; width:calc(100% - 16px); margin:8px auto 12px; padding:16px 0; background:#00ff88; color:#0d1117; border:none; font-size:1.4em; font-family:inherit; font-weight:bold; letter-spacing:4px; border-radius:8px; cursor:pointer; transition:all 0.1s; box-shadow:0 4px 0 #00994d; }
+  #swing-btn:active { transform:translateY(2px); box-shadow:0 2px 0 #00994d; }
+  #swing-btn.cooldown { background:#444c56; color:#6e7681; box-shadow:0 4px 0 #2d333b; pointer-events:none; }
+
+  /* Game Over */
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:24px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.5); margin:8px 0 4px; }
+  .final-score.neg { color:#ff5050; text-shadow:0 0 20px rgba(255,80,80,0.5); }
+  .final-meta { color:#8b949e; font-size:0.78em; margin:2px 0; letter-spacing:1px; }
+  .roast-msg { color:#f0883e; font-size:0.9em; margin:18px 8px 8px; max-width:340px; line-height:1.5; font-style:italic; }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  const HIGH_KEY = 'dippy-dippy-slugger-high';
+
+  const BULLISH = [
+    'ANALYST UPGRADE','EARNINGS BEAT','GUIDANCE RAISE','FED CUT','AI DEAL',
+    'BUYBACK','RECORD REVENUE','PRODUCT LAUNCH','ACTIVIST STAKE','STRONG BUY',
+    'BREAKOUT ABOVE','VOL SURGE +','SHORT COVER'
+  ];
+  const BEARISH = [
+    'DOWNGRADE','EARNINGS MISS','GUIDANCE CUT','LAWSUIT FILED','CEO RESIGNS',
+    'INSIDER SELLING','SECTOR SELLOFF','FRAUD ALERT','SUPPLY GLITCH','MARGIN COMPRESS',
+    'DEAL FALLS THRU','DEBT DOWNGRADE','SHORT REPORT'
+  ];
+
+  const ROAST = [
+    "Moony swung at every pitch. Six strikeouts in three innings. Called it 'dollar-cost averaging into bats'.",
+    "Home runs in the cage are the easy part. Hitting one in the regular season is what cleared $400 of UBER short Friday.",
+    "Net green? You're a tape reader. Net red? You chased every fastball with a red label and called it conviction.",
+    "Take the called strike, take the next one too. Then take the ball. Patience pays at the plate and at the open.",
+    "The bullish/bearish tag is the strategy. The timing is the execution. Miss either and the box score is red.",
+    "Moony's batting stance: 70% off the back foot, 30% checking the price-to-book. Strikeouts looking, every single time.",
+    "Home Run Derby is a parameter sweep. Live at-bats are a regime test. Don't confuse the two.",
+    "Read the label, time the swing, ignore the noise from the dugout. Same job as the ORB ranker at 13:15 UTC.",
+    "If you chased a bearish pitch, congratulations — you reinvented Moony's whole portfolio.",
+    "n=30 pitches is variance. n=30 wins or losses is statistical. Trust the bullish tags, trust the strike zone, trust the slope.",
+    "Memorial Day baseball: the only thing more American than a closed market is swinging at the first pitch you see.",
+    "Best slugger in the league still hits .300. That's a 70% loss rate. They call it the Hall of Fame anyway."
+  ];
+
+  // ---- State ----
+  let pitchIdx = 0;
+  let pnl = 0;
+  let hrs = 0, hits = 0, fouls = 0, called = 0, chases = 0, balls = 0;
+  let streak = 0; // consecutive HRs
+  const TOTAL_PITCHES = 30;
+  let currentPitch = null;
+  let pitchStartMs = 0;
+  let resolved = false;
+  let raf = null;
+
+  // ---- DOM ----
+  const titleScreen = document.getElementById('title-screen');
+  const gameScreen  = document.getElementById('game-screen');
+  const overScreen  = document.getElementById('gameover-screen');
+  const titleHigh   = document.getElementById('title-high-score');
+  const pnlEl       = document.getElementById('pnl');
+  const pitchEl     = document.getElementById('pitch');
+  const hrCountEl   = document.getElementById('hr-count');
+  const streakEl    = document.getElementById('streak');
+  const canvas      = document.getElementById('field-canvas');
+  const ctx         = canvas.getContext('2d');
+  const banner      = document.getElementById('result-banner');
+  const swingBtn    = document.getElementById('swing-btn');
+  const finalScore  = document.getElementById('final-score');
+  const finalHrs    = document.getElementById('final-hrs');
+  const finalHits   = document.getElementById('final-hits');
+  const finalChases = document.getElementById('final-chases');
+  const finalCalled = document.getElementById('final-called');
+  const roastMsg    = document.getElementById('roast-msg');
+
+  // ---- Helpers ----
+  function loadHigh() {
+    const h = parseFloat(localStorage.getItem(HIGH_KEY));
+    if (!isNaN(h)) titleHigh.textContent = `BEST: ${fmt(h)}`;
+  }
+  function saveHigh(v) {
+    const h = parseFloat(localStorage.getItem(HIGH_KEY));
+    if (isNaN(h) || v > h) localStorage.setItem(HIGH_KEY, String(v));
+  }
+  function fmt(v) {
+    const sign = v >= 0 ? '+' : '-';
+    return `${sign}$${Math.abs(v).toFixed(0)}`;
+  }
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  // Pitch speed scales with progression: pitch 1 = 1700ms, pitch 30 = 850ms
+  function pitchDurationMs() {
+    const t = pitchIdx / (TOTAL_PITCHES - 1);
+    return 1700 - t * 850;
+  }
+
+  // 60% bullish, 40% bearish — keeps player honest
+  function nextPitch() {
+    const isBullish = Math.random() < 0.6;
+    const label = isBullish ? pick(BULLISH) : pick(BEARISH);
+    currentPitch = {
+      isBullish,
+      label,
+      duration: pitchDurationMs(),
+      // strike zone occupies y range [0.55, 0.78] of canvas height
+      zoneStart: 0.55,
+      zoneEnd: 0.78,
+      // center of zone where HR window lives
+      sweetStart: 0.62,
+      sweetEnd: 0.72
+    };
+    pitchStartMs = performance.now();
+    resolved = false;
+    pitchEl.textContent = (pitchIdx + 1) + '/' + TOTAL_PITCHES;
+    swingBtn.classList.remove('cooldown');
+    banner.classList.remove('show', 'hr', 'hit', 'foul', 'called', 'chase', 'ball');
+    banner.textContent = '';
+  }
+
+  // ---- Canvas sizing ----
+  function fitCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    const r = canvas.getBoundingClientRect();
+    canvas.width  = Math.max(1, Math.floor(r.width  * dpr));
+    canvas.height = Math.max(1, Math.floor(r.height * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function drawScene(progress) {
+    const r = canvas.getBoundingClientRect();
+    const W = r.width, H = r.height;
+    ctx.clearRect(0, 0, W, H);
+
+    // Sky gradient (twilight blue → dark)
+    const grd = ctx.createLinearGradient(0, 0, 0, H);
+    grd.addColorStop(0, '#0a1426');
+    grd.addColorStop(1, '#0d1117');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, W, H);
+
+    // Distant outfield wall + scoreboard ('GAME OFF — MARKET CLOSED')
+    ctx.fillStyle = '#161b22';
+    ctx.fillRect(0, H * 0.18, W, H * 0.12);
+    ctx.fillStyle = '#21262d';
+    ctx.fillRect(W * 0.12, H * 0.06, W * 0.76, H * 0.14);
+    ctx.fillStyle = '#f0883e';
+    ctx.font = 'bold 10px Courier New';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('MARKET · CLOSED', W * 0.5, H * 0.13);
+
+    // Strike zone band
+    const sz = currentPitch;
+    if (sz) {
+      const zy1 = H * sz.zoneStart;
+      const zy2 = H * sz.zoneEnd;
+      ctx.fillStyle = 'rgba(0,255,136,0.06)';
+      ctx.fillRect(W * 0.18, zy1, W * 0.64, zy2 - zy1);
+      ctx.strokeStyle = 'rgba(0,255,136,0.45)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.strokeRect(W * 0.18, zy1, W * 0.64, zy2 - zy1);
+      ctx.setLineDash([]);
+      // Sweet spot stripe
+      const sy1 = H * sz.sweetStart;
+      const sy2 = H * sz.sweetEnd;
+      ctx.fillStyle = 'rgba(0,255,136,0.10)';
+      ctx.fillRect(W * 0.18, sy1, W * 0.64, sy2 - sy1);
+    }
+
+    // Mound (Moony, top center)
+    ctx.fillStyle = '#7a4a3a';
+    ctx.beginPath();
+    ctx.ellipse(W * 0.5, H * 0.32, W * 0.22, H * 0.04, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Moony figure on mound (silly little blob)
+    ctx.fillStyle = '#c0c8d1';
+    ctx.beginPath();
+    ctx.arc(W * 0.5, H * 0.27, Math.min(18, W * 0.045), 0, Math.PI * 2);
+    ctx.fill();
+    // Moony eyes — comically tilted/sad
+    ctx.fillStyle = '#0d1117';
+    ctx.beginPath();
+    ctx.arc(W * 0.5 - 5, H * 0.265, 1.6, 0, Math.PI * 2);
+    ctx.arc(W * 0.5 + 5, H * 0.265, 1.6, 0, Math.PI * 2);
+    ctx.fill();
+    // Sad frown
+    ctx.strokeStyle = '#0d1117';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(W * 0.5, H * 0.285, 3, Math.PI, 0, true);
+    ctx.stroke();
+
+    // Home plate at bottom
+    ctx.fillStyle = '#e6edf3';
+    ctx.beginPath();
+    ctx.moveTo(W * 0.5 - 22, H * 0.95);
+    ctx.lineTo(W * 0.5 + 22, H * 0.95);
+    ctx.lineTo(W * 0.5 + 22, H * 0.97);
+    ctx.lineTo(W * 0.5, H * 0.99);
+    ctx.lineTo(W * 0.5 - 22, H * 0.97);
+    ctx.closePath();
+    ctx.fill();
+
+    // Batter (Dippy) at plate
+    ctx.fillStyle = '#00ff88';
+    ctx.beginPath();
+    ctx.ellipse(W * 0.5 - 18, H * 0.88, 11, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Bat
+    ctx.strokeStyle = '#a06848';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(W * 0.5 - 8, H * 0.85);
+    ctx.lineTo(W * 0.5 + 22, H * 0.74);
+    ctx.stroke();
+
+    // Ball
+    if (sz) {
+      // Linear travel from mound (y ≈ 0.32) to past zone (y ≈ 0.92)
+      const startY = H * 0.32;
+      const endY   = H * 0.92;
+      const ballY  = startY + (endY - startY) * progress;
+      const ballX  = W * 0.5 + Math.sin(progress * Math.PI * 0.5) * (W * 0.02);
+      // Ball grows as it gets closer (perspective)
+      const ballR = 8 + progress * 12;
+
+      // Ball shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.beginPath();
+      ctx.ellipse(ballX + 3, ballY + ballR * 0.4, ballR * 0.7, ballR * 0.3, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Ball body — color-coded by signal
+      const bullish = sz.isBullish;
+      ctx.fillStyle = bullish ? '#00ff88' : '#ff5050';
+      ctx.beginPath();
+      ctx.arc(ballX, ballY, ballR, 0, Math.PI * 2);
+      ctx.fill();
+      // Ball stitching
+      ctx.strokeStyle = bullish ? '#00994d' : '#993030';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(ballX, ballY, ballR * 0.7, -0.6, 0.6);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(ballX, ballY, ballR * 0.7, Math.PI - 0.6, Math.PI + 0.6);
+      ctx.stroke();
+
+      // News label tag floating beside ball
+      const tagW = Math.min(W * 0.6, 8 + sz.label.length * 7.2);
+      const tagX = ballX + ballR + 8;
+      const tagY = ballY - 8;
+      const tagXClamped = Math.min(W - tagW - 4, tagX);
+      ctx.fillStyle = bullish ? 'rgba(0,255,136,0.18)' : 'rgba(255,80,80,0.20)';
+      ctx.fillRect(tagXClamped, tagY, tagW, 16);
+      ctx.strokeStyle = bullish ? '#00ff88' : '#ff5050';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(tagXClamped, tagY, tagW, 16);
+      ctx.fillStyle = bullish ? '#00ff88' : '#ff5050';
+      ctx.font = 'bold 10px Courier New';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(sz.label, tagXClamped + 4, tagY + 8);
+    }
+  }
+
+  function loop(now) {
+    raf = requestAnimationFrame(loop);
+    if (!currentPitch) return;
+    const elapsed = now - pitchStartMs;
+    const progress = Math.min(1, elapsed / currentPitch.duration);
+    drawScene(progress);
+
+    if (!resolved && progress >= 1) {
+      // Ball passed without swing
+      const sz = currentPitch;
+      if (sz.isBullish) resolve('CALLED');
+      else resolve('BALL');
+    }
+  }
+
+  // Convert current progress -> y fraction of pitch travel within canvas
+  // The ball lives in y range [0.32, 0.92] of canvas; map to that for zone check.
+  function ballYFraction() {
+    if (!currentPitch) return 0;
+    const elapsed = performance.now() - pitchStartMs;
+    const progress = Math.min(1, elapsed / currentPitch.duration);
+    const yFrac = 0.32 + progress * (0.92 - 0.32);
+    return yFrac;
+  }
+
+  function onSwing() {
+    if (resolved || !currentPitch) return;
+    const yFrac = ballYFraction();
+    const sz = currentPitch;
+    if (sz.isBullish) {
+      if (yFrac >= sz.sweetStart && yFrac <= sz.sweetEnd) resolve('HR');
+      else if (yFrac >= sz.zoneStart && yFrac <= sz.zoneEnd) resolve('HIT');
+      else resolve('FOUL');
+    } else {
+      // Swung at bearish — chased
+      resolve('CHASE');
+    }
+  }
+
+  function resolve(kind) {
+    resolved = true;
+    swingBtn.classList.add('cooldown');
+    let delta = 0;
+    let cls = 'foul';
+    let txt = '';
+
+    if (kind === 'HR') {
+      streak += 1;
+      const bonus = Math.max(0, (streak - 1) * 200);
+      delta = 1000 + bonus;
+      hrs++;
+      cls = 'hr';
+      txt = `HOME RUN! +$${delta}${bonus > 0 ? ' (x' + streak + ')' : ''}`;
+    } else if (kind === 'HIT') {
+      streak = 0;
+      delta = 300;
+      hits++;
+      cls = 'hit';
+      txt = `HIT  +$300`;
+    } else if (kind === 'FOUL') {
+      streak = 0;
+      delta = -100;
+      fouls++;
+      cls = 'foul';
+      txt = `FOUL  -$100`;
+    } else if (kind === 'CALLED') {
+      streak = 0;
+      delta = -200;
+      called++;
+      cls = 'called';
+      txt = `STRIKE LOOKING  -$200`;
+    } else if (kind === 'CHASE') {
+      streak = 0;
+      delta = -400;
+      chases++;
+      cls = 'chase';
+      txt = `CHASED  -$400`;
+    } else if (kind === 'BALL') {
+      // Smart take on bearish — streak preserved (it's a decision, not a swing)
+      delta = 50;
+      balls++;
+      cls = 'ball';
+      txt = `BALL  +$50`;
+    }
+
+    pnl += delta;
+    pnlEl.textContent = fmt(pnl);
+    pnlEl.classList.toggle('pos', pnl > 0);
+    pnlEl.classList.toggle('neg', pnl < 0);
+    hrCountEl.textContent = hrs;
+    streakEl.textContent = streak;
+    banner.classList.add('show', cls);
+    banner.textContent = txt;
+
+    if (navigator.vibrate) {
+      if (kind === 'HR') navigator.vibrate([20, 30, 60]);
+      else if (kind === 'HIT' || kind === 'BALL') navigator.vibrate(25);
+      else navigator.vibrate([40, 30, 40]);
+    }
+
+    setTimeout(() => {
+      pitchIdx++;
+      if (pitchIdx >= TOTAL_PITCHES) endGame();
+      else nextPitch();
+    }, 900);
+  }
+
+  function endGame() {
+    if (raf) cancelAnimationFrame(raf);
+    raf = null;
+    currentPitch = null;
+    gameScreen.style.display = 'none';
+    overScreen.style.display = 'flex';
+    finalScore.textContent = fmt(pnl);
+    finalScore.classList.toggle('neg', pnl < 0);
+    finalHrs.textContent = hrs;
+    finalHits.textContent = hits;
+    finalChases.textContent = chases;
+    finalCalled.textContent = called;
+    roastMsg.textContent = ROAST[Math.floor(Math.random() * ROAST.length)];
+    saveHigh(pnl);
+    if (window.DippyLB && DippyLB.onGameOver) DippyLB.onGameOver(pnl);
+  }
+
+  // Swing input — button + tap-anywhere-on-field
+  swingBtn.addEventListener('click', onSwing);
+  canvas.addEventListener('click', onSwing);
+  canvas.addEventListener('touchstart', (e) => { e.preventDefault(); onSwing(); }, { passive: false });
+
+  window.addEventListener('resize', fitCanvas);
+
+  window.startGame = function() {
+    pitchIdx = 0;
+    pnl = 0;
+    hrs = 0; hits = 0; fouls = 0; called = 0; chases = 0; balls = 0;
+    streak = 0;
+    pnlEl.textContent = fmt(0);
+    pnlEl.classList.remove('pos', 'neg');
+    hrCountEl.textContent = 0;
+    streakEl.textContent = 0;
+    titleScreen.style.display = 'none';
+    overScreen.style.display = 'none';
+    gameScreen.style.display = 'flex';
+    requestAnimationFrame(() => {
+      fitCanvas();
+      nextPitch();
+      if (!raf) raf = requestAnimationFrame(loop);
+    });
+  };
+
+  loadHigh();
+  if (window.DippyLB && DippyLB.init) DippyLB.init('dippy-slugger');
+})();
+</script>
+{{ end }}
