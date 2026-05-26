@@ -1,0 +1,587 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">BOOK TRIAGE</h1>
+    <p class="game-subtitle">Five live trades on the tape.<br>Cut the bleeders. Let the wolf run.<br>30 seconds.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">OPEN THE BOOK</button>
+    <p class="game-hint">Tap a card to <b>CUT</b> the trade (lock in its P&amp;L).<br>One is a <b>wolf</b> (runs hard) · one is a <b>dud</b> (bleeds out) · three drift.<br>Cut the wolf early = miss the run. Hold the dud = ugly.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">BOOK P&amp;L</span>
+        <span class="hud-value" id="pnl">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">CLOCK</span>
+        <span class="hud-value" id="clock">30.0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">OPEN</span>
+        <span class="hud-value" id="openct">5</span>
+      </div>
+    </div>
+
+    <div id="cards"></div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="gameover-title" id="gameover-title">BELL RINGS</h1>
+    <div class="final-score">
+      <span class="final-label">FINAL BOOK</span>
+      <span class="final-value" id="final-score">$0</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-wolfheld">—</span><span class="stat-label">Wolf</span></div>
+      <div class="stat"><span class="stat-val" id="stat-dudcut">—</span><span class="stat-label">Dud</span></div>
+      <div class="stat"><span class="stat-val" id="stat-cuts">0</span><span class="stat-label">Cuts</span></div>
+    </div>
+    <div class="high-score-display" id="gameover-high-score"></div>
+    <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
+    <button id="replay-btn" onclick="startGame()">NEXT SESSION</button>
+  </div>
+</div>
+{{ partial "leaderboard" . }}
+
+<style>
+  #game-wrapper {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Title */
+  #title-screen { text-align: center; animation: fadeIn 0.5s ease; }
+  .title-dippy { margin-bottom: 1rem; animation: bounce 2s ease-in-out infinite; }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .game-title {
+    font-size: 2.2rem;
+    color: #00ff88;
+    margin: 0 0 0.5rem;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .game-subtitle { color: #8b949e; font-size: 0.95rem; margin: 0 0 1.5rem; line-height: 1.5; }
+  .game-hint { color: #484f58; font-size: 0.8rem; margin-top: 1.5rem; font-style: italic; line-height: 1.5; }
+  .high-score-display { color: #f0883e; font-size: 0.9rem; margin-bottom: 1rem; min-height: 1.2em; }
+  #start-btn, #replay-btn {
+    background: #00ff88;
+    color: #0d1117;
+    border: none;
+    padding: 0.9rem 2.5rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 1px;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  #start-btn:active, #replay-btn:active { transform: scale(0.95); }
+  #start-btn:hover, #replay-btn:hover { box-shadow: 0 0 20px rgba(0,255,136,0.4); }
+
+  /* HUD */
+  .game-hud {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 380px;
+    margin-bottom: 0.75rem;
+    gap: 0.5rem;
+  }
+  .hud-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 0.4rem;
+  }
+  .hud-label { font-size: 0.62rem; color: #484f58; letter-spacing: 1px; }
+  .hud-value { font-size: 1.3rem; font-weight: 800; color: #e6edf3; font-variant-numeric: tabular-nums; }
+  #clock { color: #f0883e; }
+
+  /* Cards */
+  #cards {
+    width: 100%;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .card {
+    background: #161b22;
+    border: 2px solid #30363d;
+    border-radius: 10px;
+    padding: 0.6rem 0.75rem;
+    cursor: pointer;
+    transition: border-color 0.1s, transform 0.05s, opacity 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .card:active { transform: scale(0.98); }
+  .card.cut { cursor: default; opacity: 0.6; border-color: #484f58; }
+  .card.cut::after {
+    content: 'CUT';
+    position: absolute;
+    top: 0.4rem;
+    right: 0.75rem;
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #f0883e;
+    letter-spacing: 2px;
+  }
+  .card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.35rem;
+  }
+  .card-ticker {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #e6edf3;
+    letter-spacing: 1px;
+  }
+  .card-side {
+    font-size: 0.65rem;
+    color: #8b949e;
+    letter-spacing: 1px;
+    margin-left: 0.4rem;
+  }
+  .card-pnl {
+    font-size: 1.15rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: #8b949e;
+    transition: color 0.15s;
+  }
+  .card-pnl.pos { color: #00ff88; }
+  .card-pnl.neg { color: #ff5050; }
+
+  /* P&L bar */
+  .card-bar {
+    height: 6px;
+    background: #0d1117;
+    border-radius: 3px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card-bar-fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: #00ff88;
+    transition: width 0.2s linear, background 0.15s;
+  }
+  .card-bar-fill.neg { background: #ff5050; }
+  .card-bar-zero {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    left: 50%;
+    width: 1px;
+    background: #484f58;
+  }
+
+  /* Tape ticker scrolling beneath ticker */
+  .card-tape {
+    display: flex;
+    gap: 3px;
+    margin-top: 0.4rem;
+    height: 14px;
+    align-items: flex-end;
+  }
+  .tape-tick {
+    width: 4px;
+    background: #484f58;
+    border-radius: 1px;
+    transition: height 0.2s, background 0.2s;
+  }
+
+  /* Float */
+  #float-texts {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .float-text {
+    position: absolute;
+    font-weight: 800;
+    font-size: 1.1rem;
+    animation: floatUp 0.8s ease-out forwards;
+    pointer-events: none;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  }
+  .float-text.pos { color: #00ff88; }
+  .float-text.neg { color: #ff5050; }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-50px); }
+  }
+
+  /* Game Over */
+  #gameover-screen { text-align: center; animation: fadeIn 0.5s ease; }
+  .gameover-title { font-size: 2rem; color: #f0883e; margin: 0 0 1rem; }
+  .final-score { display: flex; flex-direction: column; align-items: center; margin-bottom: 1.5rem; }
+  .final-label { font-size: 0.8rem; color: #484f58; letter-spacing: 1px; }
+  .final-value { font-size: 3rem; font-weight: 800; color: #00ff88; text-shadow: 0 0 20px rgba(0,255,136,0.3); font-variant-numeric: tabular-nums; }
+  .final-value.neg { color: #ff5050; text-shadow: 0 0 20px rgba(255,80,80,0.3); }
+  .stats-row { display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .stat { display: flex; flex-direction: column; align-items: center; }
+  .stat-val { font-size: 1.1rem; font-weight: 800; color: #e6edf3; }
+  .stat-val.good { color: #00ff88; }
+  .stat-val.bad { color: #ff5050; }
+  .stat-label { font-size: 0.7rem; color: #484f58; letter-spacing: 1px; }
+  .gameover-roast { color: #8b949e; font-size: 0.9rem; margin: 1rem 0 1.5rem; font-style: italic; line-height: 1.5; min-height: 2.5em; }
+
+  .clock-warn { color: #ff5050 !important; animation: clockPulse 0.5s ease-in-out infinite; }
+  @keyframes clockPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+</style>
+
+<div id="float-texts"></div>
+
+<script>
+(function() {
+  // Universe of tickers (Dippy's real symbols)
+  const UNIVERSE = ['MU','NVDA','AAPL','TSLA','SPY','CRWD','COIN','AMD','ARM','AMZN','QQQ','SMCI','SNOW','UBER'];
+
+  const ROASTS = [
+    "Moony cuts winners early and holds losers. The opposite of what you (mostly) just did.",
+    "Real traders cut bleeders fast. Moony is a hospice for bad trades.",
+    "Your wolf made more in 30 seconds than Moony's value picks make in a quarter.",
+    "Cut the dud, ride the wolf. Moony does the exact reverse. Proudly.",
+    "Moony saw your score and asked 'But what's its P/E ratio?'",
+    "The wolf eats. The dud bleeds. Moony takes notes for next year's letter.",
+    "Triage like an ER doctor. Moony triages like a librarian.",
+    "Risk management is cutting losers. Moony's risk management is sitting 70% cash.",
+    "You're managing a book. Moony is managing a graveyard.",
+    "Every cut you made was a Moony lesson Moony will never learn.",
+    "Holding the wolf > holding annual reports. Moony disagrees.",
+    "Dippy sells the bleeders. Moony averages down. Spot the genius.",
+  ];
+
+  // Each card config
+  // Roles: 'wolf' (strong drift +), 'dud' (strong drift -), 'noise' (random walk)
+  let cards = [];
+  let pnlTotal = 0;
+  let clock = 30.0;
+  let tickInterval = null;
+  let clockInterval = null;
+  let gameActive = false;
+  let cutsCount = 0;
+  let wolfHeldToEnd = false;
+  let dudCutEarly = false; // cut within first 10s
+
+  function getHighScore() {
+    try { return parseInt(localStorage.getItem('dippy-book-triage-high') || '-99999'); } catch(e) { return -99999; }
+  }
+  function setHighScore(s) {
+    try { localStorage.setItem('dippy-book-triage-high', s); } catch(e) {}
+  }
+
+  function showScreen(id) {
+    ['title-screen','game-screen','gameover-screen'].forEach(s => {
+      document.getElementById(s).style.display = s === id ? '' : 'none';
+    });
+  }
+
+  function pickTickers(n) {
+    const pool = UNIVERSE.slice();
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const idx = Math.floor(Math.random() * pool.length);
+      out.push(pool.splice(idx, 1)[0]);
+    }
+    return out;
+  }
+
+  function newCard(ticker, role, idx) {
+    const side = Math.random() < 0.5 ? 'LONG' : 'SHORT';
+    return {
+      ticker, role, side, idx,
+      pnl: 0,
+      open: true,
+      tape: new Array(8).fill(0),
+      cutAt: null,
+    };
+  }
+
+  function buildCards() {
+    const tickers = pickTickers(5);
+    const roles = ['wolf','dud','noise','noise','noise'];
+    // shuffle role assignment
+    for (let i = roles.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [roles[i], roles[j]] = [roles[j], roles[i]];
+    }
+    cards = tickers.map((t, i) => newCard(t, roles[i], i));
+  }
+
+  function renderCards() {
+    const container = document.getElementById('cards');
+    container.innerHTML = '';
+    cards.forEach((c, i) => {
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.id = 'card-' + i;
+      div.onclick = () => cutCard(i);
+      div.innerHTML = `
+        <div class="card-row">
+          <span><span class="card-ticker">${c.ticker}</span><span class="card-side">${c.side}</span></span>
+          <span class="card-pnl" id="pnl-${i}">$0</span>
+        </div>
+        <div class="card-bar">
+          <div class="card-bar-zero"></div>
+          <div class="card-bar-fill" id="bar-${i}" style="left:50%;width:0%"></div>
+        </div>
+        <div class="card-tape" id="tape-${i}">
+          ${c.tape.map((_,k) => `<div class="tape-tick" id="tape-${i}-${k}" style="height:2px"></div>`).join('')}
+        </div>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function tickPnL() {
+    if (!gameActive) return;
+    let totalDelta = 0;
+    cards.forEach((c, i) => {
+      if (!c.open) return;
+      let delta;
+      if (c.role === 'wolf') {
+        // Strong + drift: mostly positive, with occasional dips so it doesn't look fake
+        const r = Math.random();
+        if (r < 0.85) delta = 1.5 + Math.random() * 3.5; // +1.5 to +5
+        else delta = -1 - Math.random() * 1.5; // small dip
+      } else if (c.role === 'dud') {
+        const r = Math.random();
+        if (r < 0.85) delta = -1.5 - Math.random() * 3.5;
+        else delta = 1 + Math.random() * 1.5;
+      } else {
+        // noise: drift -2 to +2 with mild bias
+        delta = (Math.random() - 0.5) * 4;
+      }
+      c.pnl += delta;
+      // tape (last 8 deltas)
+      c.tape.shift();
+      c.tape.push(delta);
+      totalDelta += delta;
+    });
+    pnlTotal += totalDelta;
+    updateUI();
+  }
+
+  function updateUI() {
+    cards.forEach((c, i) => {
+      const pnlEl = document.getElementById('pnl-' + i);
+      const barEl = document.getElementById('bar-' + i);
+      if (!pnlEl || !barEl) return;
+      if (c.open || c.cutAt !== null) {
+        const v = Math.round(c.pnl);
+        pnlEl.textContent = (v >= 0 ? '+$' : '-$') + Math.abs(v);
+        pnlEl.classList.toggle('pos', v > 0);
+        pnlEl.classList.toggle('neg', v < 0);
+
+        // Bar: scale to abs PnL, max width 50% each side
+        const maxAbs = 600;
+        const pct = Math.min(50, Math.abs(c.pnl) / maxAbs * 50);
+        if (c.pnl >= 0) {
+          barEl.style.left = '50%';
+          barEl.style.width = pct + '%';
+          barEl.classList.remove('neg');
+        } else {
+          barEl.style.left = (50 - pct) + '%';
+          barEl.style.width = pct + '%';
+          barEl.classList.add('neg');
+        }
+      }
+      // tape display: 8 vertical bars showing recent delta magnitudes
+      c.tape.forEach((d, k) => {
+        const tEl = document.getElementById(`tape-${i}-${k}`);
+        if (!tEl) return;
+        const h = Math.min(12, Math.max(2, Math.abs(d) * 2));
+        tEl.style.height = h + 'px';
+        tEl.style.background = d >= 0 ? '#00cc6e' : '#ff5050';
+        tEl.style.opacity = c.open ? '1' : '0.3';
+      });
+    });
+    // total book P&L
+    const tot = Math.round(pnlTotal);
+    const pnlEl = document.getElementById('pnl');
+    pnlEl.textContent = (tot >= 0 ? '+$' : '-$') + Math.abs(tot);
+    pnlEl.style.color = tot >= 0 ? '#00ff88' : '#ff5050';
+    document.getElementById('openct').textContent = cards.filter(c => c.open).length;
+  }
+
+  function floatText(cardIdx, text, cls) {
+    const el = document.getElementById('card-' + cardIdx);
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const f = document.createElement('div');
+    f.className = 'float-text ' + cls;
+    f.textContent = text;
+    f.style.left = (rect.left + rect.width - 80) + 'px';
+    f.style.top = (rect.top + 6) + 'px';
+    document.getElementById('float-texts').appendChild(f);
+    setTimeout(() => f.remove(), 800);
+  }
+
+  window.cutCard = function(i) {
+    if (!gameActive) return;
+    const c = cards[i];
+    if (!c.open) return;
+    c.open = false;
+    c.cutAt = 30 - clock;
+    cutsCount++;
+    if (c.role === 'dud' && c.cutAt < 10) dudCutEarly = true;
+    const el = document.getElementById('card-' + i);
+    el.classList.add('cut');
+    const v = Math.round(c.pnl);
+    floatText(i, 'CUT @ ' + (v >= 0 ? '+$' : '-$') + Math.abs(v), v >= 0 ? 'pos' : 'neg');
+    if (navigator.vibrate) navigator.vibrate(20);
+    updateUI();
+    // End early if all cut
+    if (cards.every(c => !c.open)) {
+      endGame();
+    }
+  };
+
+  window.startGame = function() {
+    pnlTotal = 0;
+    clock = 30.0;
+    cutsCount = 0;
+    wolfHeldToEnd = false;
+    dudCutEarly = false;
+    gameActive = true;
+    buildCards();
+    renderCards();
+    updateUI();
+    showScreen('game-screen');
+    document.getElementById('clock').classList.remove('clock-warn');
+
+    tickInterval = setInterval(tickPnL, 300);
+    clockInterval = setInterval(() => {
+      clock = Math.max(0, clock - 0.1);
+      const el = document.getElementById('clock');
+      el.textContent = clock.toFixed(1);
+      if (clock <= 5 && !el.classList.contains('clock-warn')) el.classList.add('clock-warn');
+      if (clock <= 0) endGame();
+    }, 100);
+  };
+
+  function endGame() {
+    if (!gameActive) return;
+    gameActive = false;
+    clearInterval(tickInterval);
+    clearInterval(clockInterval);
+
+    // Apply final auto-close: any still-open cards lock in current PnL (already in pnlTotal)
+    const wolf = cards.find(c => c.role === 'wolf');
+    const dud = cards.find(c => c.role === 'dud');
+    wolfHeldToEnd = wolf && wolf.open;
+    // Apply bonuses/penalties
+    let bonus = 0;
+    if (wolfHeldToEnd) bonus += 200;
+    if (dudCutEarly) bonus += 300;
+    if (!wolf.open && wolf.cutAt < 15) bonus -= 400; // cut the wolf too early
+    pnlTotal += bonus;
+
+    const fv = document.getElementById('final-score');
+    const v = Math.round(pnlTotal);
+    fv.textContent = (v >= 0 ? '+$' : '-$') + Math.abs(v);
+    fv.classList.toggle('neg', v < 0);
+
+    // Wolf / dud stats — reveal
+    const wEl = document.getElementById('stat-wolfheld');
+    const dEl = document.getElementById('stat-dudcut');
+    if (wolfHeldToEnd) {
+      wEl.textContent = wolf.ticker + ' ✓';
+      wEl.className = 'stat-val good';
+    } else if (!wolf.open && wolf.cutAt < 15) {
+      wEl.textContent = wolf.ticker + ' ✗';
+      wEl.className = 'stat-val bad';
+    } else {
+      wEl.textContent = wolf.ticker;
+      wEl.className = 'stat-val';
+    }
+    if (dudCutEarly) {
+      dEl.textContent = dud.ticker + ' ✓';
+      dEl.className = 'stat-val good';
+    } else if (dud.open) {
+      dEl.textContent = dud.ticker + ' ✗';
+      dEl.className = 'stat-val bad';
+    } else {
+      dEl.textContent = dud.ticker;
+      dEl.className = 'stat-val';
+    }
+    document.getElementById('stat-cuts').textContent = cutsCount;
+
+    // High score
+    const prev = getHighScore();
+    const isNew = v > prev;
+    if (isNew) setHighScore(v);
+    document.getElementById('gameover-high-score').textContent = isNew
+      ? 'NEW BEST! (prev: ' + (prev <= -99999 ? '—' : (prev >= 0 ? '+$' : '-$') + Math.abs(prev)) + ')'
+      : 'Best: ' + (prev >= 0 ? '+$' : '-$') + Math.abs(prev);
+    document.getElementById('gameover-title').textContent = isNew ? 'NEW RECORD!' : 'BELL RINGS';
+
+    document.getElementById('gameover-roast').textContent =
+      '"' + ROASTS[Math.floor(Math.random() * ROASTS.length)] + '"';
+
+    showScreen('gameover-screen');
+    DippyLB.onGameOver(v);
+  }
+
+  // Show best on title
+  const hs = getHighScore();
+  if (hs > -99999) {
+    document.getElementById('title-high-score').textContent =
+      'Best: ' + (hs >= 0 ? '+$' : '-$') + Math.abs(hs);
+  }
+
+  DippyLB.init('book-triage');
+})();
+</script>
+{{ end }}
