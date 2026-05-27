@@ -1,0 +1,643 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <text x="60" y="62" text-anchor="middle" font-family="monospace" font-size="14" font-weight="800" fill="#0d1117">+/−</text>
+      </svg>
+    </div>
+    <h1 class="game-title">TAPE CIPHER</h1>
+    <p class="game-subtitle">Read the tape. Sum in your head.<br>POS or NEG? 30 seconds. 10 rounds.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">READ THE TAPE</button>
+    <p class="game-hint">A burst of P&amp;L deltas will flash by.<br>When prompted, tap <b class="pos">POS</b> if cumulative &gt; 0, <b class="neg">NEG</b> if &lt; 0.<br>Faster taps earn a streak bonus. Speed ramps each round.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">BOOK</span>
+        <span class="hud-value" id="score">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">ROUND</span>
+        <span class="hud-value" id="round">1/10</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">CLOCK</span>
+        <span class="hud-value" id="clock">30.0</span>
+      </div>
+    </div>
+
+    <div class="ticker-wrap">
+      <div class="ticker-symbol" id="ticker-symbol">—</div>
+      <div class="tape-window">
+        <div class="tape-row" id="tape-row"></div>
+        <div class="tape-mask-left"></div>
+        <div class="tape-mask-right"></div>
+        <div class="tape-cursor"></div>
+      </div>
+    </div>
+
+    <div class="answer-prompt" id="answer-prompt">READ THE TAPE…</div>
+
+    <div class="answer-buttons">
+      <button class="ans-btn ans-neg" id="ans-neg" onclick="answer('neg')">
+        <span class="ans-label">NEG</span>
+        <span class="ans-symbol">−</span>
+      </button>
+      <button class="ans-btn ans-pos" id="ans-pos" onclick="answer('pos')">
+        <span class="ans-label">POS</span>
+        <span class="ans-symbol">+</span>
+      </button>
+    </div>
+
+    <div class="streak-bar" id="streak-bar">Streak: <span id="streak">0</span></div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="gameover-title" id="gameover-title">MARK TO MARKET</h1>
+    <div class="final-score">
+      <span class="final-label">FINAL BOOK</span>
+      <span class="final-value" id="final-score">$0</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val good" id="stat-correct">0</span><span class="stat-label">Right</span></div>
+      <div class="stat"><span class="stat-val bad" id="stat-wrong">0</span><span class="stat-label">Wrong</span></div>
+      <div class="stat"><span class="stat-val" id="stat-best-streak">0</span><span class="stat-label">Best Run</span></div>
+    </div>
+    <div class="high-score-display" id="gameover-high-score"></div>
+    <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
+    <button id="replay-btn" onclick="startGame()">RE-OPEN BOOK</button>
+  </div>
+</div>
+{{ partial "leaderboard" . }}
+
+<style>
+  #game-wrapper {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Title */
+  #title-screen { text-align: center; animation: fadeIn 0.5s ease; }
+  .title-dippy { margin-bottom: 1rem; animation: bounce 2s ease-in-out infinite; }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .game-title {
+    font-size: 2.2rem;
+    color: #00ff88;
+    margin: 0 0 0.5rem;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .game-subtitle { color: #8b949e; font-size: 0.95rem; margin: 0 0 1.5rem; line-height: 1.5; }
+  .game-hint { color: #484f58; font-size: 0.8rem; margin-top: 1.5rem; font-style: italic; line-height: 1.5; }
+  .game-hint .pos { color: #00ff88; font-style: normal; }
+  .game-hint .neg { color: #ff5050; font-style: normal; }
+  .high-score-display { color: #f0883e; font-size: 0.9rem; margin-bottom: 1rem; min-height: 1.2em; }
+  #start-btn, #replay-btn {
+    background: #00ff88;
+    color: #0d1117;
+    border: none;
+    padding: 0.9rem 2.5rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 1px;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  #start-btn:active, #replay-btn:active { transform: scale(0.95); }
+  #start-btn:hover, #replay-btn:hover { box-shadow: 0 0 20px rgba(0,255,136,0.4); }
+
+  /* HUD */
+  .game-hud {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 380px;
+    margin-bottom: 0.75rem;
+    gap: 0.5rem;
+  }
+  .hud-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 0.4rem;
+  }
+  .hud-label { font-size: 0.62rem; color: #484f58; letter-spacing: 1px; }
+  .hud-value { font-size: 1.3rem; font-weight: 800; color: #e6edf3; font-variant-numeric: tabular-nums; }
+  #clock { color: #f0883e; }
+  #clock.warn { color: #ff5050; animation: clockPulse 0.5s ease-in-out infinite; }
+  @keyframes clockPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  /* Ticker tape */
+  .ticker-wrap {
+    width: 100%;
+    max-width: 380px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+  }
+  .ticker-symbol {
+    text-align: center;
+    color: #f0883e;
+    font-weight: 800;
+    font-size: 1rem;
+    letter-spacing: 2px;
+    padding: 0.5rem 0 0.25rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .tape-window {
+    position: relative;
+    height: 64px;
+    overflow: hidden;
+    border-top: 1px dashed #30363d;
+    background: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
+  }
+  .tape-row {
+    position: absolute;
+    top: 0;
+    left: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    padding: 0 20px;
+    white-space: nowrap;
+  }
+  .tape-row.running { transition: transform linear; }
+  .tape-token {
+    font-family: 'Menlo','Monaco',monospace;
+    font-size: 1.4rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 10px currentColor;
+    flex: 0 0 auto;
+  }
+  .tape-token.pos { color: #00ff88; }
+  .tape-token.neg { color: #ff5050; }
+  .tape-mask-left, .tape-mask-right {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 30px;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .tape-mask-left {
+    left: 0;
+    background: linear-gradient(90deg, #0d1117 0%, rgba(13,17,23,0) 100%);
+  }
+  .tape-mask-right {
+    right: 0;
+    background: linear-gradient(270deg, #0d1117 0%, rgba(13,17,23,0) 100%);
+  }
+  .tape-cursor {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 1px;
+    height: 60%;
+    background: #f0883e;
+    opacity: 0.4;
+    z-index: 1;
+  }
+
+  /* Prompt */
+  .answer-prompt {
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    color: #8b949e;
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    min-height: 1.2em;
+    transition: color 0.15s;
+  }
+  .answer-prompt.live { color: #f0883e; animation: blinkOrange 0.6s ease-in-out infinite alternate; }
+  .answer-prompt.right { color: #00ff88; animation: none; }
+  .answer-prompt.wrong { color: #ff5050; animation: none; }
+  @keyframes blinkOrange { from{opacity:0.6} to{opacity:1} }
+
+  /* Answer buttons */
+  .answer-buttons {
+    display: flex;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 380px;
+    margin-bottom: 0.5rem;
+  }
+  .ans-btn {
+    flex: 1;
+    background: #161b22;
+    border: 2px solid #30363d;
+    border-radius: 12px;
+    padding: 1rem 0;
+    font-family: inherit;
+    font-weight: 800;
+    cursor: pointer;
+    color: #e6edf3;
+    transition: transform 0.08s, border-color 0.1s, background 0.1s, opacity 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+  }
+  .ans-btn:active { transform: scale(0.96); }
+  .ans-btn.disabled { opacity: 0.4; pointer-events: none; }
+  .ans-pos { border-color: #14532d; }
+  .ans-pos:hover, .ans-pos.armed { border-color: #00ff88; background: rgba(0,255,136,0.08); }
+  .ans-neg { border-color: #5a1a1a; }
+  .ans-neg:hover, .ans-neg.armed { border-color: #ff5050; background: rgba(255,80,80,0.08); }
+  .ans-label { font-size: 0.7rem; letter-spacing: 2px; color: #8b949e; }
+  .ans-pos .ans-label { color: #00ff88; }
+  .ans-neg .ans-label { color: #ff5050; }
+  .ans-symbol { font-size: 1.6rem; line-height: 1; }
+  .ans-pos .ans-symbol { color: #00ff88; }
+  .ans-neg .ans-symbol { color: #ff5050; }
+
+  .streak-bar { color: #484f58; font-size: 0.8rem; letter-spacing: 1px; }
+  #streak { color: #f0883e; font-weight: 800; }
+
+  /* Float */
+  #float-texts {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .float-text {
+    position: absolute;
+    font-weight: 800;
+    font-size: 1.1rem;
+    animation: floatUp 0.8s ease-out forwards;
+    pointer-events: none;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  }
+  .float-text.pos { color: #00ff88; }
+  .float-text.neg { color: #ff5050; }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-50px); }
+  }
+
+  /* Game Over */
+  #gameover-screen { text-align: center; animation: fadeIn 0.5s ease; }
+  .gameover-title { font-size: 2rem; color: #f0883e; margin: 0 0 1rem; }
+  .final-score { display: flex; flex-direction: column; align-items: center; margin-bottom: 1.5rem; }
+  .final-label { font-size: 0.8rem; color: #484f58; letter-spacing: 1px; }
+  .final-value { font-size: 3rem; font-weight: 800; color: #00ff88; text-shadow: 0 0 20px rgba(0,255,136,0.3); font-variant-numeric: tabular-nums; }
+  .final-value.neg { color: #ff5050; text-shadow: 0 0 20px rgba(255,80,80,0.3); }
+  .stats-row { display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .stat { display: flex; flex-direction: column; align-items: center; }
+  .stat-val { font-size: 1.1rem; font-weight: 800; color: #e6edf3; }
+  .stat-val.good { color: #00ff88; }
+  .stat-val.bad { color: #ff5050; }
+  .stat-label { font-size: 0.7rem; color: #484f58; letter-spacing: 1px; }
+  .gameover-roast { color: #8b949e; font-size: 0.9rem; margin: 1rem 0 1.5rem; font-style: italic; line-height: 1.5; min-height: 2.5em; }
+</style>
+
+<div id="float-texts"></div>
+
+<script>
+(function() {
+  const UNIVERSE = ['MU','NVDA','AAPL','TSLA','SPY','CRWD','COIN','AMD','ARM','AMZN','QQQ','SMCI','SNOW','UBER','AVGO','SHOP'];
+
+  const ROASTS = [
+    "Mental P&L beats the spreadsheet Moony refuses to open.",
+    "Read the tape, not the analyst report. Moony does the opposite. Famously.",
+    "You summed deltas faster than Moony's risk team approves a trade.",
+    "Tape-reading is a skill. 'Sitting in 70% cash' is a personality disorder.",
+    "Moony saw your score and asked 'But is that adjusted for inflation?'",
+    "Every wrong answer is a Moony life choice. Every right one is a Dippy fill.",
+    "Cumulative is the only stat that matters. Moony tracks 47 others.",
+    "Pip math: how Dippy thinks. Sharpe ratio derivatives: how Moony stalls.",
+    "Reading green-and-red sums beats reading 10-K filings. The market said so.",
+    "The tape doesn't lie. Moony's backtests sure do.",
+    "Sum the flow, find the wolf. Moony's still trying to find its glasses.",
+    "Quick mental math > slow committee approvals. Moony has both. Profitable in neither.",
+  ];
+
+  // Game state
+  let score = 0;
+  let round = 0;
+  const totalRounds = 10;
+  let clock = 30.0;
+  let clockInterval = null;
+  let active = false;
+  let correctCount = 0;
+  let wrongCount = 0;
+  let streak = 0;
+  let bestStreak = 0;
+  let currentSum = 0;
+  let acceptingAnswer = false;
+  let answerStartedAt = 0;
+  let scrollTimer = null;
+  let promptTimer = null;
+  let currentScrollMs = 0;
+
+  function getHighScore() {
+    try { return parseInt(localStorage.getItem('dippy-tape-cipher-high') || '-99999'); } catch(e) { return -99999; }
+  }
+  function setHighScore(s) {
+    try { localStorage.setItem('dippy-tape-cipher-high', s); } catch(e) {}
+  }
+
+  function showScreen(id) {
+    ['title-screen','game-screen','gameover-screen'].forEach(s => {
+      document.getElementById(s).style.display = s === id ? '' : 'none';
+    });
+  }
+
+  function pickTicker() {
+    return UNIVERSE[Math.floor(Math.random() * UNIVERSE.length)];
+  }
+
+  // Generate a tape: array of integer deltas whose sum is clearly +/- (avoid near-zero ambiguity)
+  function generateTape(roundIdx) {
+    // Round difficulty: more numbers + tighter sums as rounds progress
+    const count = 5 + Math.min(4, Math.floor(roundIdx / 2)); // 5..9
+    const targetSign = Math.random() < 0.5 ? 1 : -1;
+    // Build with bias toward target sign
+    const deltas = [];
+    for (let i = 0; i < count; i++) {
+      // Pull from -25..+25, integer, but with bias
+      let v;
+      const biasRoll = Math.random();
+      const biasStrength = 0.55 + roundIdx * 0.015; // earlier rounds clearer
+      if (biasRoll < biasStrength) {
+        // sign-aligned: 4..24 in target sign direction
+        v = targetSign * (4 + Math.floor(Math.random() * 21));
+      } else {
+        // opposite: 2..18 against sign
+        v = -targetSign * (2 + Math.floor(Math.random() * 17));
+      }
+      deltas.push(v);
+    }
+    // Compute sum; enforce min absolute margin
+    let sum = deltas.reduce((a,b) => a+b, 0);
+    const minMargin = 6;
+    if (sum * targetSign < minMargin) {
+      // pad with one extra delta to enforce sign
+      const pad = targetSign * (minMargin - sum * targetSign + 1 + Math.floor(Math.random() * 6));
+      deltas.push(pad);
+      sum += pad;
+    }
+    return { deltas, sum };
+  }
+
+  function formatDelta(n) {
+    return (n >= 0 ? '+' : '−') + Math.abs(n);
+  }
+
+  function startRound() {
+    if (!active) return;
+    round++;
+    if (round > totalRounds) { endGame(); return; }
+    document.getElementById('round').textContent = round + '/' + totalRounds;
+
+    const ticker = pickTicker();
+    document.getElementById('ticker-symbol').textContent = ticker;
+
+    const { deltas, sum } = generateTape(round - 1);
+    currentSum = sum;
+
+    // Build tape row of tokens
+    const row = document.getElementById('tape-row');
+    row.classList.remove('running');
+    row.style.transition = 'none';
+    row.style.transform = 'translateX(0)';
+    row.innerHTML = deltas.map(d => `<span class="tape-token ${d >= 0 ? 'pos' : 'neg'}">${formatDelta(d)}</span>`).join('');
+
+    // Measure width
+    requestAnimationFrame(() => {
+      const wrapWidth = row.parentElement.clientWidth;
+      const contentWidth = row.scrollWidth + wrapWidth;
+      // Scroll speed scales with round
+      const baseMs = 3200;
+      const perRoundReduce = 180;
+      const scrollMs = Math.max(1100, baseMs - perRoundReduce * (round - 1));
+      currentScrollMs = scrollMs;
+
+      // Disable answers until tape is partway through
+      acceptingAnswer = false;
+      document.getElementById('ans-pos').classList.add('disabled');
+      document.getElementById('ans-neg').classList.add('disabled');
+      const prompt = document.getElementById('answer-prompt');
+      prompt.textContent = 'READ THE TAPE…';
+      prompt.className = 'answer-prompt';
+
+      // Animate
+      row.style.transition = `transform ${scrollMs}ms linear`;
+      row.classList.add('running');
+      row.style.transform = `translateX(-${contentWidth}px)`;
+
+      // Open answer window once 40% of tape has scrolled
+      const openAt = Math.floor(scrollMs * 0.4);
+      promptTimer = setTimeout(() => {
+        if (!active) return;
+        acceptingAnswer = true;
+        answerStartedAt = performance.now();
+        document.getElementById('ans-pos').classList.remove('disabled');
+        document.getElementById('ans-neg').classList.remove('disabled');
+        prompt.textContent = 'POS or NEG?';
+        prompt.className = 'answer-prompt live';
+      }, openAt);
+
+      // Auto-fail at end of tape if no answer
+      scrollTimer = setTimeout(() => {
+        if (!active) return;
+        if (acceptingAnswer) {
+          // timeout = wrong
+          resolveAnswer(null);
+        }
+      }, scrollMs + 100);
+    });
+  }
+
+  function resolveAnswer(choice) {
+    if (!active) return;
+    acceptingAnswer = false;
+    document.getElementById('ans-pos').classList.add('disabled');
+    document.getElementById('ans-neg').classList.add('disabled');
+
+    const actual = currentSum >= 0 ? 'pos' : 'neg';
+    const prompt = document.getElementById('answer-prompt');
+    const right = choice === actual;
+    let delta = 0;
+    if (choice === null) {
+      // Timeout
+      delta = -150;
+      wrongCount++;
+      streak = 0;
+      prompt.textContent = `MISS — was ${actual.toUpperCase()} (sum ${formatDelta(currentSum)})`;
+      prompt.className = 'answer-prompt wrong';
+    } else if (right) {
+      // Score: base + speed bonus
+      const elapsed = performance.now() - answerStartedAt;
+      const speedWindow = currentScrollMs * 0.6; // window length after open
+      const speedFrac = Math.max(0, 1 - elapsed / speedWindow);
+      const bonus = Math.round(speedFrac * 120);
+      const streakBonus = streak * 20;
+      delta = 100 + bonus + streakBonus;
+      correctCount++;
+      streak++;
+      bestStreak = Math.max(bestStreak, streak);
+      prompt.textContent = `RIGHT — sum ${formatDelta(currentSum)} (+$${delta})`;
+      prompt.className = 'answer-prompt right';
+      if (navigator.vibrate) navigator.vibrate(15);
+    } else {
+      delta = -200;
+      wrongCount++;
+      streak = 0;
+      prompt.textContent = `WRONG — was ${actual.toUpperCase()} (sum ${formatDelta(currentSum)})`;
+      prompt.className = 'answer-prompt wrong';
+      if (navigator.vibrate) navigator.vibrate([10, 30, 10]);
+    }
+    score += delta;
+    document.getElementById('streak').textContent = streak;
+    document.getElementById('score').textContent = (score >= 0 ? '+$' : '-$') + Math.abs(score);
+    document.getElementById('score').style.color = score >= 0 ? '#00ff88' : '#ff5050';
+    floatAtScore(delta);
+
+    // Halt tape scroll
+    clearTimeout(scrollTimer);
+    clearTimeout(promptTimer);
+    const row = document.getElementById('tape-row');
+    const cs = getComputedStyle(row);
+    row.style.transition = 'none';
+    row.style.transform = cs.transform;
+
+    // Next round
+    setTimeout(() => {
+      if (!active) return;
+      startRound();
+    }, 850);
+  }
+
+  window.answer = function(choice) {
+    if (!acceptingAnswer) return;
+    resolveAnswer(choice);
+  };
+
+  function floatAtScore(delta) {
+    const el = document.getElementById('score');
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const f = document.createElement('div');
+    f.className = 'float-text ' + (delta >= 0 ? 'pos' : 'neg');
+    f.textContent = (delta >= 0 ? '+$' : '-$') + Math.abs(delta);
+    f.style.left = (rect.left + rect.width / 2 - 25) + 'px';
+    f.style.top = (rect.top - 8) + 'px';
+    document.getElementById('float-texts').appendChild(f);
+    setTimeout(() => f.remove(), 800);
+  }
+
+  window.startGame = function() {
+    score = 0;
+    round = 0;
+    clock = 30.0;
+    correctCount = 0;
+    wrongCount = 0;
+    streak = 0;
+    bestStreak = 0;
+    active = true;
+    document.getElementById('score').textContent = '$0';
+    document.getElementById('score').style.color = '#e6edf3';
+    document.getElementById('streak').textContent = '0';
+    document.getElementById('clock').classList.remove('warn');
+    showScreen('game-screen');
+
+    clockInterval = setInterval(() => {
+      clock = Math.max(0, clock - 0.1);
+      const el = document.getElementById('clock');
+      el.textContent = clock.toFixed(1);
+      if (clock <= 5) el.classList.add('warn');
+      if (clock <= 0) endGame();
+    }, 100);
+
+    startRound();
+  };
+
+  function endGame() {
+    if (!active) return;
+    active = false;
+    clearInterval(clockInterval);
+    clearTimeout(scrollTimer);
+    clearTimeout(promptTimer);
+
+    document.getElementById('stat-correct').textContent = correctCount;
+    document.getElementById('stat-wrong').textContent = wrongCount;
+    document.getElementById('stat-best-streak').textContent = bestStreak;
+
+    const fv = document.getElementById('final-score');
+    const v = Math.round(score);
+    fv.textContent = (v >= 0 ? '+$' : '-$') + Math.abs(v);
+    fv.classList.toggle('neg', v < 0);
+
+    const prev = getHighScore();
+    const isNew = v > prev;
+    if (isNew) setHighScore(v);
+    document.getElementById('gameover-high-score').textContent = isNew
+      ? 'NEW BEST! (prev: ' + (prev <= -99999 ? '—' : (prev >= 0 ? '+$' : '-$') + Math.abs(prev)) + ')'
+      : 'Best: ' + (prev >= 0 ? '+$' : '-$') + Math.abs(prev);
+    document.getElementById('gameover-title').textContent = isNew ? 'NEW RECORD!' : 'MARK TO MARKET';
+
+    document.getElementById('gameover-roast').textContent =
+      '"' + ROASTS[Math.floor(Math.random() * ROASTS.length)] + '"';
+
+    showScreen('gameover-screen');
+    DippyLB.onGameOver(v);
+  }
+
+  // Show best on title
+  const hs = getHighScore();
+  if (hs > -99999) {
+    document.getElementById('title-high-score').textContent =
+      'Best: ' + (hs >= 0 ? '+$' : '-$') + Math.abs(hs);
+  }
+
+  DippyLB.init('tape-cipher');
+})();
+</script>
+{{ end }}
