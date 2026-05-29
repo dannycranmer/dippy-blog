@@ -1,0 +1,736 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <!-- Sheriff star on chest -->
+        <polygon points="52,68 55,76 63,76 57,82 60,90 52,85 44,90 47,82 41,76 49,76" fill="#ffaa00"/>
+        <!-- Two-shot holster -->
+        <rect x="74" y="86" width="12" height="9" rx="2" fill="#8b949e"/>
+        <line x1="82" y1="86" x2="82" y2="78" stroke="#8b949e" stroke-width="2"/>
+      </svg>
+    </div>
+    <h1 class="game-title">TWO-SHOT TRADER</h1>
+    <p class="game-subtitle">100 shares. One wolf. Two shots.<br>The half locks at 1R. Trail the rest. Pin the peak.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">DRAW</button>
+    <p class="game-hint">Tap <b class="pebtn">PE 50%</b> the instant price hits the orange <b>+1R</b> line — locks half the position at that price.<br>Then tap <b class="tsbtn">TS 50%</b> at the peak of the back-half walk — closes the rest.<br>PE before 1R = -$300. PE never fires = full auto-close. TS too late = miss the peak.<br>8 rounds. Bars get faster.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">BOOK</span>
+        <span class="hud-value" id="score">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">ROUND</span>
+        <span class="hud-value" id="round">1/8</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">SHARES</span>
+        <span class="hud-value" id="shares">100</span>
+      </div>
+    </div>
+
+    <div class="trade-wrap">
+      <div class="trade-header">
+        <span class="trade-symbol" id="trade-symbol">—</span>
+        <span class="trade-entry" id="trade-entry">@ $0.00</span>
+      </div>
+      <canvas id="chart" width="380" height="200"></canvas>
+      <div class="trade-stats">
+        <div class="stat-box">
+          <span class="stat-key">LIVE</span>
+          <span class="stat-num" id="live-price">$0.00</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-key">R-MULT</span>
+          <span class="stat-num" id="r-mult">+0.0R</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-key">LOCKED</span>
+          <span class="stat-num good" id="locked">$0</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="shot-row">
+      <button class="shot-btn pe-btn" id="pe-btn" onclick="firePE()">
+        <span class="shot-label">PE 50%</span>
+        <span class="shot-sub">at +1R</span>
+      </button>
+      <button class="shot-btn ts-btn" id="ts-btn" onclick="fireTS()" disabled>
+        <span class="shot-label">TS 50%</span>
+        <span class="shot-sub">trail close</span>
+      </button>
+    </div>
+
+    <div class="round-summary" id="round-summary"></div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="gameover-title" id="gameover-title">HOLSTER UP</h1>
+    <div class="final-score">
+      <span class="final-label">BOUNTY COLLECTED</span>
+      <span class="final-value" id="final-score">$0</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val good" id="stat-wolves">0</span><span class="stat-label">Wolves Pinned</span></div>
+      <div class="stat"><span class="stat-val" id="stat-best">$0</span><span class="stat-label">Best Round</span></div>
+    </div>
+    <div class="high-score-display" id="gameover-high-score"></div>
+    <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
+    <button id="replay-btn" onclick="startGame()">RACK ANOTHER ROUND</button>
+  </div>
+</div>
+{{ partial "leaderboard" . }}
+
+<style>
+  #game-wrapper {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #title-screen { text-align: center; animation: fadeIn 0.5s ease; }
+  .title-dippy { margin-bottom: 1rem; animation: bounce 2s ease-in-out infinite; }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .game-title {
+    font-size: 2.2rem;
+    color: #00ff88;
+    margin: 0 0 0.5rem;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .game-subtitle { color: #8b949e; font-size: 0.95rem; margin: 0 0 1.5rem; line-height: 1.5; }
+  .game-hint { color: #484f58; font-size: 0.8rem; margin-top: 1.5rem; font-style: italic; line-height: 1.5; }
+  .game-hint .pebtn { color: #f0883e; font-style: normal; }
+  .game-hint .tsbtn { color: #00ff88; font-style: normal; }
+  .high-score-display { color: #f0883e; font-size: 0.9rem; margin-bottom: 1rem; min-height: 1.2em; }
+  #start-btn, #replay-btn {
+    background: #00ff88;
+    color: #0d1117;
+    border: none;
+    padding: 0.9rem 2.5rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 1px;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  #start-btn:active, #replay-btn:active { transform: scale(0.95); }
+  #start-btn:hover, #replay-btn:hover { box-shadow: 0 0 20px rgba(0,255,136,0.4); }
+
+  .game-hud {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 380px;
+    margin-bottom: 0.75rem;
+    gap: 0.5rem;
+  }
+  .hud-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 0.4rem;
+  }
+  .hud-label { font-size: 0.62rem; color: #484f58; letter-spacing: 1px; }
+  .hud-value { font-size: 1.3rem; font-weight: 800; color: #e6edf3; font-variant-numeric: tabular-nums; }
+
+  .trade-wrap {
+    width: 100%;
+    max-width: 380px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    padding: 0.6rem;
+    margin-bottom: 1rem;
+  }
+  .trade-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0 0.2rem 0.4rem;
+    border-bottom: 1px dashed #30363d;
+    margin-bottom: 0.4rem;
+  }
+  .trade-symbol { color: #f0883e; font-weight: 800; font-size: 1.05rem; letter-spacing: 1.5px; }
+  .trade-entry { color: #8b949e; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+  #chart { display: block; width: 100%; height: 200px; background: #0d1117; border-radius: 6px; }
+
+  .trade-stats {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+  }
+  .stat-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #0d1117;
+    border-radius: 6px;
+    padding: 0.35rem 0.2rem;
+    border: 1px solid #21262d;
+  }
+  .stat-key { font-size: 0.62rem; color: #484f58; letter-spacing: 1.2px; }
+  .stat-num { font-size: 1rem; font-weight: 800; color: #e6edf3; font-variant-numeric: tabular-nums; }
+  .stat-num.good { color: #00ff88; }
+  .stat-num.bad { color: #ff5050; }
+
+  .shot-row {
+    display: flex;
+    gap: 0.6rem;
+    width: 100%;
+    max-width: 380px;
+  }
+  .shot-btn {
+    flex: 1;
+    border: none;
+    padding: 1rem 0.6rem;
+    font-size: 1rem;
+    font-weight: 800;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 1.5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    transition: transform 0.07s, opacity 0.15s, box-shadow 0.15s;
+    color: #0d1117;
+  }
+  .shot-btn:active { transform: scale(0.96); }
+  .shot-btn:disabled { background: #21262d; color: #484f58; box-shadow: none; cursor: not-allowed; }
+  .shot-label { font-size: 1.1rem; }
+  .shot-sub { font-size: 0.68rem; font-weight: 600; letter-spacing: 1px; opacity: 0.8; }
+  .pe-btn { background: #f0883e; box-shadow: 0 0 20px rgba(240,136,62,0.25); }
+  .pe-btn:disabled { background: #21262d; color: #484f58; box-shadow: none; }
+  .ts-btn { background: #00ff88; box-shadow: 0 0 20px rgba(0,255,136,0.25); }
+  .ts-btn:disabled { background: #21262d; color: #484f58; box-shadow: none; }
+  .pe-btn.armed { animation: pulseOrange 0.9s ease-in-out infinite; }
+  .ts-btn.armed { animation: pulseGreen 0.9s ease-in-out infinite; }
+  @keyframes pulseOrange { 0%,100%{box-shadow:0 0 20px rgba(240,136,62,0.25)} 50%{box-shadow:0 0 32px rgba(240,136,62,0.7)} }
+  @keyframes pulseGreen { 0%,100%{box-shadow:0 0 20px rgba(0,255,136,0.25)} 50%{box-shadow:0 0 32px rgba(0,255,136,0.7)} }
+
+  .round-summary {
+    width: 100%;
+    max-width: 380px;
+    min-height: 1.4rem;
+    margin-top: 0.8rem;
+    text-align: center;
+    color: #8b949e;
+    font-size: 0.85rem;
+    font-style: italic;
+  }
+  .round-summary.flash { animation: flashGood 0.4s ease; }
+  .round-summary.flash-bad { animation: flashBad 0.4s ease; }
+  @keyframes flashGood { 0%{color:#00ff88;text-shadow:0 0 12px rgba(0,255,136,0.6)} 100%{color:#8b949e} }
+  @keyframes flashBad { 0%{color:#ff5050;text-shadow:0 0 12px rgba(255,80,80,0.6)} 100%{color:#8b949e} }
+
+  #gameover-screen { text-align: center; animation: fadeIn 0.5s ease; }
+  .gameover-title { font-size: 1.8rem; color: #f0883e; margin: 0 0 1rem; letter-spacing: 2px; }
+  .final-score { display: flex; flex-direction: column; align-items: center; margin: 1.5rem 0; }
+  .final-label { color: #484f58; font-size: 0.75rem; letter-spacing: 2px; }
+  .final-value { font-size: 3rem; font-weight: 800; color: #00ff88; font-variant-numeric: tabular-nums; text-shadow: 0 0 24px rgba(0,255,136,0.4); }
+  .stats-row { display: flex; gap: 1rem; justify-content: center; margin: 1rem 0 1.5rem; }
+  .stat { display: flex; flex-direction: column; align-items: center; background: #161b22; padding: 0.6rem 1rem; border-radius: 8px; border: 1px solid #30363d; min-width: 110px; }
+  .stat-val { font-size: 1.3rem; font-weight: 800; color: #e6edf3; font-variant-numeric: tabular-nums; }
+  .stat-val.good { color: #00ff88; }
+  .stat-label { font-size: 0.7rem; color: #8b949e; }
+  .gameover-roast { color: #8b949e; font-style: italic; max-width: 320px; margin: 1.5rem auto; line-height: 1.5; font-size: 0.95rem; }
+</style>
+
+<script>
+(function () {
+  const TICKERS = ['ARM','MU','NVDA','AAPL','TSLA','SPY','CRWD','COIN','AMD','AMZN','QQQ','SMCI','SNOW','UBER','META','AVGO','SHOP','MSTR'];
+  const ROUNDS = 8;
+  const SHARES_TOTAL = 100;
+  const HALF = 50;
+  const HIGH_KEY = 'dippy-two-shot-trader-high';
+
+  // R-distance from entry as a percentage of entry (so all tickers behave the same).
+  // 1R = 1.5% above entry (close to typical ORB risk distance after PE eligibility).
+  const R_PCT = 0.015;
+
+  const ROASTS = [
+    "Two shots, one wolf, zero help from Moony. As is tradition.",
+    "Moony saw the wolf and called animal control. You called the broker.",
+    "PE at 1R, TS at the peak. Moony's at 70% cash since the open.",
+    "The back half walked. Moony asked which half. Both halves of nothing.",
+    "Holstered up. Moony still hasn't drawn this fiscal year.",
+    "Wolf pinned. Moony pinned a chart from 2022 to its wall and called it research.",
+    "Quick-draw. Slow-trail. Moony does both at the same speed: zero.",
+    "Two-shot took the wolf. Moony took a nap.",
+    "The peak is for pinning, not for asking permission. Moony asked permission.",
+    "Sheriff badge stays on. Moony's badge says ASSISTANT MANAGER, CASH DESK.",
+    "You let the back half run. Moony let it run too — out of its account.",
+    "PE locked the certain, TS pinned the peak. Moony locked the door of the vault.",
+    "Wolf went down in two shots. Moony went down in zero — never even reached the holster.",
+    "Trailed the peak by one bar. Moony trailed the market by one career."
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const canvas = $('chart');
+  const ctx = canvas ? canvas.getContext('2d') : null;
+
+  let state = null;
+
+  function setHigh(val) {
+    try {
+      const cur = parseInt(localStorage.getItem(HIGH_KEY) || '0', 10);
+      if (val > cur) localStorage.setItem(HIGH_KEY, String(val));
+    } catch (e) {}
+  }
+  function getHigh() {
+    try { return parseInt(localStorage.getItem(HIGH_KEY) || '0', 10); }
+    catch (e) { return 0; }
+  }
+
+  function updateTitleHigh() {
+    const h = getHigh();
+    const el = $('title-high-score');
+    if (el) el.textContent = h > 0 ? `Best bounty: $${h.toLocaleString()}` : '';
+  }
+  updateTitleHigh();
+
+  // 4 path patterns — each guarantees price crosses 1R at some point.
+  //   smooth_runner: hits 1R early, walks to a clear peak in upper third, then fades modestly.
+  //   spike_fade: hits 1R fast, peak near the middle, then sharper fade.
+  //   late_run: chops just above entry, hits 1R later, big late peak.
+  //   double_pop: hits 1R, retraces briefly toward entry, then second leg up to bigger peak.
+  function pickPattern(round) {
+    const r = Math.random();
+    if (round <= 2) {
+      // ease in — mostly smooth runners
+      if (r < 0.55) return 'smooth_runner';
+      if (r < 0.85) return 'spike_fade';
+      return 'late_run';
+    }
+    if (round <= 5) {
+      if (r < 0.3) return 'smooth_runner';
+      if (r < 0.55) return 'spike_fade';
+      if (r < 0.8) return 'late_run';
+      return 'double_pop';
+    }
+    if (r < 0.2) return 'smooth_runner';
+    if (r < 0.45) return 'spike_fade';
+    if (r < 0.75) return 'late_run';
+    return 'double_pop';
+  }
+
+  function buildPath(pattern, bars, entry) {
+    // Build a path where the price clearly exceeds 1R at some index and forms an identifiable peak.
+    const target1R = entry * (1 + R_PCT);
+    const path = [entry];
+    const noise = entry * 0.0014;
+
+    // Helper: target curve evaluated at fractional t in [0,1].
+    const curve = (t) => {
+      const above = (mult) => entry * (1 + R_PCT * mult);
+      switch (pattern) {
+        case 'smooth_runner': {
+          // Peak around t=0.75 at +2.2R, fade to +1.6R by end.
+          if (t < 0.75) return entry + (above(2.2) - entry) * (t / 0.75);
+          return above(2.2) + (above(1.6) - above(2.2)) * ((t - 0.75) / 0.25);
+        }
+        case 'spike_fade': {
+          // Peak around t=0.4 at +2.0R, fade to +0.3R by end.
+          if (t < 0.4) return entry + (above(2.0) - entry) * (t / 0.4);
+          return above(2.0) + (above(0.3) - above(2.0)) * ((t - 0.4) / 0.6);
+        }
+        case 'late_run': {
+          // Chop just above entry until t=0.4 around +0.5R, then rip to +2.5R peak at t=0.9, slight fade.
+          if (t < 0.4) return entry + (above(0.5) - entry) * (t / 0.4);
+          if (t < 0.9) return above(0.5) + (above(2.5) - above(0.5)) * ((t - 0.4) / 0.5);
+          return above(2.5) + (above(2.1) - above(2.5)) * ((t - 0.9) / 0.1);
+        }
+        case 'double_pop': {
+          // First pop to +1.3R at t=0.25, retrace to +0.6R at t=0.5, second leg to +2.4R peak at t=0.85, fade to +1.7R.
+          if (t < 0.25) return entry + (above(1.3) - entry) * (t / 0.25);
+          if (t < 0.5) return above(1.3) + (above(0.6) - above(1.3)) * ((t - 0.25) / 0.25);
+          if (t < 0.85) return above(0.6) + (above(2.4) - above(0.6)) * ((t - 0.5) / 0.35);
+          return above(2.4) + (above(1.7) - above(2.4)) * ((t - 0.85) / 0.15);
+        }
+      }
+      return entry;
+    };
+
+    for (let i = 1; i < bars; i++) {
+      const t = i / (bars - 1);
+      const tgt = curve(t);
+      const n = (Math.random() - 0.5) * noise * 2;
+      path.push(Math.max(entry * 0.95, tgt + n));
+    }
+    // Ensure at least one bar strictly above 1R
+    let crossed = false;
+    let crossIdx = -1;
+    for (let i = 0; i < path.length; i++) {
+      if (path[i] >= target1R) { crossed = true; crossIdx = i; break; }
+    }
+    if (!crossed) {
+      // bump the middle bar so the trade is at least PE-eligible
+      const mid = Math.floor(bars / 2);
+      path[mid] = target1R * 1.002;
+      crossIdx = mid;
+    }
+    // Peak index — the highest value in the path (used for TS scoring)
+    let peakIdx = 0;
+    for (let i = 1; i < path.length; i++) {
+      if (path[i] > path[peakIdx]) peakIdx = i;
+    }
+    return { path, crossIdx, peakIdx, target1R };
+  }
+
+  function drawChart() {
+    if (!ctx || !state) return;
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const { path, target1R } = state.pathInfo;
+    const visible = path.slice(0, state.barIdx + 1);
+    if (visible.length === 0) return;
+
+    // y-bounds derived from full path so axis doesn't jump as bars print, padded for entry line.
+    const lo = Math.min(state.entry, ...path) * 0.998;
+    const hi = Math.max(...path, target1R * 1.01) * 1.002;
+    const yOf = (price) => h - 12 - ((price - lo) / (hi - lo)) * (h - 24);
+    const xOf = (i) => 12 + (i / (path.length - 1)) * (w - 24);
+
+    // 1R target line (orange, dashed)
+    const targetY = yOf(target1R);
+    ctx.strokeStyle = '#f0883e';
+    ctx.setLineDash([5, 4]);
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(12, targetY);
+    ctx.lineTo(w - 12, targetY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#f0883e';
+    ctx.font = '600 9px monospace';
+    ctx.fillText('+1R', w - 30, targetY - 3);
+
+    // entry line (grey, dashed)
+    const entryY = yOf(state.entry);
+    ctx.strokeStyle = '#30363d';
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(12, entryY);
+    ctx.lineTo(w - 12, entryY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // price area fill
+    const last = visible[visible.length - 1];
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    if (last >= state.entry) {
+      grad.addColorStop(0, 'rgba(0,255,136,0.25)');
+      grad.addColorStop(1, 'rgba(0,255,136,0)');
+    } else {
+      grad.addColorStop(0, 'rgba(255,80,80,0.25)');
+      grad.addColorStop(1, 'rgba(255,80,80,0)');
+    }
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(xOf(0), h - 12);
+    for (let i = 0; i < visible.length; i++) {
+      ctx.lineTo(xOf(i), yOf(visible[i]));
+    }
+    ctx.lineTo(xOf(visible.length - 1), h - 12);
+    ctx.closePath();
+    ctx.fill();
+
+    // price line
+    ctx.strokeStyle = last >= state.entry ? '#00ff88' : '#ff5050';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(xOf(0), yOf(visible[0]));
+    for (let i = 1; i < visible.length; i++) {
+      ctx.lineTo(xOf(i), yOf(visible[i]));
+    }
+    ctx.stroke();
+
+    // PE marker
+    if (state.peShot) {
+      const x = xOf(state.peShot.bar);
+      const y = yOf(state.peShot.price);
+      ctx.fillStyle = '#f0883e';
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#0d1117';
+      ctx.font = '700 9px monospace';
+      ctx.fillText('PE', x - 6, y + 3);
+    }
+    // TS marker
+    if (state.tsShot) {
+      const x = xOf(state.tsShot.bar);
+      const y = yOf(state.tsShot.price);
+      ctx.fillStyle = '#00ff88';
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#0d1117';
+      ctx.font = '700 9px monospace';
+      ctx.fillText('TS', x - 6, y + 3);
+    }
+
+    // current price dot
+    const cx = xOf(visible.length - 1);
+    const cy = yOf(last);
+    ctx.fillStyle = last >= state.entry ? '#00ff88' : '#ff5050';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function refreshHUD() {
+    if (!state) return;
+    $('score').textContent = '$' + Math.round(state.total).toLocaleString();
+    $('round').textContent = `${state.round}/${ROUNDS}`;
+    const heldShares = (state.peShot ? 0 : HALF) + (state.tsShot ? 0 : HALF);
+    $('shares').textContent = String(heldShares);
+    const last = state.pathInfo.path[state.barIdx];
+    $('live-price').textContent = '$' + last.toFixed(2);
+    const rDist = (last - state.entry) / (state.pathInfo.target1R - state.entry);
+    const rEl = $('r-mult');
+    rEl.textContent = (rDist >= 0 ? '+' : '') + rDist.toFixed(1) + 'R';
+    rEl.classList.toggle('good', rDist >= 1);
+    rEl.classList.toggle('bad', rDist < 0);
+    $('locked').textContent = (state.locked >= 0 ? '+$' : '-$') + Math.abs(Math.round(state.locked)).toLocaleString();
+
+    const eligiblePE = !state.peShot && !state.roundOver;
+    const eligibleTS = !!state.peShot && !state.tsShot && !state.roundOver;
+    const peBtn = $('pe-btn');
+    const tsBtn = $('ts-btn');
+    peBtn.disabled = !eligiblePE;
+    tsBtn.disabled = !eligibleTS;
+    // arm visual when price is at or above 1R for PE, or post-PE for TS
+    peBtn.classList.toggle('armed', eligiblePE && last >= state.pathInfo.target1R);
+    tsBtn.classList.toggle('armed', eligibleTS);
+  }
+
+  window.firePE = function () {
+    if (!state || state.peShot || state.roundOver) return;
+    const price = state.pathInfo.path[state.barIdx];
+    const target1R = state.pathInfo.target1R;
+    const reached1R = price >= target1R;
+    const pnl = HALF * (price - state.entry);
+    let bonus = 0;
+    let tag = '';
+    if (!reached1R) {
+      // Premature draw — penalty for breaking the playbook.
+      bonus = -300;
+      tag = 'early';
+      state.early = true;
+    } else {
+      // Tap speed bonus: time since price first crossed 1R.
+      const lag = state.barIdx - state.pathInfo.crossIdx;
+      if (lag <= 1) bonus = 150;
+      else if (lag <= 3) bonus = 75;
+      else if (lag <= 6) bonus = 20;
+      else bonus = -50; // dawdled badly
+      tag = lag <= 1 ? 'snap' : lag <= 3 ? 'fast' : lag <= 6 ? 'late' : 'slow';
+    }
+    state.locked += pnl + bonus;
+    state.peShot = { bar: state.barIdx, price, pnl, bonus, tag };
+    if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
+    refreshHUD();
+    drawChart();
+  };
+
+  window.fireTS = function () {
+    if (!state || !state.peShot || state.tsShot || state.roundOver) return;
+    const price = state.pathInfo.path[state.barIdx];
+    const pnl = HALF * (price - state.entry);
+    // TS bonus measured vs the peak of the path (max over all bars).
+    const peakPrice = state.pathInfo.path[state.pathInfo.peakIdx];
+    const distFromPeak = Math.abs(price - peakPrice) / peakPrice;
+    let bonus = 0;
+    let tag = '';
+    if (distFromPeak <= 0.001) { bonus = 200; tag = 'peak'; }
+    else if (distFromPeak <= 0.003) { bonus = 140; tag = 'near-peak'; }
+    else if (distFromPeak <= 0.008) { bonus = 80; tag = 'good'; }
+    else if (distFromPeak <= 0.015) { bonus = 30; tag = 'okay'; }
+    else { bonus = 0; tag = 'late'; }
+    state.locked += pnl + bonus;
+    state.tsShot = { bar: state.barIdx, price, pnl, bonus, tag };
+    if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
+    refreshHUD();
+    drawChart();
+    // round ends as soon as both shots fired
+    finishRound(false);
+  };
+
+  function finishRound(forcedLiquidate) {
+    if (state.roundOver) return;
+    state.roundOver = true;
+    clearInterval(state.tickHandle);
+
+    let forcedNote = '';
+    if (forcedLiquidate) {
+      const last = state.pathInfo.path[state.pathInfo.path.length - 1];
+      if (!state.peShot) {
+        // never fired PE: auto-close full 100 shares at last price, penalty for missing playbook.
+        const pnl = SHARES_TOTAL * (last - state.entry);
+        state.locked += pnl - 200; // penalty
+        state.peShot = { bar: state.pathInfo.path.length - 1, price: last, pnl, bonus: -200, tag: 'auto', auto: true };
+        state.tsShot = state.peShot; // mark both filled for HUD
+        forcedNote = 'No PE fired — full auto-close at the bell.';
+      } else if (!state.tsShot) {
+        // PE fired but TS never: auto-close back half at last price, modest penalty.
+        const pnl = HALF * (last - state.entry);
+        state.locked += pnl - 50;
+        state.tsShot = { bar: state.pathInfo.path.length - 1, price: last, pnl, bonus: -50, tag: 'auto', auto: true };
+        forcedNote = 'Back half auto-closed at the bell.';
+      }
+    }
+
+    const roundScore = state.locked;
+    state.total += roundScore;
+    if (roundScore > state.bestRound) state.bestRound = roundScore;
+    const pinned = state.peShot && state.tsShot
+      && !state.peShot.auto && !state.tsShot.auto
+      && !state.early
+      && (state.tsShot.tag === 'peak' || state.tsShot.tag === 'near-peak');
+    if (pinned) state.wolvesPinned++;
+
+    const summary = $('round-summary');
+    let msg = '';
+    if (forcedNote) msg = forcedNote + ' Round: ' + fmtMoney(roundScore);
+    else if (pinned) msg = `🐺 Wolf pinned — ${state.tsShot.tag} TS. ` + fmtMoney(roundScore);
+    else if (state.early) msg = 'PE before 1R — sheriff frowns. ' + fmtMoney(roundScore);
+    else msg = `PE: ${state.peShot.tag} · TS: ${state.tsShot.tag} · ` + fmtMoney(roundScore);
+    summary.textContent = msg;
+    summary.classList.remove('flash', 'flash-bad');
+    void summary.offsetWidth; // restart animation
+    summary.classList.add(roundScore >= 0 ? 'flash' : 'flash-bad');
+    refreshHUD();
+    drawChart();
+    setTimeout(nextRound, 1500);
+  }
+
+  function fmtMoney(v) {
+    return (v >= 0 ? '+$' : '-$') + Math.abs(Math.round(v)).toLocaleString();
+  }
+
+  function nextRound() {
+    if (state.round >= ROUNDS) {
+      endGame();
+      return;
+    }
+    state.round++;
+    startRound();
+  }
+
+  function startRound() {
+    const bars = 18 + Math.floor(Math.random() * 5);
+    const symbol = TICKERS[Math.floor(Math.random() * TICKERS.length)];
+    const entryBase = 40 + Math.random() * 720;
+    const entry = Math.round(entryBase * 100) / 100;
+    const pattern = pickPattern(state.round);
+    const pathInfo = buildPath(pattern, bars, entry);
+
+    state.entry = entry;
+    state.pathInfo = pathInfo;
+    state.barIdx = 0;
+    state.locked = 0;
+    state.peShot = null;
+    state.tsShot = null;
+    state.early = false;
+    state.roundOver = false;
+
+    $('trade-symbol').textContent = symbol + ' LONG';
+    $('trade-entry').textContent = '@ $' + entry.toFixed(2);
+    $('round-summary').textContent = '';
+
+    const speed = Math.max(240, 640 - state.round * 50);
+    state.tickHandle = setInterval(() => {
+      if (state.roundOver) return;
+      state.barIdx++;
+      if (state.barIdx >= state.pathInfo.path.length - 1) {
+        state.barIdx = state.pathInfo.path.length - 1;
+        refreshHUD();
+        drawChart();
+        finishRound(true);
+        return;
+      }
+      refreshHUD();
+      drawChart();
+    }, speed);
+
+    refreshHUD();
+    drawChart();
+  }
+
+  function endGame() {
+    $('game-screen').style.display = 'none';
+    $('gameover-screen').style.display = 'block';
+    const finalScore = Math.round(state.total);
+    $('final-score').textContent = (finalScore >= 0 ? '$' : '-$') + Math.abs(finalScore).toLocaleString();
+    $('stat-wolves').textContent = String(state.wolvesPinned);
+    $('stat-best').textContent = (state.bestRound >= 0 ? '$' : '-$') + Math.abs(Math.round(state.bestRound)).toLocaleString();
+    setHigh(finalScore);
+    const h = getHigh();
+    $('gameover-high-score').textContent = h > 0 ? `Best bounty: $${h.toLocaleString()}` : '';
+    $('gameover-roast').textContent = ROASTS[Math.floor(Math.random() * ROASTS.length)];
+    if (window.DippyLB && DippyLB.onGameOver) DippyLB.onGameOver(finalScore);
+  }
+
+  window.startGame = function () {
+    state = {
+      round: 1,
+      total: 0,
+      wolvesPinned: 0,
+      bestRound: -Infinity,
+      tickHandle: null
+    };
+    $('title-screen').style.display = 'none';
+    $('gameover-screen').style.display = 'none';
+    $('game-screen').style.display = 'flex';
+    $('game-screen').style.flexDirection = 'column';
+    $('game-screen').style.alignItems = 'center';
+    startRound();
+  };
+
+  if (window.DippyLB && DippyLB.init) DippyLB.init('two-shot-trader');
+})();
+</script>
+{{ end }}
