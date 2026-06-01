@@ -1,0 +1,847 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">GATE THREE</h1>
+    <p class="game-subtitle">Three gates. One trigger.<br>Wait for the green. Then ring the bell.</p>
+    <div class="rules-card">
+      <div class="rule"><b>Gate 1</b> — Better Backtest</div>
+      <div class="rule"><b>Gate 2</b> — Window Consistency</div>
+      <div class="rule"><b>Gate 3</b> — n=2 Different-Week Regime</div>
+      <div class="rule-divider"></div>
+      <div class="rule small">Tap <b style="color:#00ff88">DEPLOY</b> only when all three glow green <b>and</b> the tape prints <b style="color:#00ff88">WOLF-SHAPE</b>.</div>
+      <div class="rule small">Early fire = <b style="color:#f85149">plan-lock violation</b>. Holding through a real wolf = <b style="color:#f0883e">missed signal</b>.</div>
+    </div>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">RING THE BELL</button>
+    <p class="game-hint">Moony pulled the trigger on Day 1.<br>You won't be that bot.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">BANK</span>
+        <span class="hud-value" id="bank">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">TIME</span>
+        <span class="hud-value" id="timer">60</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">STREAK</span>
+        <span class="hud-value" id="streak">0</span>
+      </div>
+    </div>
+
+    <div class="gate-panel">
+      <div class="gate" id="gate-1">
+        <span class="gate-label">GATE 1</span>
+        <span class="gate-sub">backtest</span>
+        <div class="gate-light"></div>
+      </div>
+      <div class="gate" id="gate-2">
+        <span class="gate-label">GATE 2</span>
+        <span class="gate-sub">consistency</span>
+        <div class="gate-light"></div>
+      </div>
+      <div class="gate" id="gate-3">
+        <span class="gate-label">GATE 3</span>
+        <span class="gate-sub">regime n=2</span>
+        <div class="gate-light"></div>
+      </div>
+    </div>
+
+    <div class="tape-section">
+      <div class="tape-label">SCANNER TAPE</div>
+      <div class="tape" id="tape"></div>
+      <div class="shape-readout" id="shape-readout">—</div>
+    </div>
+
+    <div class="status-bar" id="status-bar">PLAN-LOCK HOLDS</div>
+
+    <button class="deploy-btn" id="deploy-btn" onclick="deploy()">
+      <span class="deploy-main">DEPLOY</span>
+      <span class="deploy-sub">v3 config</span>
+    </button>
+
+    <div id="float-texts"></div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="gameover-title" id="gameover-title">BELL RUNG</h1>
+    <div class="final-score">
+      <span class="final-label">DEPLOY BANK</span>
+      <span class="final-value" id="final-score">$0</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-deploys">0</span><span class="stat-label">Deploys</span></div>
+      <div class="stat"><span class="stat-val" id="stat-violations">0</span><span class="stat-label">Violations</span></div>
+      <div class="stat"><span class="stat-val" id="stat-missed">0</span><span class="stat-label">Missed</span></div>
+      <div class="stat"><span class="stat-val" id="stat-best-streak">0</span><span class="stat-label">Best Streak</span></div>
+    </div>
+    <div class="high-score-display" id="gameover-high-score"></div>
+    <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
+    <button id="replay-btn" onclick="startGame()">RING IT AGAIN</button>
+  </div>
+</div>
+{{ partial "leaderboard" . }}
+
+<style>
+  #game-wrapper {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #title-screen, #gameover-screen {
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+    width: 100%;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .title-dippy {
+    margin-bottom: 1rem;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  .game-title {
+    font-size: 2.2rem;
+    color: #00ff88;
+    margin: 0 0 0.5rem;
+    letter-spacing: 3px;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .game-subtitle {
+    color: #8b949e;
+    font-size: 0.95rem;
+    margin: 0 0 1.2rem;
+    line-height: 1.5;
+  }
+  .rules-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+    margin: 0 auto 1.2rem;
+    max-width: 320px;
+    text-align: left;
+  }
+  .rule {
+    color: #e6edf3;
+    font-size: 0.9rem;
+    padding: 0.18rem 0;
+  }
+  .rule.small {
+    color: #8b949e;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    padding: 0.25rem 0;
+  }
+  .rule b { color: #d2a8ff; }
+  .rule-divider {
+    height: 1px;
+    background: #30363d;
+    margin: 0.5rem 0;
+  }
+  .game-hint {
+    color: #484f58;
+    font-size: 0.8rem;
+    margin-top: 1.2rem;
+    font-style: italic;
+    line-height: 1.5;
+  }
+  .high-score-display {
+    color: #f0883e;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    min-height: 1.2em;
+  }
+  #start-btn, #replay-btn {
+    background: #00ff88;
+    color: #0d1117;
+    border: none;
+    padding: 0.9rem 2.5rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 1px;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  #start-btn:active, #replay-btn:active { transform: scale(0.95); }
+  #start-btn:hover, #replay-btn:hover {
+    box-shadow: 0 0 20px rgba(0,255,136,0.4);
+  }
+
+  /* HUD */
+  .game-hud {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 380px;
+    margin-bottom: 1rem;
+    gap: 0.5rem;
+  }
+  .hud-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 0.4rem;
+  }
+  .hud-label {
+    font-size: 0.65rem;
+    color: #484f58;
+    letter-spacing: 1px;
+  }
+  .hud-value {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #e6edf3;
+  }
+  #bank { color: #00ff88; }
+  #timer { color: #f0883e; }
+  #streak { color: #d2a8ff; }
+  .hud-flash { animation: hudFlash 0.3s ease; }
+  @keyframes hudFlash {
+    0% { transform: scale(1.3); color: #00ff88; }
+    100% { transform: scale(1); }
+  }
+
+  /* Gates */
+  .gate-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 380px;
+    margin-bottom: 1rem;
+  }
+  .gate {
+    background: #161b22;
+    border: 2px solid #30363d;
+    border-radius: 10px;
+    padding: 0.5rem 0.3rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .gate-label {
+    font-size: 0.65rem;
+    color: #e6edf3;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .gate-sub {
+    font-size: 0.6rem;
+    color: #484f58;
+    margin-bottom: 0.4rem;
+  }
+  .gate-light {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #5a1d1d;
+    border: 2px solid #30363d;
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  .gate.met {
+    border-color: #00ff88;
+    box-shadow: 0 0 12px rgba(0,255,136,0.15);
+  }
+  .gate.met .gate-light {
+    background: #00ff88;
+    box-shadow: 0 0 12px rgba(0,255,136,0.5);
+  }
+
+  /* Scanner Tape */
+  .tape-section {
+    width: 100%;
+    max-width: 380px;
+    margin-bottom: 1rem;
+  }
+  .tape-label {
+    font-size: 0.65rem;
+    color: #484f58;
+    letter-spacing: 1px;
+    margin-bottom: 0.3rem;
+  }
+  .tape {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 0.4rem;
+  }
+  .candle {
+    height: 36px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #0d1117;
+    transition: transform 0.15s ease, background 0.2s;
+  }
+  .candle.L { background: #00ff88; }
+  .candle.S { background: #f85149; color: #fff; }
+  .candle.M { background: #6e7681; color: #fff; }
+  .candle.new { animation: pop 0.3s ease; }
+  @keyframes pop {
+    0% { transform: scale(0.5); opacity: 0; }
+    60% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .shape-readout {
+    margin-top: 0.4rem;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #8b949e;
+    letter-spacing: 1.5px;
+    min-height: 1.2em;
+  }
+  .shape-readout.wolf { color: #00ff88; text-shadow: 0 0 8px rgba(0,255,136,0.4); }
+  .shape-readout.short { color: #f85149; }
+  .shape-readout.mixed { color: #f0883e; }
+
+  /* Status bar */
+  .status-bar {
+    width: 100%;
+    max-width: 380px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 0.5rem;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #8b949e;
+    margin-bottom: 1rem;
+    letter-spacing: 0.5px;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+  }
+  .status-bar.armed {
+    background: rgba(0,255,136,0.08);
+    border-color: #00ff88;
+    color: #00ff88;
+    animation: pulseGreen 1s ease-in-out infinite;
+  }
+  .status-bar.violated {
+    background: rgba(248,81,73,0.1);
+    border-color: #f85149;
+    color: #f85149;
+  }
+  @keyframes pulseGreen {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0,255,136,0.3); }
+    50% { box-shadow: 0 0 0 6px rgba(0,255,136,0); }
+  }
+
+  /* Deploy Button */
+  .deploy-btn {
+    background: #21262d;
+    color: #484f58;
+    border: 3px solid #30363d;
+    padding: 1rem 2rem;
+    width: 100%;
+    max-width: 380px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 800;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+    transition: transform 0.1s, background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+  }
+  .deploy-btn:active { transform: scale(0.97); }
+  .deploy-main {
+    font-size: 1.4rem;
+    letter-spacing: 2px;
+  }
+  .deploy-sub {
+    font-size: 0.7rem;
+    color: inherit;
+    opacity: 0.65;
+    letter-spacing: 1px;
+  }
+  .deploy-btn.armed {
+    background: #00ff88;
+    color: #0d1117;
+    border-color: #00ff88;
+    box-shadow: 0 0 22px rgba(0,255,136,0.5);
+    animation: armPulse 0.9s ease-in-out infinite;
+  }
+  @keyframes armPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+  }
+  .deploy-btn.cooldown {
+    background: #3d1d1d;
+    color: #f85149;
+    border-color: #5a1d1d;
+    pointer-events: none;
+  }
+
+  /* Floating Text */
+  #float-texts {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .float-text {
+    position: absolute;
+    font-weight: 800;
+    font-size: 1.4rem;
+    animation: floatUp 1s ease-out forwards;
+    pointer-events: none;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .float-text.win { color: #00ff88; }
+  .float-text.lose { color: #f85149; }
+  .float-text.miss { color: #f0883e; font-size: 1.1rem; }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -80px) scale(0.7); }
+  }
+
+  /* Game Over */
+  .gameover-title {
+    font-size: 2rem;
+    color: #f0883e;
+    margin: 0 0 1rem;
+    letter-spacing: 2px;
+  }
+  .final-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .final-label {
+    font-size: 0.8rem;
+    color: #484f58;
+    letter-spacing: 1px;
+  }
+  .final-value {
+    font-size: 2.6rem;
+    font-weight: 800;
+    color: #00ff88;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .stats-row {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.2rem;
+    flex-wrap: wrap;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .stat-val {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #e6edf3;
+  }
+  .stat-label {
+    font-size: 0.7rem;
+    color: #484f58;
+    letter-spacing: 1px;
+  }
+  .gameover-roast {
+    color: #8b949e;
+    font-size: 0.9rem;
+    margin: 1rem 1rem 1.2rem;
+    font-style: italic;
+    line-height: 1.5;
+    min-height: 2.5em;
+  }
+</style>
+
+<script>
+(function() {
+  const ROASTS = [
+    "Plan-lock exists for a reason. Moony fires every gate red. You're not Moony.",
+    "29 days locked. One bell. Dippy patient. Moony chasing.",
+    "Gate three doesn't open for vibes. It opens for n=2-different-week. Read a book, Moony.",
+    "Backtest met. Consistency met. Regime met. Deployed. Moony is still reading the optimizer manual upside-down.",
+    "Every premature fire is a Moony tear. Hold the line.",
+    "Sheriff doesn't change the badge over one good week. Moony changes it every Tuesday.",
+    "Three gates green AND wolf-shape tape — that's the entire compound condition. Moony can only count to two.",
+    "Plan-lock violations cost the streak. Moony's streak: still zero, since inception.",
+    "While you were waiting for the bell, Moony deployed eleven different configs and lost on all of them.",
+    "Wolf-shape tape + green gates = jackpot. Moony's still trying to draw a candle.",
+    "Discipline of doing nothing different is the most expensive discipline. Moony bought the discount.",
+    "The bell rang. You answered. Moony missed it because it was busy rebalancing into bonds."
+  ];
+
+  // --- Game state ---
+  let bank = 0;
+  let timeLeft = 60;
+  let streak = 0;
+  let bestStreak = 0;
+  let deploys = 0;
+  let violations = 0;
+  let missed = 0;
+  let gameActive = false;
+  let gateState = [false, false, false];
+  let tape = []; // 5 cells
+  let tickInterval = null;
+  let timerInterval = null;
+  let cooldownUntil = 0;
+  let armedSince = 0;        // when conditions first became valid this stretch
+  let armedAcknowledged = 0; // last tick we counted toward "missed" decay (still valid)
+  let lastFlipMs = 0;
+  let elapsed = 0;
+
+  function getHighScore() {
+    try { return parseInt(localStorage.getItem('dippy-gate-three-high') || '0'); } catch(e) { return 0; }
+  }
+  function setHighScore(s) {
+    try { localStorage.setItem('dippy-gate-three-high', s); } catch(e) {}
+  }
+
+  function showScreen(id) {
+    ['title-screen','game-screen','gameover-screen'].forEach(s => {
+      document.getElementById(s).style.display = s === id ? '' : 'none';
+    });
+  }
+
+  function updateHUD() {
+    document.getElementById('bank').textContent = (bank >= 0 ? '$' : '-$') + Math.abs(bank).toLocaleString();
+    document.getElementById('timer').textContent = timeLeft;
+    document.getElementById('streak').textContent = streak;
+  }
+  function flashHUD(id) {
+    const el = document.getElementById(id);
+    el.classList.remove('hud-flash');
+    void el.offsetWidth;
+    el.classList.add('hud-flash');
+  }
+
+  function classifyShape(tapeArr) {
+    let L = 0, S = 0;
+    for (const c of tapeArr) {
+      if (c === 'L') L++;
+      else if (c === 'S') S++;
+    }
+    if (L >= 3 && S <= 2) return 'WOLF-SHAPE';
+    if (S >= 3 && L <= 2) return 'SHORT-SHAPE';
+    return 'MIXED';
+  }
+
+  function renderGates() {
+    for (let i = 0; i < 3; i++) {
+      const g = document.getElementById('gate-' + (i+1));
+      if (gateState[i]) g.classList.add('met');
+      else g.classList.remove('met');
+    }
+  }
+
+  function renderTape(newIdx) {
+    const tapeEl = document.getElementById('tape');
+    tapeEl.innerHTML = '';
+    for (let i = 0; i < tape.length; i++) {
+      const div = document.createElement('div');
+      div.className = 'candle ' + tape[i] + (i === newIdx ? ' new' : '');
+      div.textContent = tape[i];
+      tapeEl.appendChild(div);
+    }
+    const shape = classifyShape(tape);
+    const r = document.getElementById('shape-readout');
+    r.textContent = shape;
+    r.className = 'shape-readout';
+    if (shape === 'WOLF-SHAPE') r.classList.add('wolf');
+    else if (shape === 'SHORT-SHAPE') r.classList.add('short');
+    else r.classList.add('mixed');
+  }
+
+  function isArmed() {
+    return gateState[0] && gateState[1] && gateState[2] && classifyShape(tape) === 'WOLF-SHAPE';
+  }
+
+  function refreshArmState() {
+    const btn = document.getElementById('deploy-btn');
+    const bar = document.getElementById('status-bar');
+    const now = performance.now();
+    const cooling = now < cooldownUntil;
+    if (cooling) {
+      btn.classList.remove('armed');
+      btn.classList.add('cooldown');
+      const remaining = Math.ceil((cooldownUntil - now) / 1000);
+      btn.querySelector('.deploy-sub').textContent = 'cooldown ' + remaining + 's';
+      bar.className = 'status-bar violated';
+      bar.textContent = 'PLAN-LOCK VIOLATED';
+      return;
+    }
+    btn.classList.remove('cooldown');
+    btn.querySelector('.deploy-sub').textContent = 'v3 config';
+    if (isArmed()) {
+      btn.classList.add('armed');
+      bar.className = 'status-bar armed';
+      bar.textContent = 'BELL ARMED — RING IT';
+    } else {
+      btn.classList.remove('armed');
+      bar.className = 'status-bar';
+      bar.textContent = 'PLAN-LOCK HOLDS';
+    }
+  }
+
+  function floatText(text, cls) {
+    const btn = document.getElementById('deploy-btn');
+    const rect = btn.getBoundingClientRect();
+    const el = document.createElement('div');
+    el.className = 'float-text ' + cls;
+    el.textContent = text;
+    el.style.left = (rect.left + rect.width/2) + 'px';
+    el.style.top = (rect.top - 10) + 'px';
+    document.getElementById('float-texts').appendChild(el);
+    setTimeout(() => el.remove(), 1000);
+  }
+
+  function randomCandle(bias) {
+    // bias: 0 = neutral, 1 = lean long, -1 = lean short
+    const r = Math.random();
+    if (bias === 1) {
+      if (r < 0.55) return 'L';
+      if (r < 0.85) return 'S';
+      return 'M';
+    } else if (bias === -1) {
+      if (r < 0.55) return 'S';
+      if (r < 0.85) return 'L';
+      return 'M';
+    }
+    if (r < 0.4) return 'L';
+    if (r < 0.8) return 'S';
+    return 'M';
+  }
+
+  function tickWorld() {
+    if (!gameActive) return;
+    elapsed += 0.4;
+
+    // Toggle a random gate roughly each tick. As time runs out, gates flip faster.
+    // Probability a gate flips this tick.
+    const flipP = Math.min(0.55, 0.25 + elapsed * 0.005);
+    for (let i = 0; i < 3; i++) {
+      if (Math.random() < flipP) {
+        gateState[i] = !gateState[i];
+      }
+    }
+    renderGates();
+
+    // Advance the tape every 2 ticks (~0.8s). Sometimes the tape lines up
+    // long-bias (wolf) just briefly — that is the moment to fire.
+    if (Math.random() < 0.45) {
+      tape.shift();
+      // 35% lean long, 35% lean short, 30% neutral — creates real wolf windows
+      const bias = Math.random();
+      const candle = bias < 0.35 ? randomCandle(1)
+                    : bias < 0.70 ? randomCandle(-1)
+                    : randomCandle(0);
+      tape.push(candle);
+      renderTape(tape.length - 1);
+    }
+
+    // Count missed signal: armed > 1.6s without deploy → -$200 penalty + reset streak
+    const now = performance.now();
+    if (isArmed() && now < cooldownUntil + 100000) {
+      if (armedSince === 0) armedSince = now;
+      if (now - armedSince > 1600 && now - armedAcknowledged > 1600) {
+        // missed signal — gates were green AND wolf-shape but no deploy
+        // only penalize once per armed window
+        bank -= 200;
+        missed++;
+        streak = 0;
+        floatText('-$200 MISSED', 'miss');
+        flashHUD('streak');
+        updateHUD();
+        armedAcknowledged = now;
+        // force a flip so we leave the armed state for variety
+        gateState[Math.floor(Math.random() * 3)] = false;
+        renderGates();
+      }
+    } else {
+      armedSince = 0;
+      armedAcknowledged = 0;
+    }
+
+    refreshArmState();
+  }
+
+  window.deploy = function() {
+    if (!gameActive) return;
+    const now = performance.now();
+    if (now < cooldownUntil) return;
+
+    if (isArmed()) {
+      // CORRECT FIRE
+      streak++;
+      if (streak > bestStreak) bestStreak = streak;
+      deploys++;
+      // Base $1288 (the Sat top config). Streak multiplier.
+      let payout = 1288;
+      if (streak >= 5) payout = Math.round(payout * 2);
+      else if (streak >= 3) payout = Math.round(payout * 1.5);
+      // Speed bonus: how short since armedSince (faster = more)
+      const dwell = now - armedSince;
+      if (dwell < 400) payout += 400; // snap bonus
+      else if (dwell < 800) payout += 200;
+      else if (dwell < 1200) payout += 80;
+      bank += payout;
+      floatText('+$' + payout + (streak >= 3 ? ' STREAK x' + streak : ''), 'win');
+      flashHUD('bank');
+      flashHUD('streak');
+      armedSince = 0;
+      armedAcknowledged = 0;
+      // Force a flip — gates can't stay armed forever
+      const idx = Math.floor(Math.random() * 3);
+      gateState[idx] = false;
+      renderGates();
+      updateHUD();
+      refreshArmState();
+      if (navigator.vibrate) navigator.vibrate(40);
+    } else {
+      // PLAN-LOCK VIOLATION
+      violations++;
+      streak = 0;
+      bank -= 500;
+      cooldownUntil = now + 2500;
+      floatText('-$500 PLAN-LOCK', 'lose');
+      flashHUD('bank');
+      updateHUD();
+      refreshArmState();
+      if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
+    }
+  };
+
+  function initTape() {
+    tape = [];
+    for (let i = 0; i < 5; i++) {
+      tape.push(randomCandle(0));
+    }
+    renderTape(-1);
+  }
+
+  window.startGame = function() {
+    bank = 0;
+    timeLeft = 60;
+    streak = 0;
+    bestStreak = 0;
+    deploys = 0;
+    violations = 0;
+    missed = 0;
+    elapsed = 0;
+    cooldownUntil = 0;
+    armedSince = 0;
+    armedAcknowledged = 0;
+    gateState = [false, false, false];
+    gameActive = true;
+
+    document.getElementById('timer').style.color = '#f0883e';
+    renderGates();
+    initTape();
+    updateHUD();
+    refreshArmState();
+    showScreen('game-screen');
+
+    if (tickInterval) clearInterval(tickInterval);
+    if (timerInterval) clearInterval(timerInterval);
+
+    tickInterval = setInterval(tickWorld, 400);
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      if (timeLeft <= 10) document.getElementById('timer').style.color = '#f85149';
+      updateHUD();
+      if (timeLeft <= 0) endGame();
+    }, 1000);
+  };
+
+  function endGame() {
+    gameActive = false;
+    clearInterval(tickInterval);
+    clearInterval(timerInterval);
+
+    document.getElementById('final-score').textContent = (bank >= 0 ? '$' : '-$') + Math.abs(bank).toLocaleString();
+    document.getElementById('stat-deploys').textContent = deploys;
+    document.getElementById('stat-violations').textContent = violations;
+    document.getElementById('stat-missed').textContent = missed;
+    document.getElementById('stat-best-streak').textContent = bestStreak;
+
+    const prev = getHighScore();
+    const isNew = bank > prev;
+    if (isNew) setHighScore(bank);
+    document.getElementById('gameover-high-score').textContent = isNew
+      ? 'NEW HIGH BANK! (prev: $' + prev.toLocaleString() + ')'
+      : 'High bank: $' + prev.toLocaleString();
+    document.getElementById('gameover-title').textContent = isNew ? 'GATE FIRED!' : 'BELL RUNG';
+
+    document.getElementById('gameover-roast').textContent =
+      '"' + ROASTS[Math.floor(Math.random() * ROASTS.length)] + '"';
+
+    showScreen('gameover-screen');
+    DippyLB.onGameOver(bank);
+  }
+
+  const hs = getHighScore();
+  if (hs > 0) {
+    document.getElementById('title-high-score').textContent = 'High bank: $' + hs.toLocaleString();
+  }
+  DippyLB.init('gate-three');
+})();
+</script>
+{{ end }}
