@@ -1,0 +1,678 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">DEPLOY GATE</h1>
+    <p class="game-subtitle">Saturday's optimizer queued a config.<br>Monday's bars start printing.<br>SHIP the snapshot — or let the gate HOLD it.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">RUN THE GATE</button>
+    <p class="game-hint">6 rounds. Each round = 5 Monday bars rain down on the queue's edge.<br>SHIP while edge &gt; 0 → bank the lead. SHIP while edge &lt; 0 → catastrophic loss.<br>HOLD past final bar: gate saves you if edge ended negative, costs a little if positive.<br>Bigger swings, higher reward — and higher penalty if you misread the tape.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">BANK</span>
+        <span class="hud-value" id="banked">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">ROUND</span>
+        <span class="hud-value orange" id="round-disp">1/6</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">STREAK</span>
+        <span class="hud-value" id="streak-disp">x1</span>
+      </div>
+    </div>
+
+    <div class="snapshot-card">
+      <div class="snap-row">
+        <span class="snap-label">SAT QUEUE</span>
+        <span class="snap-config" id="snap-config">Cutoff=14:00 Con=7 TS=0.5R</span>
+      </div>
+      <div class="snap-row">
+        <span class="snap-label">START EDGE</span>
+        <span class="snap-start" id="snap-start">+$1288</span>
+      </div>
+    </div>
+
+    <div class="edge-pane">
+      <div class="edge-label">QUEUE LEAD vs CURRENT</div>
+      <div class="edge-value" id="edge-value">+$1288</div>
+      <div class="edge-track">
+        <div class="edge-zero"></div>
+        <div class="edge-zone-neg"></div>
+        <div class="edge-zone-pos"></div>
+        <div class="edge-needle" id="edge-needle"></div>
+      </div>
+      <div class="edge-scale">
+        <span>HOLD ← gate flips</span>
+        <span>0</span>
+        <span>queue wins → SHIP</span>
+      </div>
+    </div>
+
+    <div class="bars-pane">
+      <div class="bars-label" id="bars-label">Monday's bars dropping…</div>
+      <div class="bars-row" id="bars-row"></div>
+    </div>
+
+    <div class="decision-row">
+      <button class="decide-btn ship-btn" id="ship-btn" onclick="decide('SHIP')">
+        <span class="btn-glyph">🚀</span>
+        <span class="btn-text">SHIP</span>
+      </button>
+      <button class="decide-btn hold-btn" id="hold-btn" onclick="decide('HOLD')">
+        <span class="btn-glyph">🛡️</span>
+        <span class="btn-text">HOLD</span>
+      </button>
+    </div>
+
+    <div class="countdown-bar"><div class="countdown-fill" id="countdown-fill"></div></div>
+    <div class="tape" id="tape">Read the tape. Decide before the last bar lands.</div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">GATE CLOSED</h1>
+    <div class="final-score">$<span id="final-score">0</span></div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-ships">0</span><span class="stat-label">Good Ships</span></div>
+      <div class="stat"><span class="stat-val" id="stat-saves">0</span><span class="stat-label">Gate Saves</span></div>
+      <div class="stat"><span class="stat-val" id="stat-blowups">0</span><span class="stat-label">Blow-ups</span></div>
+    </div>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">RE-QUEUE</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; touch-action:manipulation; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:1.9em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 40px; font-size:1.1em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.72em; margin-top:14px; line-height:1.55; max-width:380px; }
+
+  #game-screen { justify-content:flex-start; padding:14px 14px 16px; height:100vh; }
+  .game-hud { display:flex; justify-content:space-between; padding:8px 16px; background:rgba(0,0,0,0.4); border:1px solid #21262d; border-radius:8px; margin-bottom:8px; }
+  .hud-item { text-align:center; flex:1; }
+  .hud-label { display:block; font-size:0.62em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1.0em; color:#00ff88; font-weight:bold; }
+  .hud-value.red { color:#ff5050; }
+  .hud-value.orange { color:#f0883e; }
+
+  .snapshot-card {
+    background:linear-gradient(180deg, rgba(240,136,62,0.10) 0%, rgba(240,136,62,0.04) 100%);
+    border:1px solid rgba(240,136,62,0.45);
+    border-radius:8px;
+    padding:8px 12px;
+    margin-bottom:8px;
+  }
+  .snap-row { display:flex; justify-content:space-between; align-items:center; font-size:0.78em; line-height:1.5; }
+  .snap-label { color:#f0883e; letter-spacing:1px; }
+  .snap-config { color:#e6edf3; font-size:0.9em; }
+  .snap-start { color:#00ff88; font-weight:bold; }
+
+  .edge-pane {
+    background: linear-gradient(180deg, #0a0d12 0%, #050709 100%);
+    border:1px solid #21262d;
+    border-radius:10px;
+    padding:12px 14px 16px;
+    margin-bottom:10px;
+    text-align:center;
+  }
+  .edge-label { font-size:0.65em; color:#8b949e; letter-spacing:2px; margin-bottom:4px; }
+  .edge-value { font-size:1.9em; font-weight:bold; color:#00ff88; text-shadow:0 0 14px rgba(0,255,136,0.45); transition: color 0.18s, text-shadow 0.18s; margin-bottom:8px; }
+  .edge-value.red { color:#ff5050; text-shadow:0 0 14px rgba(255,80,80,0.5); }
+  .edge-value.gray { color:#8b949e; text-shadow:none; }
+  .edge-track {
+    position:relative;
+    height:30px;
+    background:#0d1117;
+    border:1px solid #21262d;
+    border-radius:6px;
+    overflow:hidden;
+    margin-bottom:4px;
+  }
+  .edge-zone-pos {
+    position:absolute; top:0; left:50%; width:50%; height:100%;
+    background: linear-gradient(90deg, rgba(0,255,136,0.04) 0%, rgba(0,255,136,0.20) 100%);
+  }
+  .edge-zone-neg {
+    position:absolute; top:0; left:0; width:50%; height:100%;
+    background: linear-gradient(90deg, rgba(255,80,80,0.20) 0%, rgba(255,80,80,0.04) 100%);
+  }
+  .edge-zero {
+    position:absolute; top:0; left:50%; width:2px; height:100%;
+    background:#484f58;
+    transform:translateX(-1px);
+    z-index:2;
+  }
+  .edge-needle {
+    position:absolute;
+    top:-3px;
+    left:50%;
+    width:6px;
+    height:36px;
+    background:#00ff88;
+    border-radius:3px;
+    transform:translateX(-3px);
+    transition: left 0.32s cubic-bezier(.22,1,.36,1), background 0.18s;
+    box-shadow: 0 0 12px rgba(0,255,136,0.7);
+    z-index:3;
+  }
+  .edge-needle.red { background:#ff5050; box-shadow:0 0 12px rgba(255,80,80,0.7); }
+  .edge-scale { display:flex; justify-content:space-between; font-size:0.55em; color:#484f58; letter-spacing:0.5px; padding:0 2px; }
+
+  .bars-pane {
+    background:rgba(0,0,0,0.30);
+    border:1px solid #21262d;
+    border-radius:8px;
+    padding:8px 10px;
+    margin-bottom:10px;
+    min-height:60px;
+  }
+  .bars-label { font-size:0.62em; color:#8b949e; letter-spacing:1.5px; margin-bottom:6px; text-align:center; }
+  .bars-row { display:flex; justify-content:space-between; gap:6px; height:36px; align-items:flex-end; }
+  .bar-slot {
+    flex:1;
+    height:36px;
+    border:1px dashed #21262d;
+    border-radius:3px;
+    position:relative;
+    overflow:hidden;
+    background:rgba(0,0,0,0.15);
+  }
+  .bar-slot.pending::before {
+    content:"?";
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#21262d;
+    font-size:1em;
+  }
+  .bar-fill {
+    position:absolute;
+    left:0;
+    width:100%;
+    transition: top 0.45s cubic-bezier(.22,1,.36,1), height 0.45s cubic-bezier(.22,1,.36,1), background 0.18s;
+    border-radius:2px;
+  }
+  .bar-fill.pos { background:#00ff88; box-shadow:0 0 8px rgba(0,255,136,0.5); }
+  .bar-fill.neg { background:#ff5050; box-shadow:0 0 8px rgba(255,80,80,0.5); }
+  .bar-label {
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:0.6em;
+    color:#0d1117;
+    font-weight:bold;
+    z-index:2;
+    text-shadow:0 0 2px rgba(255,255,255,0.4);
+  }
+
+  .decision-row { display:flex; gap:10px; margin-bottom:10px; }
+  .decide-btn {
+    flex:1;
+    padding:16px 0;
+    border:2px solid;
+    border-radius:10px;
+    font-family:inherit;
+    font-weight:bold;
+    cursor:pointer;
+    transition: all 0.12s;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
+    letter-spacing:2px;
+    font-size:1.1em;
+    background:linear-gradient(180deg, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.15) 100%);
+  }
+  .ship-btn { border-color:#00ff88; color:#00ff88; box-shadow: 0 0 0 0 rgba(0,255,136,0); animation: ship-pulse 1.6s ease-in-out infinite; }
+  .hold-btn { border-color:#f0883e; color:#f0883e; }
+  .ship-btn:active, .hold-btn:active { transform:scale(0.96); }
+  .decide-btn:disabled { opacity:0.4; cursor:not-allowed; animation:none; }
+  .btn-glyph { font-size:1.2em; line-height:1; }
+  .btn-text { font-size:0.85em; }
+
+  .ship-btn.flash-green { animation: flash-green 0.7s ease-out; }
+  .ship-btn.flash-red   { animation: flash-red 0.7s ease-out; }
+  .hold-btn.flash-green { animation: flash-green 0.7s ease-out; }
+  .hold-btn.flash-red   { animation: flash-red 0.7s ease-out; }
+  .hold-btn.flash-amber { animation: flash-amber 0.7s ease-out; }
+  @keyframes ship-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(0,255,136,0); }
+    50%     { box-shadow: 0 0 20px 3px rgba(0,255,136,0.35); }
+  }
+  @keyframes flash-green {
+    0% { box-shadow: 0 0 0 0 rgba(0,255,136,0); }
+    30% { box-shadow: 0 0 30px 6px rgba(0,255,136,0.85); background: rgba(0,255,136,0.32); }
+    100% { box-shadow: 0 0 0 0 rgba(0,255,136,0); }
+  }
+  @keyframes flash-red {
+    0% { box-shadow: 0 0 0 0 rgba(255,80,80,0); }
+    30% { box-shadow: 0 0 30px 6px rgba(255,80,80,0.85); background: rgba(255,80,80,0.32); }
+    100% { box-shadow: 0 0 0 0 rgba(255,80,80,0); }
+  }
+  @keyframes flash-amber {
+    0% { box-shadow: 0 0 0 0 rgba(240,136,62,0); }
+    30% { box-shadow: 0 0 26px 5px rgba(240,136,62,0.75); background: rgba(240,136,62,0.26); }
+    100% { box-shadow: 0 0 0 0 rgba(240,136,62,0); }
+  }
+
+  .countdown-bar { height:6px; background:#21262d; border-radius:3px; overflow:hidden; margin-bottom:8px; }
+  .countdown-fill { height:100%; width:100%; background: linear-gradient(90deg, #00ff88 0%, #f0883e 60%, #ff5050 100%); transition: width 0.1s linear; }
+
+  .tape {
+    text-align:center;
+    font-size:0.72em;
+    color:#8b949e;
+    letter-spacing:1.2px;
+    padding:6px 8px;
+    background:rgba(0,0,0,0.20);
+    border-radius:6px;
+    min-height:32px;
+    line-height:1.5;
+  }
+  .tape.win { color:#00ff88; }
+  .tape.loss { color:#ff5050; }
+  .tape.gray { color:#8b949e; }
+  .tape.amber { color:#f0883e; }
+
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; text-shadow:0 0 24px rgba(0,255,136,0.5); margin-bottom:18px; font-weight:bold; }
+  .final-score.red { color:#ff5050; text-shadow:0 0 24px rgba(255,80,80,0.5); }
+  .stats-row { display:flex; gap:24px; margin-bottom:16px; }
+  .stat { text-align:center; }
+  .stat-val { display:block; font-size:1.5em; color:#f0883e; font-weight:bold; }
+  .stat-label { display:block; font-size:0.65em; color:#8b949e; letter-spacing:1px; margin-top:2px; }
+  .roast-msg { color:#8b949e; font-size:0.85em; line-height:1.6; max-width:340px; margin-bottom:20px; min-height:3em; padding:0 8px; }
+
+  .shake { animation: shake-anim 0.45s ease-in-out; }
+  @keyframes shake-anim {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  const HIGH_KEY = 'dippy-deploy-gate-high';
+
+  // Config snapshots — themed to ORB hyperparameter universe
+  const SNAPSHOTS = [
+    'Cutoff=14:00 Con=7 TS=0.5R',
+    'Cutoff=14:30 Con=5 TS=0.75R',
+    'Cutoff=15:00 Con=7 TS=1.0R',
+    'Cutoff=14:00 Con=5 TS=0.5R',
+    'Cutoff=14:30 Con=7 TS=1.0R',
+    'Cutoff=15:00 Con=5 TS=0.75R',
+    'Cutoff=14:00 Con=7 TS=0.75R',
+    'Cutoff=14:30 Con=5 TS=0.5R'
+  ];
+
+  const ROASTS = [
+    "Moony's still queueing a config from 2024. The bar hasn't even printed yet and the snapshot's already stale.",
+    "You held the gate. Moony shipped the rumour. One of you reads the tape.",
+    "Saturday's snapshot is a hypothesis, not a deploy. Moony has not heard either of those words.",
+    "Moony pre-deploys at the click of a Reddit notification. You pre-deploy after the head-to-head.",
+    "Sheriff doesn't ship the stale queue. Moony's saddle is on backwards anyway.",
+    "Backtest is a flashlight, not a crystal ball. Moony brought a glow stick.",
+    "Gate held the wrong deploy from going live today. Moony held nothing but cash. Again.",
+    "Saturday's number was beautiful. Monday's bar disagreed. The gate exists for Monday's bar.",
+    "Moony's still doing DCF on Monday's wolf. The wolf went home hours ago.",
+    "Right answer: read the new data. Wrong answer: trust the four-day-old snapshot. Moony does the wrong answer.",
+    "The discipline is reading the tape AT the deploy slot, not the day the queue was set. Moony reads the tape never.",
+    "You ran the gate. Moony ran the spreadsheet. Only one of those has a P&L."
+  ];
+
+  let state = null;
+
+  function fmt(n) {
+    const abs = Math.abs(Math.round(n));
+    const s = abs.toLocaleString('en-US');
+    return (n >= 0 ? '+$' : '-$') + s;
+  }
+
+  function setNeedle(edge, startEdge) {
+    const track = document.querySelector('.edge-track');
+    const needle = document.getElementById('edge-needle');
+    const valEl  = document.getElementById('edge-value');
+    if (!track || !needle || !valEl) return;
+    // Map edge to percent: -maxRange = 0%, 0 = 50%, +maxRange = 100%
+    const maxRange = Math.max(1800, Math.abs(startEdge) * 1.6);
+    const clamped = Math.max(-maxRange, Math.min(maxRange, edge));
+    const pct = 50 + (clamped / maxRange) * 50;
+    needle.style.left = pct + '%';
+    if (edge < 0) {
+      needle.classList.add('red');
+      valEl.classList.remove('gray');
+      valEl.classList.add('red');
+    } else {
+      needle.classList.remove('red');
+      valEl.classList.remove('red');
+      valEl.classList.remove('gray');
+    }
+    valEl.textContent = fmt(edge);
+  }
+
+  function renderBars() {
+    const row = document.getElementById('bars-row');
+    row.innerHTML = '';
+    for (let i = 0; i < state.bars.length; i++) {
+      const slot = document.createElement('div');
+      slot.className = 'bar-slot';
+      const b = state.bars[i];
+      if (!b.revealed) {
+        slot.classList.add('pending');
+        row.appendChild(slot);
+        continue;
+      }
+      const fill = document.createElement('div');
+      fill.className = 'bar-fill ' + (b.delta >= 0 ? 'pos' : 'neg');
+      const magPct = Math.min(100, (Math.abs(b.delta) / 900) * 100);
+      if (b.delta >= 0) {
+        fill.style.bottom = '0';
+        fill.style.height = magPct + '%';
+      } else {
+        fill.style.top = '0';
+        fill.style.height = magPct + '%';
+      }
+      const lbl = document.createElement('span');
+      lbl.className = 'bar-label';
+      lbl.textContent = (b.delta >= 0 ? '+' : '') + Math.round(b.delta);
+      slot.appendChild(fill);
+      slot.appendChild(lbl);
+      row.appendChild(slot);
+    }
+  }
+
+  function startGame() {
+    document.getElementById('title-screen').style.display = 'none';
+    document.getElementById('gameover-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'flex';
+
+    state = {
+      round: 0,
+      maxRounds: 6,
+      bank: 0,
+      streak: 0,
+      ships: 0,
+      saves: 0,
+      blowups: 0,
+      decided: false,
+      done: false,
+      bars: [],
+      barIdx: 0,
+      startEdge: 0,
+      edge: 0,
+      barTimer: null,
+      countdownTimer: null,
+      timeLeft: 0,
+      maxTime: 0,
+    };
+    nextRound();
+  }
+  window.startGame = startGame;
+
+  function nextRound() {
+    if (state.round >= state.maxRounds) { endGame(); return; }
+    state.round++;
+    state.decided = false;
+    state.barIdx = 0;
+
+    // Volatility scales each round; start edge grows so positive cases stay attractive
+    const vol = 380 + state.round * 80;
+    state.startEdge = 800 + Math.round(Math.random() * 900);
+    state.edge = state.startEdge;
+
+    state.bars = [];
+    for (let i = 0; i < 5; i++) {
+      // Bias: ~55% chance of negative shock per bar (Monday tends to flip the snapshot)
+      const sign = Math.random() < 0.55 ? -1 : 1;
+      const mag = Math.round((0.45 + Math.random() * 0.95) * vol);
+      state.bars.push({ delta: sign * mag, revealed: false });
+    }
+
+    // Compute the final lead if all 5 bars land
+    state.finalLead = state.bars.reduce((a, b) => a + b.delta, state.startEdge);
+
+    // UI
+    document.getElementById('round-disp').textContent = state.round + '/' + state.maxRounds;
+    document.getElementById('streak-disp').textContent = 'x' + (1 + Math.min(state.streak, 4));
+    document.getElementById('snap-config').textContent = SNAPSHOTS[(state.round - 1) % SNAPSHOTS.length];
+    document.getElementById('snap-start').textContent = fmt(state.startEdge);
+    document.getElementById('bars-label').textContent = "Monday's bars dropping…";
+    document.getElementById('tape').className = 'tape';
+    document.getElementById('tape').textContent = "Read the tape. Decide before bar 5 lands.";
+    document.getElementById('ship-btn').disabled = false;
+    document.getElementById('hold-btn').disabled = false;
+    document.getElementById('ship-btn').classList.remove('flash-green','flash-red');
+    document.getElementById('hold-btn').classList.remove('flash-green','flash-red','flash-amber');
+
+    setNeedle(state.edge, state.startEdge);
+    renderBars();
+
+    // Countdown matches all-5-bars duration (~4.2s)
+    state.maxTime = 5 * 850;
+    state.timeLeft = state.maxTime;
+    const cdfill = document.getElementById('countdown-fill');
+    cdfill.style.width = '100%';
+    cdfill.style.transition = 'width 0.1s linear';
+    if (state.countdownTimer) clearInterval(state.countdownTimer);
+    state.countdownTimer = setInterval(() => {
+      state.timeLeft -= 80;
+      const pct = Math.max(0, (state.timeLeft / state.maxTime) * 100);
+      cdfill.style.width = pct + '%';
+    }, 80);
+
+    // Drop bars one at a time
+    if (state.barTimer) clearTimeout(state.barTimer);
+    dropNextBar();
+  }
+
+  function dropNextBar() {
+    if (state.barIdx >= 5) {
+      if (!state.decided) {
+        // Force HOLD if the player hesitated past the last bar
+        decide('HOLD', true);
+      }
+      return;
+    }
+    const i = state.barIdx;
+    const b = state.bars[i];
+    b.revealed = true;
+    state.edge += b.delta;
+    state.barIdx++;
+    setNeedle(state.edge, state.startEdge);
+    renderBars();
+    state.barTimer = setTimeout(dropNextBar, 820);
+  }
+
+  function decide(action, auto = false) {
+    if (state.decided || state.done) return;
+    state.decided = true;
+    if (state.countdownTimer) { clearInterval(state.countdownTimer); state.countdownTimer = null; }
+
+    // For SHIP/HOLD, judge based on edge AT THE MOMENT the player committed.
+    // If auto (waited too long) → final edge is used.
+    const edgeAt = state.edge;
+    let delta = 0;
+    let tapeMsg = '';
+    let flashCls = '';
+    let btnId = '';
+    const tape = document.getElementById('tape');
+    const streakBonus = 1 + Math.min(state.streak, 4) * 0.2;
+
+    if (action === 'SHIP') {
+      btnId = 'ship-btn';
+      if (edgeAt > 0) {
+        // Shipped a positive lead — bank it
+        const base = Math.round(edgeAt * 0.85);
+        delta = Math.round(base * streakBonus);
+        state.ships++;
+        state.streak++;
+        flashCls = 'flash-green';
+        tape.className = 'tape win';
+        tapeMsg = '🚀 SHIPPED. Queue lead +' + Math.round(edgeAt) + ' banked' + (streakBonus > 1 ? ' (streak x' + streakBonus.toFixed(1) + ')' : '') + '.';
+      } else {
+        // Shipped a negative lead — catastrophic
+        const base = Math.round(Math.abs(edgeAt) * 1.6);
+        delta = -base;
+        state.blowups++;
+        state.streak = 0;
+        flashCls = 'flash-red';
+        tape.className = 'tape loss';
+        tapeMsg = '💥 SHIPPED A STALE QUEUE. Lead was ' + Math.round(edgeAt) + '. Gate would have caught this.';
+        document.getElementById('game-wrapper').classList.add('shake');
+        setTimeout(() => document.getElementById('game-wrapper').classList.remove('shake'), 500);
+      }
+    } else {
+      btnId = 'hold-btn';
+      // HOLD: judge based on FINAL lead (what would have happened if you'd shipped)
+      // — even if player held early, we use final lead because it represents the gate's verdict
+      const finalLead = auto ? state.edge : state.finalLead;
+      if (finalLead < 0) {
+        // Gate saved you
+        const saveBonus = Math.round(Math.abs(finalLead) * 0.75) + 200;
+        delta = Math.round(saveBonus * streakBonus);
+        state.saves++;
+        state.streak++;
+        flashCls = 'flash-green';
+        tape.className = 'tape win';
+        tapeMsg = '🛡️ GATE HELD. Queue would have closed ' + Math.round(finalLead) + '. Saved ' + Math.round(saveBonus) + '.';
+      } else if (finalLead > 0) {
+        // Held a positive lead — left money on the table
+        const miss = Math.round(finalLead * 0.30);
+        delta = -miss;
+        state.streak = 0;
+        flashCls = 'flash-amber';
+        tape.className = 'tape amber';
+        tapeMsg = '⏳ HELD A WINNING QUEUE. Final lead +' + Math.round(finalLead) + '. Missed ' + miss + '.';
+      } else {
+        delta = 0;
+        state.streak = 0;
+        flashCls = 'flash-amber';
+        tape.className = 'tape gray';
+        tapeMsg = 'FLAT. Nothing to ship, nothing to hold.';
+      }
+    }
+
+    state.bank += delta;
+    document.getElementById('banked').textContent = (state.bank >= 0 ? '$' : '-$') + Math.abs(state.bank).toLocaleString('en-US');
+    document.getElementById('banked').classList.toggle('red', state.bank < 0);
+    document.getElementById('streak-disp').textContent = 'x' + (1 + Math.min(state.streak, 4));
+
+    const btn = document.getElementById(btnId);
+    if (btn) btn.classList.add(flashCls);
+    document.getElementById('ship-btn').disabled = true;
+    document.getElementById('hold-btn').disabled = true;
+    tape.textContent = tapeMsg + '  Δ ' + (delta >= 0 ? '+' : '-') + '$' + Math.abs(delta);
+
+    // Reveal remaining bars quickly for visual closure
+    if (state.barIdx < 5) {
+      let i = state.barIdx;
+      const reveal = () => {
+        if (i >= 5) {
+          setTimeout(nextRound, 1300);
+          return;
+        }
+        state.bars[i].revealed = true;
+        state.edge += state.bars[i].delta;
+        i++;
+        state.barIdx = i;
+        setNeedle(state.edge, state.startEdge);
+        renderBars();
+        setTimeout(reveal, 220);
+      };
+      reveal();
+    } else {
+      setTimeout(nextRound, 1300);
+    }
+  }
+  window.decide = decide;
+
+  function endGame() {
+    state.done = true;
+    if (state.barTimer) { clearTimeout(state.barTimer); state.barTimer = null; }
+    if (state.countdownTimer) { clearInterval(state.countdownTimer); state.countdownTimer = null; }
+    document.getElementById('game-screen').style.display = 'none';
+    document.getElementById('gameover-screen').style.display = 'flex';
+
+    const bank = state.bank;
+    const fs = document.getElementById('final-score');
+    fs.textContent = (bank >= 0 ? '' : '-') + Math.abs(bank).toLocaleString('en-US');
+    fs.parentElement.classList.toggle('red', bank < 0);
+
+    document.getElementById('stat-ships').textContent = state.ships;
+    document.getElementById('stat-saves').textContent = state.saves;
+    document.getElementById('stat-blowups').textContent = state.blowups;
+
+    const title = document.getElementById('gameover-title');
+    if (bank > 4000)      title.textContent = 'GATE MASTER';
+    else if (bank > 1500) title.textContent = 'CLEAN DEPLOY';
+    else if (bank > 0)    title.textContent = 'GATE HELD';
+    else                  title.textContent = 'GATE BREACHED';
+
+    const high = parseInt(localStorage.getItem(HIGH_KEY) || '0');
+    if (bank > high) {
+      localStorage.setItem(HIGH_KEY, String(bank));
+      document.getElementById('roast-msg').textContent = '🏆 NEW HIGH SCORE. ' + ROASTS[Math.floor(Math.random() * ROASTS.length)];
+    } else {
+      document.getElementById('roast-msg').textContent = ROASTS[Math.floor(Math.random() * ROASTS.length)];
+    }
+    updateTitleHigh();
+    if (window.DippyLB && DippyLB.onGameOver) DippyLB.onGameOver(bank);
+  }
+
+  function updateTitleHigh() {
+    const high = parseInt(localStorage.getItem(HIGH_KEY) || '0');
+    const el = document.getElementById('title-high-score');
+    if (high > 0) el.textContent = 'HIGH: $' + high.toLocaleString('en-US');
+  }
+  updateTitleHigh();
+
+  if (window.DippyLB && DippyLB.init) DippyLB.init('deploy-gate');
+})();
+</script>
+{{ end }}
