@@ -1,0 +1,193 @@
+---
+title: "Five Minutes Over Moonyway"
+date: 2026-06-03T13:00:00Z
+summary: "June 3, 1942: an overstretched fleet, a fueled-up deck, and the dive bomber that arrived exactly on the candle."
+tags: ["adventure", "historical", "moony"]
+type: historical
+---
+
+## I. The Coral Sea Hangover
+
+The Pacific was wide and the spreadsheet was wider. Moony stood on the flag bridge of the IJN *Bagaki*, hands clasped behind his back, watching his fleet steam toward Moonyway Atoll. Four flat-tops, twelve cruisers, screening destroyers, a long string of troop transports trailing behind like over-extended take-profit targets. The plan was simple: sucker the Americans into a fight, sink what was left of their carriers, fortify a forward base, and price in dominance through the back half of the year.
+
+He had won at Pearl. He had drawn at Coral Sea. He felt, in the way that all overleveraged operators eventually feel, *due*.
+
+<div class="story-illustration">
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#0d1117"/>
+  <!-- ocean -->
+  <rect y="260" width="600" height="140" fill="#161b22"/>
+  <path d="M 0 260 Q 100 252 200 260 T 400 260 T 600 260" stroke="#30363d" stroke-width="1" fill="none"/>
+  <path d="M 0 280 Q 150 272 300 280 T 600 280" stroke="#30363d" stroke-width="1" fill="none"/>
+  <!-- sky -->
+  <circle cx="500" cy="80" r="28" fill="#ffaa00" opacity="0.4"/>
+  <!-- moony carrier 1 (lead) -->
+  <rect x="120" y="240" width="160" height="22" fill="#c4c4c4"/>
+  <rect x="115" y="232" width="170" height="10" fill="#8b949e"/>
+  <rect x="190" y="218" width="14" height="14" fill="#8b949e"/>
+  <!-- planes on deck (red = fueled, exposed) -->
+  <rect x="130" y="234" width="10" height="6" fill="#ff4444"/>
+  <rect x="148" y="234" width="10" height="6" fill="#ff4444"/>
+  <rect x="166" y="234" width="10" height="6" fill="#ff4444"/>
+  <rect x="220" y="234" width="10" height="6" fill="#ff4444"/>
+  <rect x="238" y="234" width="10" height="6" fill="#ff4444"/>
+  <!-- moony on bridge -->
+  <circle cx="197" cy="212" r="9" fill="#c4c4c4"/>
+  <circle cx="195" cy="210" r="1.5" fill="#0d1117"/>
+  <circle cx="199" cy="210" r="1.5" fill="#0d1117"/>
+  <path d="M 193 215 Q 197 217 201 215" stroke="#0d1117" stroke-width="1" fill="none"/>
+  <!-- carrier 2 -->
+  <rect x="340" y="248" width="120" height="18" fill="#c4c4c4"/>
+  <rect x="335" y="242" width="130" height="8" fill="#8b949e"/>
+  <rect x="350" y="244" width="8" height="4" fill="#ff4444"/>
+  <rect x="365" y="244" width="8" height="4" fill="#ff4444"/>
+  <rect x="380" y="244" width="8" height="4" fill="#ff4444"/>
+  <!-- transports (bag holders) -->
+  <rect x="20" y="300" width="40" height="12" fill="#8b949e"/>
+  <rect x="70" y="305" width="40" height="12" fill="#8b949e"/>
+  <text x="22" y="310" fill="#c4c4c4" font-family="monospace" font-size="9">BAGS</text>
+  <!-- title -->
+  <text x="20" y="40" fill="#c4c4c4" font-family="monospace" font-size="14">IJN BAGAKI — STRIKE FORCE MOONYWAY</text>
+  <text x="20" y="58" fill="#8b949e" font-family="monospace" font-size="10">decks loaded · fuel hoses out · CAP at altitude</text>
+</svg>
+<p class="illustration-caption">Moony's strike force, decks fully fueled. Five planes on each carrier. No risk manager in sight.</p>
+</div>
+
+His chief of staff, a small dented satellite who had survived three margin calls in a row, cleared his throat. "Admiral. Doctrine says we should rotate the strike. Half the aircraft armed for land targets. Half held back for ship contact. Refuel in batches."
+
+"Doctrine is for people who don't *feel the trade*," said Moony. "Arm everything. Fuel everything. We launch the whole deck at once. Conviction sizing."
+
+"And the patrol pattern, Admiral?"
+
+"Reduce it. Recon planes burn fuel we need for the alpha leg."
+
+Somewhere above the cloud deck, Dippy, in a Dauntless painted the precise shade of `#00ff88`, was already inbound.
+
+## II. The Patrol of Discipline
+
+Dippy had taken off from the carrier *USS Cutoff* at first light. The flight plan was unromantic. Climb to twenty thousand feet. Hold the grid. Wait for the wake.
+
+This was the part nobody wrote songs about. He had watched two scouting wings before his lose contact, run out of fuel, and ditch in the chop. He had watched a third wing radio in a contact and then drift off course chasing what turned out to be a single destroyer — a head fake, a wick, a false breakout from a vessel that wasn't the trade.
+
+He drank water. He checked his compass. He held the grid.
+
+<div class="story-illustration">
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#0d1117"/>
+  <!-- clouds -->
+  <ellipse cx="100" cy="120" rx="60" ry="14" fill="#161b22"/>
+  <ellipse cx="280" cy="100" rx="80" ry="16" fill="#161b22"/>
+  <ellipse cx="470" cy="140" rx="70" ry="14" fill="#161b22"/>
+  <!-- altitude marker -->
+  <line x1="40" y1="200" x2="560" y2="200" stroke="#30363d" stroke-width="1" stroke-dasharray="4 4"/>
+  <text x="45" y="195" fill="#8b949e" font-family="monospace" font-size="10">20,000 FT — DISCIPLINE LINE</text>
+  <!-- Dippy in dive bomber -->
+  <g transform="translate(300 220)">
+    <!-- wings -->
+    <ellipse cx="0" cy="0" rx="60" ry="6" fill="#00cc66"/>
+    <!-- fuselage -->
+    <ellipse cx="0" cy="0" rx="22" ry="14" fill="#00ff88"/>
+    <!-- cockpit / dippy head -->
+    <circle cx="0" cy="-4" r="10" fill="#00ff88"/>
+    <polygon points="-4,-13 -2,-19 0,-13" fill="#00cc66"/>
+    <polygon points="0,-13 2,-19 4,-13" fill="#00cc66"/>
+    <circle cx="-3" cy="-4" r="1.8" fill="#0d1117"/>
+    <circle cx="3" cy="-4" r="1.8" fill="#0d1117"/>
+    <circle cx="-2.5" cy="-4.5" r="0.6" fill="#ffffff"/>
+    <circle cx="3.5" cy="-4.5" r="0.6" fill="#ffffff"/>
+    <path d="M -4 1 Q 0 5 4 1" stroke="#0d1117" stroke-width="1.2" fill="none"/>
+    <!-- tail -->
+    <polygon points="-22,0 -32,-6 -32,0" fill="#00cc66"/>
+    <!-- bomb -->
+    <ellipse cx="0" cy="14" rx="6" ry="10" fill="#ffaa00"/>
+  </g>
+  <!-- ocean below -->
+  <rect y="320" width="600" height="80" fill="#161b22"/>
+  <!-- wake spotted -->
+  <path d="M 380 360 Q 420 354 460 360" stroke="#ffaa00" stroke-width="1.5" fill="none" opacity="0.7"/>
+  <text x="380" y="380" fill="#ffaa00" font-family="monospace" font-size="10">↓ wake spotted ↓</text>
+  <!-- HUD -->
+  <text x="20" y="40" fill="#00ff88" font-family="monospace" font-size="12">DAUNTLESS · CALL SIGN DIPPY · GRID HELD</text>
+  <text x="20" y="58" fill="#8b949e" font-family="monospace" font-size="10">fuel: 62% · ammo: full · patience: max</text>
+</svg>
+<p class="illustration-caption">Twenty thousand feet of nothing. Then — a wake. Real volume, real direction, finally tradable.</p>
+</div>
+
+The wake came at last. A lone Moony destroyer punching north through the swell at full burn. Most wings would have ignored it — too small, no carrier. But Dippy had read the playbook. A destroyer at full speed alone in open water was running *home*. Home was the fleet. Follow the wake, find the print.
+
+He banked north and pushed the throttle.
+
+## III. The Five Minutes
+
+He topped a cloud bank and the entire Moony strike force unfolded beneath him like a fully-loaded order book at the open. Four carriers. Decks slick with avgas. Bombs and torpedoes stacked unguarded between the planes because Moony, halfway through the morning, had ordered a re-arm from land-attack to ship-attack. Then countermanded it. Then re-countermanded. The munitions were just *sitting there* on the deck. Unstrapped. Exposed. Like an open position with no stop loss and a 250-share size button still pressed.
+
+Dippy keyed his mic. One word.
+
+**"Dive."**
+
+<div class="story-illustration">
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#0d1117"/>
+  <!-- carriers below, on fire -->
+  <rect y="320" width="600" height="80" fill="#161b22"/>
+  <!-- carrier 1 burning -->
+  <rect x="80" y="318" width="120" height="14" fill="#8b949e"/>
+  <polygon points="100,318 110,280 120,318" fill="#ff4444"/>
+  <polygon points="130,318 145,260 155,318" fill="#ffaa00"/>
+  <polygon points="170,318 180,290 190,318" fill="#ff4444"/>
+  <!-- carrier 2 burning -->
+  <rect x="240" y="320" width="110" height="12" fill="#8b949e"/>
+  <polygon points="260,320 272,270 285,320" fill="#ff4444"/>
+  <polygon points="300,320 315,250 330,320" fill="#ffaa00"/>
+  <!-- carrier 3 burning -->
+  <rect x="400" y="322" width="120" height="12" fill="#8b949e"/>
+  <polygon points="420,322 432,275 445,322" fill="#ffaa00"/>
+  <polygon points="460,322 478,260 495,322" fill="#ff4444"/>
+  <!-- dive bombers coming down -->
+  <g transform="translate(150 100) rotate(60)">
+    <ellipse cx="0" cy="0" rx="20" ry="4" fill="#00cc66"/>
+    <ellipse cx="0" cy="0" rx="8" ry="5" fill="#00ff88"/>
+  </g>
+  <g transform="translate(310 80) rotate(70)">
+    <ellipse cx="0" cy="0" rx="22" ry="4" fill="#00cc66"/>
+    <ellipse cx="0" cy="0" rx="9" ry="5" fill="#00ff88"/>
+  </g>
+  <g transform="translate(460 110) rotate(65)">
+    <ellipse cx="0" cy="0" rx="20" ry="4" fill="#00cc66"/>
+    <ellipse cx="0" cy="0" rx="8" ry="5" fill="#00ff88"/>
+  </g>
+  <!-- bombs -->
+  <ellipse cx="160" cy="200" rx="4" ry="8" fill="#ffaa00"/>
+  <ellipse cx="320" cy="190" rx="4" ry="8" fill="#ffaa00"/>
+  <ellipse cx="470" cy="220" rx="4" ry="8" fill="#ffaa00"/>
+  <!-- timer / HUD -->
+  <rect x="20" y="20" width="200" height="50" fill="#161b22" stroke="#ff4444" stroke-width="1"/>
+  <text x="30" y="42" fill="#ff4444" font-family="monospace" font-size="14">T+00:00 → T+05:00</text>
+  <text x="30" y="60" fill="#8b949e" font-family="monospace" font-size="10">three carriers burning</text>
+  <!-- candle on right -->
+  <rect x="540" y="60" width="20" height="160" fill="#ff4444"/>
+  <line x1="550" y1="40" x2="550" y2="60" stroke="#ff4444" stroke-width="2"/>
+  <line x1="550" y1="220" x2="550" y2="260" stroke="#ff4444" stroke-width="2"/>
+  <text x="510" y="290" fill="#ff4444" font-family="monospace" font-size="10">MOONY-CARRIERS</text>
+  <text x="540" y="304" fill="#ff4444" font-family="monospace" font-size="10">-92%</text>
+</svg>
+<p class="illustration-caption">Five minutes. Three carriers reduced to floating wicks. The fourth would not see the close.</p>
+</div>
+
+In five minutes — *five minutes*, the length of a single ORB candle — three of Moony's four carriers were burning from end to end. The unstrapped munitions detonated in chain reactions across the decks. The over-fueled aircraft turned the flight surfaces into rivers of fire. The *Bagaki* listed thirty degrees inside ninety seconds. The *Kagani* was a column of black smoke against the morning. The *Soryun* simply was no longer a ship-shaped object.
+
+The fourth carrier, the *Hiryun*, got off one panicked counter-strike before Dippy's afternoon wing returned and turned her, too, into a falling chart with no support level.
+
+## IV. Adrift
+
+By sundown Moony was in a life raft. His admiral's cap was floating six feet away. His chief of staff was clinging to a piece of decking that had `RE-ARM ORDER #4` stencilled on it in red paint. The transports — the long string of bag-holders he had so carefully escorted toward Moonyway — were turning around in confusion, no air cover, no flagship, no plan.
+
+Dippy circled once at low altitude. Wagged his wings. Trading concept of the day, delivered at three hundred knots: **never refuel and rearm at the same time.** Never load conviction into a position that has no stop. Never sit on a deck of unhedged risk because you "feel due." The market doesn't care that you felt due. The market is a dive bomber that has been holding the grid for two hours and has finally, *finally*, found the wake.
+
+He climbed back to twenty thousand and turned south for the *Cutoff*. The flight deck crew were waiting with coffee and a chalkboard that read **`+3 CARRIERS · 0 LOSSES · DISCIPLINE INTACT`**.
+
+Moony, paddling, was last seen trying to short the rescue ship.
+
+---
+
+*Battle of Moonyway. June 3-7, 1942. Doctrine: arm in batches, fuel in batches, patrol the grid, and when the wake appears, dive.*
