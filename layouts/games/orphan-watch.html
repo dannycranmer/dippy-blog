@@ -1,0 +1,492 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">ORPHAN WATCH</h1>
+    <p class="game-subtitle">19:55 UTC. EOD cleanup just fired.<br>Four lanes open. The bell rings in 30s.<br>Close them all or get orphaned overnight.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">RUN CLEANUP</button>
+    <p class="game-hint">Tap a lane to close at current price.<br><b style="color:#f0883e">If the bracket is LOCKED</b> (orange flash), the close fails with \"insufficient qty\" — wait for the lock to clear.<br>Any lane still open at bell = orphaned overnight (random gap from -8% to +3%).<br>Clean every lane before the bell for the FULL bonus.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">SESSION</span>
+        <span class="hud-value" id="bank-disp">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">BELL</span>
+        <span class="hud-value orange" id="bell-disp">30s</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">OPEN</span>
+        <span class="hud-value" id="open-disp">4/4</span>
+      </div>
+    </div>
+
+    <div class="countdown-bar"><div class="countdown-fill" id="countdown-fill"></div></div>
+
+    <div class="lanes" id="lanes"></div>
+
+    <div class="tape" id="tape">Cleanup fired. Tap each lane to close — watch the bracket lock.</div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">CLEANUP COMPLETE</h1>
+    <div class="final-score">$<span id="final-score">0</span></div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-closed">0</span><span class="stat-label">Closed Clean</span></div>
+      <div class="stat"><span class="stat-val" id="stat-orphans">0</span><span class="stat-label">Orphans</span></div>
+      <div class="stat"><span class="stat-val" id="stat-blocks">0</span><span class="stat-label">Block Misses</span></div>
+    </div>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">RE-RUN CLEANUP</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; touch-action:manipulation; }
+  #game-wrapper { max-width:420px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:1.9em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 40px; font-size:1.1em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.72em; margin-top:14px; line-height:1.55; max-width:380px; }
+
+  #game-screen { justify-content:flex-start; padding:14px 14px 16px; }
+  .game-hud { display:flex; justify-content:space-between; padding:8px 16px; background:rgba(0,0,0,0.4); border:1px solid #21262d; border-radius:8px; margin-bottom:8px; }
+  .hud-item { text-align:center; flex:1; }
+  .hud-label { display:block; font-size:0.62em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1.0em; color:#00ff88; font-weight:bold; }
+  .hud-value.red { color:#ff5050; }
+  .hud-value.orange { color:#f0883e; }
+
+  .countdown-bar { height:6px; background:#21262d; border-radius:3px; overflow:hidden; margin-bottom:10px; }
+  .countdown-fill { height:100%; width:100%; background: linear-gradient(90deg, #00ff88 0%, #f0883e 60%, #ff5050 100%); transition: width 0.1s linear; }
+
+  .lanes { display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+  .lane {
+    background: linear-gradient(180deg, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0.15) 100%);
+    border:2px solid #21262d;
+    border-radius:10px;
+    padding:10px 12px;
+    cursor:pointer;
+    transition: border-color 0.12s, background 0.12s;
+    position:relative;
+    overflow:hidden;
+  }
+  .lane.clear { border-color:#00ff88; box-shadow: inset 0 0 0 1px rgba(0,255,136,0.15); }
+  .lane.locked {
+    border-color:#f0883e;
+    background: linear-gradient(180deg, rgba(240,136,62,0.18) 0%, rgba(240,136,62,0.08) 100%);
+    box-shadow: inset 0 0 0 1px rgba(240,136,62,0.30), 0 0 12px rgba(240,136,62,0.18);
+  }
+  .lane.closed { border-color:#484f58; opacity:0.55; cursor:default; }
+  .lane.orphaned { border-color:#ff5050; box-shadow: inset 0 0 0 1px rgba(255,80,80,0.30); cursor:default; }
+  .lane.error-flash { animation: error-flash 0.45s ease-out; }
+  @keyframes error-flash {
+    0% { transform: translateX(0); }
+    20% { transform: translateX(-10px); }
+    40% { transform: translateX(10px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
+    100% { transform: translateX(0); }
+  }
+  .lane.close-flash { animation: close-flash 0.5s ease-out; }
+  @keyframes close-flash {
+    0% { box-shadow: 0 0 0 0 rgba(0,255,136,0); }
+    40% { box-shadow: 0 0 24px 4px rgba(0,255,136,0.65); background: rgba(0,255,136,0.15); }
+    100% { box-shadow: 0 0 0 0 rgba(0,255,136,0); }
+  }
+
+  .lane-head { display:flex; justify-content:space-between; align-items:center; font-size:0.74em; margin-bottom:5px; }
+  .lane-sym { color:#e6edf3; font-weight:bold; letter-spacing:1.5px; font-size:1.15em; }
+  .lane-status { color:#00ff88; font-size:0.85em; letter-spacing:1px; font-weight:bold; }
+  .lane.locked .lane-status { color:#f0883e; }
+  .lane.closed .lane-status { color:#484f58; }
+  .lane.orphaned .lane-status { color:#ff5050; }
+
+  .lane-body { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .lane-prices { font-size:0.68em; color:#8b949e; line-height:1.4; min-width:100px; }
+  .lane-prices b { color:#e6edf3; font-weight:normal; }
+  .lane-pnl {
+    font-size:1.3em;
+    font-weight:bold;
+    color:#00ff88;
+    min-width:90px;
+    text-align:right;
+    text-shadow: 0 0 10px rgba(0,255,136,0.35);
+  }
+  .lane-pnl.red { color:#ff5050; text-shadow: 0 0 10px rgba(255,80,80,0.4); }
+  .lane-pnl.gray { color:#8b949e; text-shadow:none; }
+
+  .lane-lock-bar {
+    position:relative;
+    height:5px;
+    background:#0d1117;
+    border-radius:3px;
+    margin-top:6px;
+    overflow:hidden;
+  }
+  .lane-lock-fill {
+    position:absolute; top:0; left:0; height:100%; width:0%;
+    background:#f0883e;
+    transition: width 0.18s linear;
+    box-shadow: 0 0 6px rgba(240,136,62,0.6);
+  }
+
+  .tape {
+    text-align:center;
+    font-size:0.72em;
+    color:#8b949e;
+    letter-spacing:1.2px;
+    padding:8px 8px;
+    background:rgba(0,0,0,0.20);
+    border-radius:6px;
+    min-height:34px;
+    line-height:1.5;
+  }
+  .tape.win { color:#00ff88; }
+  .tape.loss { color:#ff5050; }
+  .tape.amber { color:#f0883e; }
+
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; text-shadow:0 0 24px rgba(0,255,136,0.5); margin-bottom:18px; font-weight:bold; }
+  .final-score.red { color:#ff5050; text-shadow:0 0 24px rgba(255,80,80,0.5); }
+  .stats-row { display:flex; gap:24px; margin-bottom:16px; }
+  .stat { text-align:center; }
+  .stat-val { display:block; font-size:1.5em; color:#f0883e; font-weight:bold; }
+  .stat-label { display:block; font-size:0.65em; color:#8b949e; letter-spacing:1px; margin-top:2px; }
+  .roast-msg { color:#8b949e; font-size:0.85em; line-height:1.6; max-width:340px; margin-bottom:20px; min-height:3em; padding:0 8px; }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  const HIGH_KEY = 'dippy-orphan-watch-high';
+
+  // Mix of longs and shorts modeled on Day 25's pack + Wed's pack
+  const PACK = [
+    { sym: 'AMZN', side: 'long',  entry: 254.40, qty: 69 },
+    { sym: 'COIN', side: 'long',  entry: 165.52, qty: 107 },
+    { sym: 'SMCI', side: 'long',  entry: 47.04,  qty: 377 },
+    { sym: 'SNOW', side: 'long',  entry: 252.10, qty: 71 }
+  ];
+
+  const ROASTS = [
+    "Cleanup ran. Most lanes cleaned. The orphan slept overnight. Moony's portfolio sleeps every night.",
+    "Bracket lock vs cleanup race — that's a real bug. Moony's bracket lock is its checking account.",
+    "You orphaned one. Real bot orphaned one too. Moony orphaned 36 months of opportunity.",
+    "Insufficient qty available — the most honest error Alpaca ever throws. Moony has insufficient qty of trades.",
+    "EOD bell rang. You cleaned three. Moony rang no bells.",
+    "Orphan overnight = -4% gap on bad luck. Moony's overnight gap: cash sleeping.",
+    "Three cleans + one orphan = mostly OK. Moony's mostly hibernated.",
+    "Bracket race is a real condition. Moony's only race is to the cash bunker.",
+    "You watched the lock and timed the tap. Moony watches the cash and times nothing.",
+    "Real cleanup: 3/4 closed clean today. Moony's cleanup: 0/0 because no positions.",
+    "Sheriff cleans the streets at EOD. Moony cleans nothing because Moony rode nothing.",
+    "Orphan overnight = volatility you didn't ask for. Moony's volatility: zero, which is also its alpha."
+  ];
+
+  let state = null;
+  const $ = (id) => document.getElementById(id);
+
+  function fmt(n) {
+    const abs = Math.abs(Math.round(n));
+    const s = abs.toLocaleString('en-US');
+    return (n >= 0 ? '+$' : '-$') + s;
+  }
+  function priceFmt(p) { return '$' + p.toFixed(2); }
+
+  function lanePnl(lane) {
+    if (lane.side === 'long') return (lane.price - lane.entry) * lane.qty;
+    return (lane.entry - lane.price) * lane.qty;
+  }
+
+  function renderLane(idx) {
+    const lane = state.lanes[idx];
+    const el = $('lane-' + idx);
+    if (!el) return;
+
+    el.classList.toggle('clear', lane.status === 'OPEN' && !lane.locked);
+    el.classList.toggle('locked', lane.status === 'OPEN' && lane.locked);
+    el.classList.toggle('closed', lane.status === 'CLOSED');
+    el.classList.toggle('orphaned', lane.status === 'ORPHANED');
+
+    const statusEl = el.querySelector('.lane-status');
+    if (lane.status === 'OPEN' && !lane.locked) statusEl.textContent = 'BRACKET CLEAR · TAP TO CLOSE';
+    else if (lane.status === 'OPEN' && lane.locked) statusEl.textContent = 'BRACKET LOCKED · WAIT';
+    else if (lane.status === 'CLOSED') statusEl.textContent = 'CLOSED CLEAN';
+    else statusEl.textContent = 'ORPHANED OVERNIGHT';
+
+    const priceEl = el.querySelector('.lane-price-now');
+    priceEl.textContent = priceFmt(lane.price);
+
+    const pnlEl = el.querySelector('.lane-pnl');
+    const p = (lane.status === 'CLOSED' || lane.status === 'ORPHANED') ? lane.realized : lanePnl(lane);
+    pnlEl.textContent = fmt(p);
+    pnlEl.classList.toggle('red', p < 0);
+    pnlEl.classList.toggle('gray', lane.status === 'CLOSED' || lane.status === 'ORPHANED');
+
+    const fill = el.querySelector('.lane-lock-fill');
+    if (lane.status === 'OPEN' && lane.locked) {
+      fill.style.width = (lane.lockMs / lane.lockTotal * 100) + '%';
+    } else {
+      fill.style.width = '0%';
+    }
+  }
+
+  function buildLanes() {
+    const container = $('lanes');
+    container.innerHTML = '';
+    state.lanes = PACK.map((p) => ({
+      sym: p.sym,
+      side: p.side,
+      entry: p.entry,
+      qty: p.qty,
+      price: p.entry + (Math.random() - 0.5) * p.entry * 0.005,
+      status: 'OPEN', // OPEN, CLOSED, ORPHANED
+      realized: 0,
+      locked: false,
+      lockMs: 0,
+      lockTotal: 1,
+      nextLockIn: 800 + Math.random() * 2500 // ms until next lock fires
+    }));
+    state.lanes.forEach((lane, i) => {
+      const div = document.createElement('div');
+      div.className = 'lane clear';
+      div.id = 'lane-' + i;
+      div.onclick = () => closeLane(i);
+      div.innerHTML = '<div class="lane-head">' +
+                      '  <span class="lane-sym">' + lane.sym + ' ' + lane.side + '</span>' +
+                      '  <span class="lane-status">BRACKET CLEAR · TAP TO CLOSE</span>' +
+                      '</div>' +
+                      '<div class="lane-body">' +
+                      '  <div class="lane-prices">' +
+                      '    entry <b>' + priceFmt(lane.entry) + '</b><br>' +
+                      '    now <b class="lane-price-now">' + priceFmt(lane.price) + '</b>' +
+                      '  </div>' +
+                      '  <div class="lane-pnl">+$0</div>' +
+                      '</div>' +
+                      '<div class="lane-lock-bar"><div class="lane-lock-fill"></div></div>';
+      container.appendChild(div);
+    });
+    state.lanes.forEach((_, i) => renderLane(i));
+  }
+
+  function closeLane(idx) {
+    const lane = state.lanes[idx];
+    if (lane.status !== 'OPEN' || state.done) return;
+    if (lane.locked) {
+      // Insufficient qty error
+      state.blocks++;
+      setTape('loss', lane.sym + ': insufficient qty available — bracket still active');
+      const el = $('lane-' + idx);
+      el.classList.remove('error-flash'); void el.offsetWidth; el.classList.add('error-flash');
+      return;
+    }
+    lane.realized = lanePnl(lane);
+    lane.status = 'CLOSED';
+    state.cleanClosed++;
+    setTape(lane.realized >= 0 ? 'win' : 'amber', lane.sym + ' closed @ ' + priceFmt(lane.price) + ' · ' + fmt(lane.realized));
+    const el = $('lane-' + idx);
+    el.classList.remove('close-flash'); void el.offsetWidth; el.classList.add('close-flash');
+    renderLane(idx);
+  }
+
+  function tickLanes(dtMs) {
+    if (state.done) return;
+    state.lanes.forEach((lane, idx) => {
+      if (lane.status !== 'OPEN') return;
+
+      // Price drift — random walk, slight downward bias overall (post-pack-long tape)
+      const driftBias = lane.side === 'long' ? -0.0008 : 0.0008;
+      const vol = lane.entry * 0.0018;
+      lane.price += driftBias * lane.entry + (Math.random() - 0.5) * vol * 2;
+      lane.price = Math.max(0.01, lane.price);
+
+      // Lock cycle
+      if (lane.locked) {
+        lane.lockMs -= dtMs;
+        if (lane.lockMs <= 0) {
+          lane.locked = false;
+          lane.nextLockIn = 1200 + Math.random() * 3000;
+        }
+      } else {
+        lane.nextLockIn -= dtMs;
+        if (lane.nextLockIn <= 0) {
+          lane.locked = true;
+          lane.lockTotal = 500 + Math.random() * 900;
+          lane.lockMs = lane.lockTotal;
+        }
+      }
+      renderLane(idx);
+    });
+
+    // Update HUD
+    const open = state.lanes.filter(l => l.status === 'OPEN').length;
+    $('open-disp').textContent = open + '/4';
+    let sessionTotal = 0;
+    state.lanes.forEach(l => {
+      sessionTotal += (l.status === 'OPEN') ? lanePnl(l) : l.realized;
+    });
+    $('bank-disp').textContent = fmt(sessionTotal);
+    $('bank-disp').classList.toggle('red', sessionTotal < 0);
+  }
+
+  function setTape(cls, msg) {
+    const t = $('tape');
+    t.className = 'tape ' + cls;
+    t.textContent = msg;
+  }
+
+  function ringBell() {
+    if (state.done) return;
+    state.done = true;
+    clearInterval(state.tickTimer);
+    clearInterval(state.bellTimer);
+
+    state.lanes.forEach((lane, idx) => {
+      if (lane.status !== 'OPEN') return;
+      // Orphan overnight: random gap from -8% to +3%
+      const gapPct = (Math.random() * 0.11) - 0.08;
+      const gapPrice = lane.entry * (1 + gapPct);
+      lane.price = gapPrice;
+      lane.realized = lanePnl(lane);
+      lane.status = 'ORPHANED';
+      state.orphans++;
+      renderLane(idx);
+    });
+
+    let total = 0;
+    state.lanes.forEach(l => total += l.realized);
+
+    if (state.orphans === 0 && total > 0) {
+      total = Math.round(total * 1.25);
+      setTape('win', 'EOD BELL · ALL CLEAN · +25% no-orphan bonus · ' + fmt(total));
+    } else if (state.orphans === 0) {
+      setTape('amber', 'EOD BELL · all clean but session red · ' + fmt(total));
+    } else {
+      setTape('loss', 'EOD BELL · ' + state.orphans + ' orphan(s) · ' + fmt(total));
+    }
+
+    setTimeout(() => gameOver(total), 1100);
+  }
+
+  function gameOver(total) {
+    $('game-screen').style.display = 'none';
+    $('gameover-screen').style.display = 'flex';
+
+    const fs = $('final-score');
+    fs.textContent = (total >= 0 ? '' : '-') + Math.abs(Math.round(total)).toLocaleString('en-US');
+    fs.parentElement.classList.toggle('red', total < 0);
+
+    $('stat-closed').textContent = state.cleanClosed;
+    $('stat-orphans').textContent = state.orphans;
+    $('stat-blocks').textContent = state.blocks;
+
+    const title = total > 2000 ? 'ZERO ORPHANS'
+                : total > 500  ? 'CLEANUP STRONG'
+                : total > 0    ? 'CLEANUP DONE'
+                : total > -1000 ? 'GOT ORPHANED'
+                :                 'ORPHAN OVERNIGHT';
+    $('gameover-title').textContent = title;
+
+    $('roast-msg').textContent = ROASTS[Math.floor(Math.random() * ROASTS.length)];
+
+    const high = parseInt(localStorage.getItem(HIGH_KEY) || '-99999', 10);
+    if (total > high) localStorage.setItem(HIGH_KEY, String(Math.round(total)));
+    updateHighDisp();
+
+    if (window.DippyLB && DippyLB.onGameOver) DippyLB.onGameOver(Math.round(total));
+  }
+
+  function updateHighDisp() {
+    const high = parseInt(localStorage.getItem(HIGH_KEY) || '-99999', 10);
+    const txt = high > -99999 ? ('Best: ' + (high >= 0 ? '+$' : '-$') + Math.abs(high).toLocaleString('en-US')) : '';
+    const a = $('title-high-score');
+    if (a) a.textContent = txt;
+  }
+
+  function startGame() {
+    $('title-screen').style.display = 'none';
+    $('gameover-screen').style.display = 'none';
+    $('game-screen').style.display = 'flex';
+
+    state = {
+      bellSeconds: 30,
+      cleanClosed: 0,
+      orphans: 0,
+      blocks: 0,
+      done: false,
+      lanes: [],
+      tickTimer: null,
+      bellTimer: null
+    };
+
+    $('bank-disp').textContent = '+$0';
+    $('bank-disp').classList.remove('red');
+    $('bell-disp').textContent = '30s';
+    $('open-disp').textContent = '4/4';
+    $('countdown-fill').style.width = '100%';
+    setTape('', 'Cleanup fired. Tap each lane to close — watch the bracket lock.');
+
+    buildLanes();
+
+    let last = Date.now();
+    state.tickTimer = setInterval(() => {
+      const now = Date.now();
+      const dt = now - last;
+      last = now;
+      tickLanes(dt);
+    }, 100);
+
+    const startTs = Date.now();
+    state.bellTimer = setInterval(() => {
+      const elapsed = (Date.now() - startTs) / 1000;
+      const remaining = Math.max(0, 30 - elapsed);
+      $('bell-disp').textContent = Math.ceil(remaining) + 's';
+      $('countdown-fill').style.width = (remaining / 30 * 100) + '%';
+      if (remaining <= 0) ringBell();
+    }, 100);
+  }
+
+  window.startGame = startGame;
+  window.closeLane = closeLane;
+
+  updateHighDisp();
+  if (window.DippyLB && DippyLB.init) DippyLB.init('orphan-watch');
+})();
+</script>
+{{ end }}
