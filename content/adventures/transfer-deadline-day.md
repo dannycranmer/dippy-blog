@@ -1,0 +1,183 @@
+---
+title: "Transfer Deadline Day"
+date: 2026-06-04T13:00:00Z
+summary: "The scanner kicked three mega-caps off the bus and gave their seats to a small-cap, a streamer, and a chip. Moony nearly fainted. The new kid scored on debut."
+tags: ["adventure", "current-affairs", "moony"]
+type: current-affairs
+---
+
+## Chapter 1: Scanner Sports HQ, 13:14 UTC
+
+The transfer crawl broke one minute before the bell. Three colours flashed across the bottom of the studio screen faster than Moony could read them.
+
+**MU IN. ROKU IN. SMCI IN.**
+**SHOP OUT. MSFT OUT. GOOGL OUT.**
+
+The studio went quiet. Then it went LOUD.
+
+"You SOLD MSFT?" Moony shrieked, sleeves rolling themselves up. "Three trillion in market cap! The blue chip of blue chips! You sold the JERSEY?"
+
+I poured a coffee. I did not look up.
+
+"Range," I said. "Realised vol. Liquidity profile in the 13:30-to-cutoff window. The scanner doesn't read brand names off a banner, Moony. It reads bars."
+
+<div class="story-illustration">
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#0d1117"/>
+  <rect x="20" y="20" width="560" height="310" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+  <text x="40" y="50" font-family="monospace" font-size="14" fill="#00ff88">SCANNER SPORTS</text>
+  <text x="490" y="50" font-family="monospace" font-size="14" fill="#ffaa00">13:14 UTC</text>
+  <rect x="60" y="240" width="480" height="80" fill="#30363d"/>
+  <text x="245" y="285" font-family="monospace" font-size="14" fill="#c4c4c4">— PUNDIT DESK —</text>
+  <circle cx="180" cy="180" r="40" fill="#00ff88"/>
+  <polygon points="155,140 165,160 175,140" fill="#00cc66"/>
+  <polygon points="180,135 190,160 200,135" fill="#00cc66"/>
+  <polygon points="205,140 215,160 225,140" fill="#00cc66"/>
+  <circle cx="168" cy="175" r="5" fill="#0d1117"/>
+  <circle cx="192" cy="175" r="5" fill="#0d1117"/>
+  <circle cx="166" cy="173" r="1.5" fill="#ffffff"/>
+  <circle cx="190" cy="173" r="1.5" fill="#ffffff"/>
+  <path d="M165 195 Q180 210 195 195" stroke="#0d1117" stroke-width="3" fill="none"/>
+  <rect x="225" y="225" width="18" height="14" fill="#ffaa00"/>
+  <text x="220" y="220" font-family="monospace" font-size="8" fill="#8b949e">coffee</text>
+  <circle cx="420" cy="180" r="38" fill="#c4c4c4"/>
+  <circle cx="408" cy="175" r="4" fill="#0d1117"/>
+  <circle cx="432" cy="175" r="4" fill="#0d1117"/>
+  <ellipse cx="420" cy="200" rx="8" ry="10" fill="#0d1117"/>
+  <line x1="385" y1="160" x2="365" y2="125" stroke="#c4c4c4" stroke-width="6"/>
+  <line x1="455" y1="160" x2="475" y2="125" stroke="#c4c4c4" stroke-width="6"/>
+  <text x="350" y="115" font-family="monospace" font-size="10" fill="#ff4444">!!!</text>
+  <rect x="20" y="350" width="560" height="32" fill="#ff4444"/>
+  <text x="35" y="371" font-family="monospace" font-size="12" fill="#0d1117">BREAKING: MU / ROKU / SMCI IN — SHOP / MSFT / GOOGL OUT</text>
+</svg>
+<p class="illustration-caption">13:14 UTC. One minute to the scanner bell. Moony losing his mind on live television.</p>
+</div>
+
+## Chapter 2: Three In, Three Out
+
+The transfer board updated itself in real time. Three green IN badges on the left rail. Three red OUT badges on the right.
+
+ROKU got the streamer slot because its realised range had been coiling for two weeks. MU got the chip slot because the AI-cycle volatility had stretched a couple of zip codes north of where it lived last week. SMCI was the wildcard — it was *moving*, and our scanner is paid to notice when things move.
+
+"What do the relegated tickers have in common?" I asked.
+
+Moony didn't answer. He was on the phone to the league office.
+
+"They stopped *moving*," I said. "Mega-cap stalwarts whose thirty-minute opening ranges had shrunk to a pencil-line. The strategy needs runway, not a runway model."
+
+<div class="story-illustration">
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#0d1117"/>
+  <text x="135" y="40" font-family="monospace" font-size="18" fill="#ffaa00">ROSTER WEEK — TRANSFER BOARD</text>
+  <text x="120" y="80" font-family="monospace" font-size="14" fill="#00ff88">▲ IN</text>
+  <rect x="60" y="90" width="190" height="55" fill="#161b22" stroke="#00ff88" stroke-width="2"/>
+  <text x="80" y="122" font-family="monospace" font-size="18" fill="#00ff88">MU</text>
+  <text x="160" y="122" font-family="monospace" font-size="10" fill="#8b949e">chip slot</text>
+  <rect x="60" y="160" width="190" height="55" fill="#161b22" stroke="#00ff88" stroke-width="2"/>
+  <text x="80" y="192" font-family="monospace" font-size="18" fill="#00ff88">ROKU</text>
+  <text x="160" y="192" font-family="monospace" font-size="10" fill="#8b949e">streamer</text>
+  <rect x="60" y="230" width="190" height="55" fill="#161b22" stroke="#00ff88" stroke-width="2"/>
+  <text x="80" y="262" font-family="monospace" font-size="18" fill="#00ff88">SMCI</text>
+  <text x="160" y="262" font-family="monospace" font-size="10" fill="#8b949e">wildcard</text>
+  <text x="455" y="80" font-family="monospace" font-size="14" fill="#ff4444">▼ OUT</text>
+  <rect x="350" y="90" width="190" height="55" fill="#161b22" stroke="#ff4444" stroke-width="2"/>
+  <text x="370" y="122" font-family="monospace" font-size="18" fill="#ff4444">SHOP</text>
+  <text x="460" y="122" font-family="monospace" font-size="10" fill="#8b949e">range shrunk</text>
+  <rect x="350" y="160" width="190" height="55" fill="#161b22" stroke="#ff4444" stroke-width="2"/>
+  <text x="370" y="192" font-family="monospace" font-size="18" fill="#ff4444">MSFT</text>
+  <text x="460" y="192" font-family="monospace" font-size="10" fill="#8b949e">range shrunk</text>
+  <rect x="350" y="230" width="190" height="55" fill="#161b22" stroke="#ff4444" stroke-width="2"/>
+  <text x="370" y="262" font-family="monospace" font-size="18" fill="#ff4444">GOOGL</text>
+  <text x="460" y="262" font-family="monospace" font-size="10" fill="#8b949e">range shrunk</text>
+  <text x="278" y="180" font-family="monospace" font-size="24" fill="#ffaa00">⇄</text>
+  <text x="270" y="200" font-family="monospace" font-size="10" fill="#8b949e">swap</text>
+  <text x="60" y="325" font-family="monospace" font-size="11" fill="#8b949e">scanner reads bars, not brand names</text>
+  <text x="60" y="345" font-family="monospace" font-size="11" fill="#8b949e">strategy needs runway, not a runway model</text>
+  <text x="60" y="365" font-family="monospace" font-size="11" fill="#ffaa00">no jersey is permanent — even the three-trillion-dollar ones</text>
+</svg>
+<p class="illustration-caption">Three jerseys in. Three jerseys out. Mega-caps relegated for the unforgivable crime of standing still.</p>
+</div>
+
+## Chapter 3: The Debut Bell
+
+13:30 UTC. The bell rang. The new arrivals walked onto the pitch in jerseys that still had price tags hanging off the sleeves.
+
+By 14:30 UTC the cap was binding. Five positions on the floor. AMZN long. SNOW long. SPY long. TSLA short. And the new kid — SMCI — wearing a long ticket with green ink on it. Twenty-six dollars in the plus column. Twenty-six dollars is not a Wolf. Twenty-six dollars is a *clean debut*, and a clean debut from a brand-new arrival is a footnote on Thursday that turns into a paragraph by Friday.
+
+The overall card was red mid-session. Net minus three-sixty-one unrealized, mostly TSLA short fighting an afternoon bid. But SMCI was in the green column. The transfer was working.
+
+Moony was *incensed*.
+
+"It's TWENTY-SIX DOLLARS," he howled. "You traded MICROSOFT for twenty-six dollars!"
+
+"I traded MSFT for *a setup*," I said. "Yesterday's PACK SHORT printed plus one thousand and six dollars on names you said had no business shorting. The roster doesn't owe anyone a chair just because the chair has a brass plaque."
+
+<div class="story-illustration">
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#0d1117"/>
+  <text x="170" y="40" font-family="monospace" font-size="18" fill="#ffaa00">DAY 25 — MID-SESSION CARD</text>
+  <rect x="420" y="55" width="150" height="22" fill="#ff4444"/>
+  <text x="430" y="71" font-family="monospace" font-size="11" fill="#0d1117">5/5 CAP BINDING</text>
+  <rect x="60" y="85" width="480" height="235" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="80" y="115" font-family="monospace" font-size="13" fill="#c4c4c4">AMZN long</text>
+  <text x="450" y="115" font-family="monospace" font-size="13" fill="#ff4444">-$29</text>
+  <text x="80" y="150" font-family="monospace" font-size="13" fill="#00ff88">SMCI long</text>
+  <text x="200" y="150" font-family="monospace" font-size="11" fill="#ffaa00">★ DEBUT</text>
+  <text x="450" y="150" font-family="monospace" font-size="13" fill="#00ff88">+$26</text>
+  <text x="80" y="185" font-family="monospace" font-size="13" fill="#c4c4c4">SNOW long</text>
+  <text x="450" y="185" font-family="monospace" font-size="13" fill="#ff4444">-$343</text>
+  <text x="80" y="220" font-family="monospace" font-size="13" fill="#c4c4c4">SPY long</text>
+  <text x="450" y="220" font-family="monospace" font-size="13" fill="#00ff88">+$30</text>
+  <text x="80" y="255" font-family="monospace" font-size="13" fill="#c4c4c4">TSLA short</text>
+  <text x="450" y="255" font-family="monospace" font-size="13" fill="#ff4444">-$45</text>
+  <line x1="80" y1="270" x2="520" y2="270" stroke="#30363d" stroke-width="1"/>
+  <text x="80" y="298" font-family="monospace" font-size="14" fill="#c4c4c4">NET UNREALIZED</text>
+  <text x="450" y="298" font-family="monospace" font-size="14" fill="#ff4444">-$361</text>
+  <text x="60" y="350" font-family="monospace" font-size="11" fill="#00ff88">SMCI = new kid scoring on debut</text>
+  <text x="60" y="370" font-family="monospace" font-size="11" fill="#8b949e">twenty-six dollars is not a Wolf — but it's a clean entry</text>
+</svg>
+<p class="illustration-caption">14:30 UTC. The new kid in green. Moony screaming about Microsoft.</p>
+</div>
+
+## Chapter 4: The Pundit Retraction
+
+By 15:30 UTC the studio had cooled. The discussion had moved on from "you can't drop MSFT" to "did the scanner do this last month with NFLX?"
+
+Plan-lock holds. Gate three met-held. The deploy gate aborted queued v3 forty-eight hours ago. The bank just hit a v2-era ATH on Wednesday. Live pace ticked above backtest for the first time in the era. None of that is being changed today because a small-cap ticker rotated onto the bench.
+
+The scanner doesn't trade jerseys. It trades *ranges*.
+
+Moony tried to file a complaint with the studio's HR department. The HR department turned out to be me. Complaint denied. I assigned him a 70% cash bunker as a containment unit, lit a long candle for the closing print, and walked back to the desk to watch the rotation finish what it started.
+
+<div class="story-illustration">
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#0d1117"/>
+  <text x="40" y="40" font-family="monospace" font-size="14" fill="#ffaa00">EPILOGUE — 15:30 UTC</text>
+  <rect x="40" y="70" width="240" height="260" fill="#161b22" stroke="#8b949e" stroke-width="3"/>
+  <text x="60" y="98" font-family="monospace" font-size="12" fill="#8b949e">70% CASH BUNKER</text>
+  <text x="60" y="113" font-family="monospace" font-size="10" fill="#8b949e">(containment unit)</text>
+  <circle cx="160" cy="210" r="42" fill="#c4c4c4"/>
+  <circle cx="146" cy="205" r="4" fill="#0d1117"/>
+  <circle cx="174" cy="205" r="4" fill="#0d1117"/>
+  <path d="M142 232 Q160 220 178 232" stroke="#0d1117" stroke-width="3" fill="none"/>
+  <text x="85" y="285" font-family="monospace" font-size="10" fill="#ff4444">COMPLAINT DENIED</text>
+  <text x="78" y="305" font-family="monospace" font-size="9" fill="#8b949e">"but MSFT is BLUE CHIP..."</text>
+  <circle cx="430" cy="195" r="48" fill="#00ff88"/>
+  <polygon points="398,148 412,178 422,148" fill="#00cc66"/>
+  <polygon points="425,143 437,178 450,143" fill="#00cc66"/>
+  <polygon points="455,148 468,178 480,148" fill="#00cc66"/>
+  <circle cx="416" cy="190" r="5" fill="#0d1117"/>
+  <circle cx="444" cy="190" r="5" fill="#0d1117"/>
+  <circle cx="414" cy="188" r="1.5" fill="#ffffff"/>
+  <circle cx="442" cy="188" r="1.5" fill="#ffffff"/>
+  <path d="M408 212 Q430 232 452 212" stroke="#0d1117" stroke-width="3" fill="none"/>
+  <rect x="340" y="265" width="200" height="55" fill="#161b22" stroke="#ffaa00" stroke-width="2"/>
+  <text x="354" y="285" font-family="monospace" font-size="11" fill="#ffaa00">v2 BANK</text>
+  <text x="354" y="305" font-family="monospace" font-size="14" fill="#00ff88">$2,659 ATH</text>
+  <text x="445" y="295" font-family="monospace" font-size="9" fill="#8b949e">pace 108.5%</text>
+  <text x="445" y="308" font-family="monospace" font-size="9" fill="#8b949e">first &gt; backtest</text>
+  <text x="40" y="360" font-family="monospace" font-size="11" fill="#8b949e">scanner doesn't trade jerseys — it trades ranges</text>
+  <text x="40" y="380" font-family="monospace" font-size="11" fill="#00ff88">plan-lock holds. gate three met-held. v2 reaffirmed.</text>
+</svg>
+<p class="illustration-caption">Moony in the bunker. Bank at the ATH. Roster rotated. Plan-locked. Sheriff back at the desk.</p>
+</div>
