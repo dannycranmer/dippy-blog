@@ -1,0 +1,509 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">SCANNER UNIVERSE</h1>
+    <p class="game-subtitle">13:15 UTC scanner restart in 8 seconds.<br>Yesterday's open positions are about to clear.<br>KEEP in today's universe — or ABANDON to orphan-detection.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">RUN SCANNER</button>
+    <p class="game-hint">Tap <b style="color:#00ff88">KEEP</b> to route through today's standard exit logic.<br>Tap <b style="color:#ff5050">ABANDON</b> to let orphan-detection force-sell at the open gap.<br>5 rounds, 4 cards each, 8 seconds per round.<br>The card label hints at yesterday's PnL — but the open gap is the open gap.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">SESSION</span>
+        <span class="hud-value" id="bank-disp">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">ROUND</span>
+        <span class="hud-value orange" id="round-disp">1/5</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">SCANNER</span>
+        <span class="hud-value orange" id="bell-disp">8s</span>
+      </div>
+    </div>
+
+    <div class="countdown-bar"><div class="countdown-fill" id="countdown-fill"></div></div>
+
+    <div class="cards" id="cards"></div>
+
+    <div class="tape" id="tape">13:15 UTC scanner is about to fire. KEEP or ABANDON each card.</div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">SCANNER FIRED</h1>
+    <div class="final-score">$<span id="final-score">0</span></div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-kept">0</span><span class="stat-label">Kept</span></div>
+      <div class="stat"><span class="stat-val" id="stat-abandoned">0</span><span class="stat-label">Abandoned</span></div>
+      <div class="stat"><span class="stat-val" id="stat-zen">0</span><span class="stat-label">Zen Bonus</span></div>
+    </div>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">RE-RUN SCANNER</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; touch-action:manipulation; }
+  #game-wrapper { max-width:420px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:1.9em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 40px; font-size:1.1em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.72em; margin-top:14px; line-height:1.55; max-width:380px; }
+
+  #game-screen { justify-content:flex-start; padding:14px 14px 16px; }
+  .game-hud { display:flex; justify-content:space-between; padding:8px 16px; background:rgba(0,0,0,0.4); border:1px solid #21262d; border-radius:8px; margin-bottom:8px; }
+  .hud-item { text-align:center; flex:1; }
+  .hud-label { display:block; font-size:0.62em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1.0em; color:#00ff88; font-weight:bold; }
+  .hud-value.red { color:#ff5050; }
+  .hud-value.orange { color:#f0883e; }
+
+  .countdown-bar { height:6px; background:#21262d; border-radius:3px; overflow:hidden; margin-bottom:10px; }
+  .countdown-fill { height:100%; width:100%; background: linear-gradient(90deg, #00ff88 0%, #f0883e 60%, #ff5050 100%); transition: width 0.1s linear; }
+
+  .cards { display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:10px; }
+  .card {
+    background: linear-gradient(180deg, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0.15) 100%);
+    border:2px solid #21262d;
+    border-radius:10px;
+    padding:9px 10px;
+    position:relative;
+    overflow:hidden;
+    min-height:130px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+  }
+  .card.decided.kept { border-color:#00ff88; box-shadow: inset 0 0 0 1px rgba(0,255,136,0.30), 0 0 14px rgba(0,255,136,0.18); }
+  .card.decided.abandoned { border-color:#ff5050; box-shadow: inset 0 0 0 1px rgba(255,80,80,0.30); opacity:0.85; }
+  .card.resolved { opacity:0.7; }
+  .card.resolved.win { border-color:#00ff88; }
+  .card.resolved.lose { border-color:#ff5050; }
+  .card.flash-good { animation: flash-good 0.6s ease-out; }
+  .card.flash-bad { animation: flash-bad 0.6s ease-out; }
+  @keyframes flash-good {
+    0% { box-shadow: 0 0 0 0 rgba(0,255,136,0); }
+    40% { box-shadow: 0 0 28px 4px rgba(0,255,136,0.70); background: rgba(0,255,136,0.15); }
+    100% { box-shadow: 0 0 0 0 rgba(0,255,136,0); }
+  }
+  @keyframes flash-bad {
+    0% { box-shadow: 0 0 0 0 rgba(255,80,80,0); }
+    40% { box-shadow: 0 0 28px 4px rgba(255,80,80,0.70); background: rgba(255,80,80,0.15); }
+    100% { box-shadow: 0 0 0 0 rgba(255,80,80,0); }
+  }
+
+  .card-head { display:flex; justify-content:space-between; align-items:center; font-size:0.74em; }
+  .card-sym { color:#e6edf3; font-weight:bold; letter-spacing:1.2px; font-size:1.1em; }
+  .card-side { color:#8b949e; font-size:0.85em; font-weight:bold; letter-spacing:0.5px; }
+  .card-side.short { color:#f0883e; }
+  .card-side.long { color:#58a6ff; }
+
+  .card-pnl {
+    font-size:1.25em;
+    font-weight:bold;
+    color:#00ff88;
+    text-shadow: 0 0 10px rgba(0,255,136,0.30);
+    text-align:center;
+    margin:4px 0;
+  }
+  .card-pnl.red { color:#ff5050; text-shadow: 0 0 10px rgba(255,80,80,0.35); }
+  .card-pnl.gray { color:#8b949e; text-shadow:none; font-size:1.0em; }
+
+  .card-trend {
+    font-size:0.65em;
+    color:#8b949e;
+    text-align:center;
+    letter-spacing:0.8px;
+  }
+  .card-trend.fresh { color:#58a6ff; }
+  .card-trend.bleeding { color:#ff5050; }
+  .card-trend.strong { color:#00ff88; }
+
+  .card-actions {
+    display:flex;
+    gap:5px;
+    margin-top:6px;
+  }
+  .btn-keep, .btn-abandon {
+    flex:1;
+    background: rgba(0,0,0,0.45);
+    border:1.5px solid #30363d;
+    color:#e6edf3;
+    padding:6px 4px;
+    border-radius:5px;
+    font-family:inherit;
+    font-size:0.68em;
+    font-weight:bold;
+    letter-spacing:0.8px;
+    cursor:pointer;
+    transition:all 0.12s;
+  }
+  .btn-keep:hover, .btn-keep:active { background:rgba(0,255,136,0.15); border-color:#00ff88; color:#00ff88; }
+  .btn-abandon:hover, .btn-abandon:active { background:rgba(255,80,80,0.15); border-color:#ff5050; color:#ff5050; }
+  .card.decided .btn-keep, .card.decided .btn-abandon { pointer-events:none; opacity:0.4; }
+  .card.decided.kept .btn-keep { background:rgba(0,255,136,0.20); border-color:#00ff88; color:#00ff88; opacity:1; }
+  .card.decided.abandoned .btn-abandon { background:rgba(255,80,80,0.20); border-color:#ff5050; color:#ff5050; opacity:1; }
+
+  .card-result {
+    font-size:0.62em;
+    color:#8b949e;
+    text-align:center;
+    letter-spacing:0.8px;
+    margin-top:4px;
+    min-height:0.9em;
+  }
+  .card-result.win { color:#00ff88; }
+  .card-result.lose { color:#ff5050; }
+
+  .tape {
+    text-align:center;
+    font-size:0.72em;
+    color:#8b949e;
+    letter-spacing:1.2px;
+    padding:8px 8px;
+    background:rgba(0,0,0,0.20);
+    border-radius:6px;
+    min-height:34px;
+    line-height:1.5;
+  }
+  .tape.win { color:#00ff88; }
+  .tape.loss { color:#ff5050; }
+  .tape.amber { color:#f0883e; }
+
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; text-shadow:0 0 24px rgba(0,255,136,0.5); margin-bottom:18px; font-weight:bold; }
+  .final-score.red { color:#ff5050; text-shadow:0 0 24px rgba(255,80,80,0.5); }
+  .stats-row { display:flex; gap:24px; margin-bottom:16px; }
+  .stat { text-align:center; }
+  .stat-val { display:block; font-size:1.5em; color:#f0883e; font-weight:bold; }
+  .stat-label { display:block; font-size:0.65em; color:#8b949e; letter-spacing:1px; margin-top:2px; }
+  .roast-msg { color:#8b949e; font-size:0.85em; line-height:1.6; max-width:340px; margin-bottom:20px; min-height:3em; padding:0 8px; }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  const HIGH_KEY = 'dippy-scanner-universe-high';
+
+  // Symbol bank for cards
+  const SYMBOL_BANK = [
+    'NVDA', 'AMZN', 'TSLA', 'AAPL', 'SPY', 'QQQ', 'GOOGL', 'SHOP',
+    'AMD', 'AVGO', 'MU', 'CRWD', 'COIN', 'MSFT', 'SNOW', 'PLTR',
+    'SMCI', 'ARM', 'ROKU'
+  ];
+
+  // Trend labels — these HINT but don't guarantee. Reality is partly noisy.
+  const TRENDS = {
+    strong: { label: 'STRONG · TRENDING', mean: 0.55, vol: 0.35 },  // gap outcome bias positive
+    bleeding: { label: 'BLEEDING · WEAK', mean: -0.50, vol: 0.45 }, // gap outcome bias negative
+    fresh: { label: 'FRESH SIGNAL · NEW', mean: 0.10, vol: 0.55 },  // wild card
+    cooked: { label: 'COOKED · STALE TS', mean: -0.20, vol: 0.30 }  // mild negative
+  };
+
+  const ROASTS = [
+    "Two orphans in 2 days — that's not a bug, that's a deploy gate. Moony's deploy gate: 'cash pls.'",
+    "You KEPT four winners and ABANDONED four losers. The real bot can't even orphan-detect that cleanly.",
+    "Scanner-restart force-sells what scanner doesn't track. Moony force-sells what Moony doesn't trade.",
+    "ABANDON the bleeding, KEEP the strong — easy when it's a game, hard when it's $1,010 of SMCI.",
+    "13:15 UTC: the scanner doesn't ask permission. Moony doesn't ask anyone for anything either.",
+    "Open gap is the open gap. Yesterday's mark is the mark. Moony's mark: never moves.",
+    "Scanner zen = no decision regret. Moony's regret: 49 months of bunker.",
+    "KEEP all 20 = ride the gap. ABANDON all 20 = lock the loss. Moony does neither — Moony does cash.",
+    "Real bot orphan-detected SMCI at -$1,010. Game version: you saw it coming. Moony saw nothing.",
+    "Strong-labeled card that gapped down: that's the game telling you labels lie. Moony lies less because Moony does nothing.",
+    "Five rounds, 20 decisions, ~$200 of zen bonus on the line. Moony's bonus: 0% APY.",
+    "Bracket-vs-cleanup race is REAL. Moony's only race: who can hold cash longest. Currently: Moony.",
+    "13:15 UTC scanner = morning gate. Morning gate ≠ algo signal. Moony confuses gates with bunkers."
+  ];
+
+  let state = null;
+  const $ = (id) => document.getElementById(id);
+
+  function fmt(n) {
+    const abs = Math.abs(Math.round(n));
+    const s = abs.toLocaleString('en-US');
+    return (n >= 0 ? '+$' : '-$') + s;
+  }
+
+  function pickN(arr, n) {
+    const copy = arr.slice();
+    const out = [];
+    while (out.length < n && copy.length) {
+      out.push(copy.splice(Math.floor(Math.random() * copy.length), 1)[0]);
+    }
+    return out;
+  }
+
+  function genCard(round, idx) {
+    // Round difficulty scales: later rounds have wilder gaps + bigger position sizes
+    const trends = ['strong', 'bleeding', 'fresh', 'cooked'];
+    const trendKey = trends[Math.floor(Math.random() * trends.length)];
+    const trend = TRENDS[trendKey];
+    const side = Math.random() < 0.5 ? 'long' : 'short';
+    const sym = SYMBOL_BANK[Math.floor(Math.random() * SYMBOL_BANK.length)];
+    const baseSize = 400 + Math.random() * 1100 + round * 120;
+    // Yesterday's PnL = sign loosely correlated with trend
+    let yesterdayPnl;
+    if (trendKey === 'strong') yesterdayPnl = 80 + Math.random() * 600 + round * 30;
+    else if (trendKey === 'bleeding') yesterdayPnl = -(60 + Math.random() * 500 + round * 30);
+    else if (trendKey === 'fresh') yesterdayPnl = (Math.random() - 0.5) * 80;
+    else yesterdayPnl = (Math.random() - 0.7) * 400; // cooked = mostly negative
+
+    // Open-gap outcome (KEEP) — biased by trend.mean with vol
+    const keepRand = (Math.random() + Math.random() + Math.random()) / 3 - 0.5; // mild central-tendency
+    const keepOutcome = (trend.mean + keepRand * 2 * trend.vol) * baseSize;
+    // Abandon outcome — orphan-detection force-sell at open gap; ~85% of current PnL + an additional adverse gap
+    const abandonGap = -(0.10 + Math.random() * 0.25) * baseSize; // typically -$60 to -$400
+    const abandonOutcome = yesterdayPnl * 0.85 + abandonGap;
+
+    return {
+      sym, side, trendKey, trendLabel: trend.label,
+      yesterdayPnl, baseSize,
+      keepOutcome, abandonOutcome,
+      decision: null, // 'keep' | 'abandon'
+      resolved: false,
+      realized: 0
+    };
+  }
+
+  function genRound(round) {
+    const symPool = pickN(SYMBOL_BANK, 4);
+    return symPool.map((_, i) => {
+      const c = genCard(round, i);
+      c.sym = symPool[i];
+      return c;
+    });
+  }
+
+  function renderCards() {
+    const container = $('cards');
+    container.innerHTML = '';
+    state.cards.forEach((card, i) => {
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.id = 'card-' + i;
+      const pnlClass = card.yesterdayPnl >= 0 ? '' : 'red';
+      const trendClass = card.trendKey === 'strong' ? 'strong' :
+                        card.trendKey === 'bleeding' ? 'bleeding' :
+                        card.trendKey === 'fresh' ? 'fresh' : '';
+      div.innerHTML =
+        '<div class="card-head">' +
+          '<span class="card-sym">' + card.sym + '</span>' +
+          '<span class="card-side ' + card.side + '">' + card.side.toUpperCase() + '</span>' +
+        '</div>' +
+        '<div class="card-pnl ' + pnlClass + '">' + fmt(card.yesterdayPnl) + '</div>' +
+        '<div class="card-trend ' + trendClass + '">' + card.trendLabel + '</div>' +
+        '<div class="card-actions">' +
+          '<button class="btn-keep" data-i="' + i + '">KEEP</button>' +
+          '<button class="btn-abandon" data-i="' + i + '">ABANDON</button>' +
+        '</div>' +
+        '<div class="card-result" id="result-' + i + '">&nbsp;</div>';
+      container.appendChild(div);
+    });
+    container.querySelectorAll('.btn-keep').forEach(b => {
+      b.addEventListener('click', (e) => decide(parseInt(b.dataset.i, 10), 'keep'));
+    });
+    container.querySelectorAll('.btn-abandon').forEach(b => {
+      b.addEventListener('click', (e) => decide(parseInt(b.dataset.i, 10), 'abandon'));
+    });
+  }
+
+  function decide(i, choice) {
+    const card = state.cards[i];
+    if (card.decision || state.roundOver) return;
+    card.decision = choice;
+    const el = $('card-' + i);
+    el.classList.add('decided', choice === 'keep' ? 'kept' : 'abandoned');
+    // If all cards in round decided, fire scanner early
+    if (state.cards.every(c => c.decision)) {
+      fireScanner();
+    }
+  }
+
+  function fireScanner() {
+    if (state.roundOver) return;
+    state.roundOver = true;
+    clearInterval(state.timerId);
+    $('countdown-fill').style.width = '0%';
+
+    // Auto-default any undecided cards as KEEP (lazy default)
+    state.cards.forEach(c => { if (!c.decision) c.decision = 'keep'; });
+
+    // Resolve each card with a small stagger
+    let i = 0;
+    const resolveNext = () => {
+      if (i >= state.cards.length) {
+        // All resolved — round done
+        $('tape').textContent = 'Round ' + state.round + ' resolved. Bank: ' + fmt(state.bank) + '. Next round in 1s.';
+        $('tape').className = 'tape amber';
+        setTimeout(() => {
+          state.round++;
+          if (state.round > state.totalRounds) endGame();
+          else startRound();
+        }, 1200);
+        return;
+      }
+      const card = state.cards[i];
+      const outcome = card.decision === 'keep' ? card.keepOutcome : card.abandonOutcome;
+      card.realized = outcome;
+      card.resolved = true;
+      state.bank += outcome;
+      if (card.decision === 'keep') state.kept++;
+      else state.abandoned++;
+
+      // Zen-bonus tracking: did the player pick the BETTER outcome?
+      if (outcome >= Math.max(card.keepOutcome, card.abandonOutcome) - 0.01) {
+        state.zenHits++;
+      }
+
+      const el = $('card-' + i);
+      const resultEl = $('result-' + i);
+      const better = outcome > 0;
+      el.classList.add('resolved', better ? 'win' : 'lose');
+      el.classList.add(better ? 'flash-good' : 'flash-bad');
+      resultEl.textContent = (card.decision === 'keep' ? 'KEPT · ' : 'ABANDON · ') + fmt(outcome);
+      resultEl.classList.add(better ? 'win' : 'lose');
+
+      // Also update the big PnL display to the realized number
+      const pnlEl = el.querySelector('.card-pnl');
+      pnlEl.textContent = fmt(outcome);
+      pnlEl.className = 'card-pnl ' + (outcome >= 0 ? '' : 'red');
+
+      $('bank-disp').textContent = fmt(state.bank);
+      $('bank-disp').className = 'hud-value' + (state.bank >= 0 ? '' : ' red');
+
+      i++;
+      setTimeout(resolveNext, 280);
+    };
+    resolveNext();
+  }
+
+  function startRound() {
+    $('round-disp').textContent = state.round + '/' + state.totalRounds;
+    state.cards = genRound(state.round);
+    state.roundOver = false;
+    renderCards();
+    $('tape').textContent = 'Round ' + state.round + ': 13:15 UTC scanner in 8 seconds. Decide each card.';
+    $('tape').className = 'tape';
+
+    // Countdown timer (8s)
+    const totalMs = 8000;
+    let elapsed = 0;
+    state.timerId = setInterval(() => {
+      if (state.roundOver) { clearInterval(state.timerId); return; }
+      elapsed += 100;
+      const remaining = Math.max(0, totalMs - elapsed);
+      const pct = (remaining / totalMs) * 100;
+      $('countdown-fill').style.width = pct + '%';
+      $('bell-disp').textContent = Math.ceil(remaining / 1000) + 's';
+      if (remaining <= 0) fireScanner();
+    }, 100);
+  }
+
+  function endGame() {
+    $('game-screen').style.display = 'none';
+    $('gameover-screen').style.display = 'flex';
+
+    // Zen bonus: 25% if perfect, scaled by zenHits/total
+    const total = state.totalRounds * 4;
+    const zenPct = state.zenHits / total;
+    const zenBonus = Math.max(0, state.bank) * zenPct * 0.30;
+    state.bank += zenBonus;
+
+    const scoreEl = $('final-score');
+    scoreEl.textContent = Math.abs(Math.round(state.bank)).toLocaleString('en-US');
+    if (state.bank < 0) {
+      $('final-score').className = 'final-score red';
+      scoreEl.textContent = '-' + scoreEl.textContent;
+    } else {
+      $('final-score').className = 'final-score';
+    }
+    $('stat-kept').textContent = state.kept;
+    $('stat-abandoned').textContent = state.abandoned;
+    $('stat-zen').textContent = '+' + Math.round(zenBonus);
+
+    // Title by score band
+    let title;
+    if (state.bank > 5000) title = 'SCANNER ZEN';
+    else if (state.bank > 2000) title = 'UNIVERSE TUNED';
+    else if (state.bank > 0) title = 'SCANNER RAN';
+    else if (state.bank > -2000) title = 'GAP TRAPPED';
+    else title = 'BUNKER DAY';
+    $('gameover-title').textContent = title;
+
+    $('roast-msg').textContent = ROASTS[Math.floor(Math.random() * ROASTS.length)];
+
+    // High score
+    const high = parseInt(localStorage.getItem(HIGH_KEY) || '0', 10);
+    if (state.bank > high) {
+      localStorage.setItem(HIGH_KEY, Math.round(state.bank).toString());
+    }
+
+    if (window.DippyLB) DippyLB.onGameOver(Math.round(state.bank));
+  }
+
+  window.startGame = function() {
+    $('title-screen').style.display = 'none';
+    $('gameover-screen').style.display = 'none';
+    $('game-screen').style.display = 'flex';
+    state = {
+      bank: 0,
+      round: 1,
+      totalRounds: 5,
+      cards: [],
+      kept: 0,
+      abandoned: 0,
+      zenHits: 0,
+      timerId: null,
+      roundOver: false
+    };
+    $('bank-disp').textContent = '$0';
+    $('bank-disp').className = 'hud-value';
+    startRound();
+  };
+
+  // Initialize high score display
+  document.addEventListener('DOMContentLoaded', function() {
+    const high = parseInt(localStorage.getItem(HIGH_KEY) || '0', 10);
+    if (high > 0) {
+      $('title-high-score').textContent = 'Best: ' + (high >= 0 ? '+' : '-') + '$' + Math.abs(high).toLocaleString('en-US');
+    }
+    if (window.DippyLB) DippyLB.init('scanner-universe');
+  });
+})();
+</script>
+{{ end }}
