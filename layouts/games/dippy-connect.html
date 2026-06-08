@@ -1,0 +1,606 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">DIPPY CONNECT</h1>
+    <p class="game-subtitle">Best-of-five vs Moony.<br>Drop a token. Get four in a row.<br>Moony's AI thinks cash is a strategy.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">DROP IN</button>
+    <p class="game-hint">Tap a <b style="color:#00ff88">column</b> to drop your green token.<br>4 in a row (any direction) wins the game.<br>Win 3 games to take the series.<br>Faster wins = bigger score bonus.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="score-disp">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">SERIES</span>
+        <span class="hud-value orange" id="series-disp">0–0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">GAME</span>
+        <span class="hud-value orange" id="game-disp">1/5</span>
+      </div>
+    </div>
+
+    <div class="turn-bar" id="turn-bar">Your move</div>
+
+    <div class="board-wrap">
+      <div class="col-buttons" id="col-buttons"></div>
+      <div class="board" id="board"></div>
+    </div>
+
+    <div class="tape" id="tape">Drop a green token to start. Connect four.</div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">SERIES OVER</h1>
+    <div class="final-score">$<span id="final-score">0</span></div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-wins">0</span><span class="stat-label">Wins</span></div>
+      <div class="stat"><span class="stat-val" id="stat-losses">0</span><span class="stat-label">Moony</span></div>
+      <div class="stat"><span class="stat-val" id="stat-draws">0</span><span class="stat-label">Draws</span></div>
+    </div>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">REMATCH</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; touch-action:manipulation; }
+  #game-wrapper { max-width:420px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:1.9em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 40px; font-size:1.1em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.72em; margin-top:14px; line-height:1.55; max-width:380px; }
+
+  #game-screen { justify-content:flex-start; padding:14px 14px 16px; }
+  .game-hud { display:flex; justify-content:space-between; padding:8px 16px; background:rgba(0,0,0,0.4); border:1px solid #21262d; border-radius:8px; margin-bottom:8px; }
+  .hud-item { text-align:center; flex:1; }
+  .hud-label { display:block; font-size:0.62em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1.0em; color:#00ff88; font-weight:bold; }
+  .hud-value.red { color:#ff5050; }
+  .hud-value.orange { color:#f0883e; }
+
+  .turn-bar {
+    text-align:center;
+    padding:8px;
+    background:rgba(0,255,136,0.10);
+    border:1px solid rgba(0,255,136,0.40);
+    border-radius:6px;
+    color:#00ff88;
+    letter-spacing:1.5px;
+    font-size:0.78em;
+    margin-bottom:10px;
+    min-height:30px;
+    transition:all 0.2s;
+  }
+  .turn-bar.moony {
+    background:rgba(255,80,80,0.10);
+    border-color:rgba(255,80,80,0.40);
+    color:#ff5050;
+  }
+  .turn-bar.locked {
+    background:rgba(240,136,62,0.10);
+    border-color:rgba(240,136,62,0.40);
+    color:#f0883e;
+  }
+
+  .board-wrap {
+    background:linear-gradient(180deg, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0.10) 100%);
+    border:2px solid #21262d;
+    border-radius:10px;
+    padding:8px;
+    margin-bottom:10px;
+  }
+  .col-buttons {
+    display:grid;
+    grid-template-columns:repeat(7, 1fr);
+    gap:4px;
+    margin-bottom:4px;
+  }
+  .col-btn {
+    aspect-ratio:1;
+    background:rgba(88,166,255,0.10);
+    border:1.5px solid rgba(88,166,255,0.35);
+    color:#58a6ff;
+    font-family:inherit;
+    font-size:1em;
+    font-weight:bold;
+    border-radius:6px;
+    cursor:pointer;
+    transition:all 0.12s;
+    padding:0;
+  }
+  .col-btn:hover:not(:disabled), .col-btn:active:not(:disabled) {
+    background:rgba(0,255,136,0.20);
+    border-color:#00ff88;
+    color:#00ff88;
+    transform:translateY(-2px);
+  }
+  .col-btn:disabled {
+    opacity:0.25;
+    cursor:not-allowed;
+  }
+  .col-btn.locked {
+    background:rgba(255,255,255,0.04);
+    border-color:#30363d;
+    color:#484f58;
+  }
+
+  .board {
+    display:grid;
+    grid-template-columns:repeat(7, 1fr);
+    grid-template-rows:repeat(6, 1fr);
+    gap:4px;
+    background:#0d1117;
+    padding:4px;
+    border-radius:6px;
+    aspect-ratio:7/6;
+  }
+  .cell {
+    background:#161b22;
+    border:1.5px solid #21262d;
+    border-radius:50%;
+    position:relative;
+    overflow:hidden;
+  }
+  .cell .token {
+    position:absolute;
+    inset:6%;
+    border-radius:50%;
+    transform:translateY(-700%);
+    transition: transform 0.35s cubic-bezier(0.34, 0.04, 0.50, 1.30);
+  }
+  .cell.dippy .token {
+    background:radial-gradient(circle at 30% 30%, #00ff88 0%, #00cc6e 70%, #009955 100%);
+    box-shadow: 0 0 10px rgba(0,255,136,0.45), inset 0 -3px 6px rgba(0,0,0,0.25);
+    transform:translateY(0);
+  }
+  .cell.moony .token {
+    background:radial-gradient(circle at 30% 30%, #ff7575 0%, #ff5050 60%, #cc2222 100%);
+    box-shadow: 0 0 10px rgba(255,80,80,0.45), inset 0 -3px 6px rgba(0,0,0,0.25);
+    transform:translateY(0);
+  }
+  .cell.win .token {
+    animation: winPulse 0.7s ease-in-out infinite alternate;
+  }
+  @keyframes winPulse {
+    0% { box-shadow: 0 0 10px currentColor, inset 0 -3px 6px rgba(0,0,0,0.25); }
+    100% { box-shadow: 0 0 26px 4px currentColor, inset 0 -3px 6px rgba(0,0,0,0.25); }
+  }
+  .cell.win.dippy .token { color:#00ff88; }
+  .cell.win.moony .token { color:#ff5050; }
+
+  .tape {
+    text-align:center;
+    font-size:0.72em;
+    color:#8b949e;
+    letter-spacing:1.2px;
+    padding:8px 8px;
+    background:rgba(0,0,0,0.20);
+    border-radius:6px;
+    min-height:34px;
+    line-height:1.5;
+  }
+  .tape.win { color:#00ff88; }
+  .tape.loss { color:#ff5050; }
+  .tape.amber { color:#f0883e; }
+
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; text-shadow:0 0 24px rgba(0,255,136,0.5); margin-bottom:18px; font-weight:bold; }
+  .final-score.red { color:#ff5050; text-shadow:0 0 24px rgba(255,80,80,0.5); }
+  .stats-row { display:flex; gap:24px; margin-bottom:16px; }
+  .stat { text-align:center; }
+  .stat-val { display:block; font-size:1.5em; color:#f0883e; font-weight:bold; }
+  .stat-label { display:block; font-size:0.65em; color:#8b949e; letter-spacing:1px; margin-top:2px; }
+  .roast-msg { color:#8b949e; font-size:0.85em; line-height:1.6; max-width:340px; margin-bottom:20px; min-height:3em; padding:0 8px; }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  const HIGH_KEY = 'dippy-dippy-connect-high';
+  const COLS = 7, ROWS = 6, NEED = 4;
+
+  const TITLES = {
+    sweep: 'CLEAN SWEEP',
+    series: 'SERIES WON',
+    draw: 'SERIES DRAWN',
+    loss: 'SERIES LOST'
+  };
+
+  const ROASTS = [
+    "Moony tried to draw on purpose. 'Drawing is a hedge,' it said. It's not.",
+    "You won a Connect Four series and Moony's still posting 4bp money-market returns. Lined up nicely.",
+    "Moony blocked your three-in-a-row by stacking the wrong column. Classic Moony tape-read.",
+    "Four green tokens diagonally is just a v3 long entry with TS=0.75R. Beautiful.",
+    "Moony's AI is the same logic that picks 'cash' over every signal: refuse to commit until it's too late.",
+    "You set up a double-threat fork and Moony chose to defend neither. Two regimes, no profile.",
+    "Moony's only real strategy: stack the same column. That's also Moony's risk management.",
+    "Winning fast = bonus score. Moony's bonus: 0.04% APY of nothing.",
+    "Connect Four solved game (first player wins with perfect play). Moony hasn't read the paper. Moony hasn't read any paper.",
+    "Best-of-five and Moony went down 3-0. That's a sweep, a swept, and a sweepy.",
+    "Diagonal connect — the play Moony never sees coming. Moony only watches verticals because columns feel safe.",
+    "You stacked four greens and the board lit up. Moony's bank statement lit up too: still cash.",
+    "Real bot's regime overlay just overrode v3 with v2. Game version: Moony overrode itself with self-doubt."
+  ];
+
+  let state = null;
+  const $ = (id) => document.getElementById(id);
+
+  function emptyBoard() {
+    return Array.from({length: ROWS}, () => Array(COLS).fill(0));
+  }
+
+  function lowestEmpty(board, col) {
+    for (let r = ROWS - 1; r >= 0; r--) {
+      if (board[r][col] === 0) return r;
+    }
+    return -1;
+  }
+
+  function colsAvailable(board) {
+    const out = [];
+    for (let c = 0; c < COLS; c++) {
+      if (board[0][c] === 0) out.push(c);
+    }
+    return out;
+  }
+
+  function checkWin(board, player) {
+    const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (board[r][c] !== player) continue;
+        for (const [dr, dc] of dirs) {
+          const cells = [];
+          for (let k = 0; k < NEED; k++) {
+            const nr = r + dr * k, nc = c + dc * k;
+            if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) break;
+            if (board[nr][nc] !== player) break;
+            cells.push([nr, nc]);
+          }
+          if (cells.length === NEED) return cells;
+        }
+      }
+    }
+    return null;
+  }
+
+  function isDraw(board) {
+    return board[0].every(v => v !== 0);
+  }
+
+  function findWinningMove(board, player) {
+    const cols = colsAvailable(board);
+    for (const c of cols) {
+      const r = lowestEmpty(board, c);
+      board[r][c] = player;
+      const win = checkWin(board, player);
+      board[r][c] = 0;
+      if (win) return c;
+    }
+    return -1;
+  }
+
+  // Moony AI difficulty by game number:
+  //  Game 1: chooses random with 80% chance, blocks only if forced 50%
+  //  Game 5: blocks 90%, takes wins 95%, prefers center
+  function moonyMove(board, gameNum) {
+    const cols = colsAvailable(board);
+    if (cols.length === 0) return -1;
+
+    const winChance = 0.30 + gameNum * 0.16; // 0.46 -> 1.10
+    const blockChance = 0.20 + gameNum * 0.16; // 0.36 -> 1.00
+    const centerBias = 0.10 + gameNum * 0.10;
+
+    // 1. Take a win
+    if (Math.random() < winChance) {
+      const win = findWinningMove(board, 2);
+      if (win !== -1) return win;
+    }
+    // 2. Block opponent's win
+    if (Math.random() < blockChance) {
+      const block = findWinningMove(board, 1);
+      if (block !== -1) return block;
+    }
+    // 3. Center bias (Connect4 strategy)
+    if (Math.random() < centerBias && cols.includes(3)) return 3;
+    // 4. Avoid setting up opponent for a win on next move
+    const safe = cols.filter(c => {
+      const r = lowestEmpty(board, c);
+      board[r][c] = 2;
+      const oppWin = findWinningMove(board, 1);
+      board[r][c] = 0;
+      return oppWin === -1;
+    });
+    const pool = safe.length > 0 && Math.random() < 0.6 ? safe : cols;
+    // 5. Random from pool, with slight center preference
+    const weights = pool.map(c => 1 / (1 + Math.abs(c - 3)));
+    const total = weights.reduce((a, b) => a + b, 0);
+    let pick = Math.random() * total;
+    for (let i = 0; i < pool.length; i++) {
+      pick -= weights[i];
+      if (pick <= 0) return pool[i];
+    }
+    return pool[pool.length - 1];
+  }
+
+  function renderBoard() {
+    const board = $('board');
+    board.innerHTML = '';
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.id = 'cell-' + r + '-' + c;
+        const token = document.createElement('div');
+        token.className = 'token';
+        cell.appendChild(token);
+        board.appendChild(cell);
+      }
+    }
+  }
+
+  function renderCols() {
+    const btns = $('col-buttons');
+    btns.innerHTML = '';
+    for (let c = 0; c < COLS; c++) {
+      const b = document.createElement('button');
+      b.className = 'col-btn';
+      b.textContent = '▼';
+      b.dataset.c = c;
+      b.addEventListener('click', () => onColClick(c));
+      btns.appendChild(b);
+    }
+  }
+
+  function updateColButtons() {
+    const btns = $('col-buttons').querySelectorAll('.col-btn');
+    btns.forEach((b, c) => {
+      const full = state.board[0][c] !== 0;
+      b.disabled = full || state.locked || state.turn !== 1;
+    });
+  }
+
+  function dropToken(col, player) {
+    const row = lowestEmpty(state.board, col);
+    if (row === -1) return false;
+    state.board[row][col] = player;
+    const cell = $('cell-' + row + '-' + col);
+    cell.classList.add(player === 1 ? 'dippy' : 'moony');
+    return { row, col };
+  }
+
+  function onColClick(c) {
+    if (state.locked || state.turn !== 1) return;
+    if (state.board[0][c] !== 0) return;
+    const drop = dropToken(c, 1);
+    if (!drop) return;
+    state.locked = true;
+    updateColButtons();
+    setTimeout(() => afterMove(1), 380);
+  }
+
+  function afterMove(player) {
+    const win = checkWin(state.board, player);
+    if (win) {
+      handleWin(player, win);
+      return;
+    }
+    if (isDraw(state.board)) {
+      handleDraw();
+      return;
+    }
+    if (player === 1) {
+      // Moony's turn
+      state.turn = 2;
+      $('turn-bar').textContent = 'Moony thinking…';
+      $('turn-bar').className = 'turn-bar moony';
+      setTimeout(() => {
+        const mc = moonyMove(state.board, state.gameNum);
+        if (mc === -1) { handleDraw(); return; }
+        dropToken(mc, 2);
+        setTimeout(() => afterMove(2), 380);
+      }, 500 + Math.random() * 400);
+    } else {
+      // Player's turn
+      state.turn = 1;
+      state.locked = false;
+      $('turn-bar').textContent = 'Your move';
+      $('turn-bar').className = 'turn-bar';
+      updateColButtons();
+    }
+  }
+
+  function flashWin(cells, player) {
+    cells.forEach(([r, c]) => {
+      const cell = $('cell-' + r + '-' + c);
+      cell.classList.add('win');
+    });
+  }
+
+  function handleWin(player, cells) {
+    state.locked = true;
+    state.turn = 0;
+    flashWin(cells, player);
+    updateColButtons();
+    const tape = $('tape');
+    if (player === 1) {
+      const movesMade = state.board.flat().filter(v => v === 1).length;
+      const speedBonus = Math.max(0, 22 - movesMade) * 80; // fewer moves = bigger bonus
+      const baseWin = 600 + state.gameNum * 150;
+      state.score += baseWin + speedBonus;
+      state.wins++;
+      tape.textContent = 'GAME ' + state.gameNum + ' — Dippy wins. +$' + (baseWin + speedBonus) + ' (speed bonus $' + speedBonus + ')';
+      tape.className = 'tape win';
+      $('turn-bar').textContent = 'You won — connect four';
+      $('turn-bar').className = 'turn-bar';
+    } else {
+      state.score -= 200;
+      state.losses++;
+      tape.textContent = 'GAME ' + state.gameNum + ' — Moony wins. -$200. Moony will not stop talking about this.';
+      tape.className = 'tape loss';
+      $('turn-bar').textContent = 'Moony took the game';
+      $('turn-bar').className = 'turn-bar moony';
+    }
+    $('score-disp').textContent = '$' + state.score.toLocaleString('en-US');
+    $('score-disp').className = 'hud-value' + (state.score < 0 ? ' red' : '');
+    $('series-disp').textContent = state.wins + '–' + state.losses;
+    setTimeout(nextGameOrEnd, 1400);
+  }
+
+  function handleDraw() {
+    state.locked = true;
+    state.turn = 0;
+    updateColButtons();
+    state.draws++;
+    state.score += 100;
+    $('tape').textContent = 'GAME ' + state.gameNum + ' — Draw. +$100 for showing up.';
+    $('tape').className = 'tape amber';
+    $('turn-bar').textContent = 'Board full — draw';
+    $('turn-bar').className = 'turn-bar locked';
+    $('score-disp').textContent = '$' + state.score.toLocaleString('en-US');
+    setTimeout(nextGameOrEnd, 1400);
+  }
+
+  function nextGameOrEnd() {
+    // Series ends when someone reaches 3 wins OR all 5 games played
+    if (state.wins >= 3 || state.losses >= 3 || state.gameNum >= 5) {
+      endSeries();
+      return;
+    }
+    state.gameNum++;
+    state.board = emptyBoard();
+    state.turn = state.gameNum % 2 === 1 ? 1 : 2; // alternate first-mover
+    state.locked = false;
+    renderBoard();
+    $('game-disp').textContent = state.gameNum + '/5';
+    $('tape').textContent = 'Game ' + state.gameNum + ' begins. Moony AI sharper this round.';
+    $('tape').className = 'tape';
+    if (state.turn === 2) {
+      $('turn-bar').textContent = 'Moony moves first…';
+      $('turn-bar').className = 'turn-bar moony';
+      state.locked = true;
+      updateColButtons();
+      setTimeout(() => {
+        const mc = moonyMove(state.board, state.gameNum);
+        dropToken(mc, 2);
+        setTimeout(() => afterMove(2), 380);
+      }, 700);
+    } else {
+      $('turn-bar').textContent = 'Your move';
+      $('turn-bar').className = 'turn-bar';
+      updateColButtons();
+    }
+  }
+
+  function endSeries() {
+    let title;
+    if (state.losses === 0 && state.wins >= 3) {
+      title = TITLES.sweep;
+      state.score += 1500; // sweep bonus
+    } else if (state.wins > state.losses) {
+      title = TITLES.series;
+      state.score += 500;
+    } else if (state.wins === state.losses) {
+      title = TITLES.draw;
+    } else {
+      title = TITLES.loss;
+    }
+
+    $('game-screen').style.display = 'none';
+    $('gameover-screen').style.display = 'flex';
+    $('gameover-title').textContent = title;
+
+    const scoreEl = $('final-score');
+    scoreEl.textContent = Math.abs(state.score).toLocaleString('en-US');
+    if (state.score < 0) {
+      scoreEl.parentElement.className = 'final-score red';
+      scoreEl.textContent = '-' + scoreEl.textContent;
+    } else {
+      scoreEl.parentElement.className = 'final-score';
+    }
+    $('stat-wins').textContent = state.wins;
+    $('stat-losses').textContent = state.losses;
+    $('stat-draws').textContent = state.draws;
+    $('roast-msg').textContent = ROASTS[Math.floor(Math.random() * ROASTS.length)];
+
+    const high = parseInt(localStorage.getItem(HIGH_KEY) || '0', 10);
+    if (state.score > high) {
+      localStorage.setItem(HIGH_KEY, state.score.toString());
+    }
+    if (window.DippyLB) DippyLB.onGameOver(state.score);
+  }
+
+  window.startGame = function() {
+    $('title-screen').style.display = 'none';
+    $('gameover-screen').style.display = 'none';
+    $('game-screen').style.display = 'flex';
+    state = {
+      board: emptyBoard(),
+      turn: 1,
+      locked: false,
+      gameNum: 1,
+      score: 0,
+      wins: 0,
+      losses: 0,
+      draws: 0
+    };
+    $('score-disp').textContent = '$0';
+    $('score-disp').className = 'hud-value';
+    $('series-disp').textContent = '0–0';
+    $('game-disp').textContent = '1/5';
+    renderBoard();
+    renderCols();
+    $('tape').textContent = 'Game 1 begins. Drop a token to start.';
+    $('tape').className = 'tape';
+    $('turn-bar').textContent = 'Your move';
+    $('turn-bar').className = 'turn-bar';
+    updateColButtons();
+  };
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const high = parseInt(localStorage.getItem(HIGH_KEY) || '0', 10);
+    if (high > 0) {
+      $('title-high-score').textContent = 'Best: $' + high.toLocaleString('en-US');
+    }
+    if (window.DippyLB) DippyLB.init('dippy-connect');
+  });
+})();
+</script>
+{{ end }}
