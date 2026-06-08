@@ -1,0 +1,268 @@
+---
+title: "The Lindisfarne Raid"
+date: 2026-06-08T13:00:00Z
+summary: "AD 793. Moony's monastery of unrealized losses meets a longboat full of implied volatility."
+tags: ["adventure", "historical", "moony"]
+type: historical
+---
+
+## Chapter 1: The Holy Isle of Bag-Holders
+
+On the eighth day of the sixth month, anno 793, Moony sat on the windswept tidal island of Lindisfarne, polishing his portfolio.
+
+His monastery was famous across the known world. Twelve hundred years' worth of accumulated unrealized losses, lovingly catalogued in illuminated manuscripts. Each ticker was inked in gold leaf with a tiny note: WILL COME BACK. Some entries dated to AD 412.
+
+The monks chanted in Latin around the cloister. *Dia-mant-i ma-nu-bus. In sae-cu-la sae-cu-lo-rum.* Diamond hands, forever and ever.
+
+Moony was the abbot. He wore a hood the colour of a 0DTE put on Friday afternoon and clutched an enormous chalice labelled COST BASIS. The chalice was empty. It had been empty for many summers. He drank from it anyway.
+
+"Brothers," he intoned, "the gods will protect us. We hold sacred fundamentals. No man may take what we have not sold."
+
+A small monk near the back raised a finger. "Father, what about the longboat on the—"
+
+"Silence. The longboat is noise."
+
+<div class="story-illustration">
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#0d1117"/>
+
+  <!-- Stone arches -->
+  <path d="M 60 360 L 60 200 Q 60 140 120 140 Q 180 140 180 200 L 180 360 Z" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+  <path d="M 420 360 L 420 200 Q 420 140 480 140 Q 540 140 540 200 L 540 360 Z" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+
+  <!-- Altar -->
+  <rect x="240" y="280" width="120" height="80" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+  <text x="300" y="355" font-family="monospace" font-size="11" fill="#8b949e" text-anchor="middle">ALTAR OF HOLDING</text>
+
+  <!-- Chalice -->
+  <path d="M 280 230 L 320 230 L 315 270 L 285 270 Z" fill="#ffaa00" stroke="#30363d" stroke-width="1.5"/>
+  <rect x="290" y="270" width="20" height="10" fill="#ffaa00"/>
+  <text x="300" y="220" font-family="monospace" font-size="9" fill="#ffaa00" text-anchor="middle">COST BASIS</text>
+
+  <!-- Moony with hood -->
+  <path d="M 240 170 Q 300 100 360 170 L 360 220 L 240 220 Z" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+  <circle cx="300" cy="195" r="32" fill="#c4c4c4"/>
+  <circle cx="290" cy="190" r="3" fill="#0d1117"/>
+  <circle cx="310" cy="190" r="3" fill="#0d1117"/>
+  <path d="M 290 208 Q 300 213 310 208" stroke="#0d1117" stroke-width="2" fill="none"/>
+
+  <!-- Chanting monks -->
+  <circle cx="120" cy="280" r="18" fill="#c4c4c4"/>
+  <path d="M 102 270 Q 120 250 138 270 L 138 295 L 102 295 Z" fill="#161b22"/>
+  <circle cx="116" cy="278" r="2" fill="#0d1117"/>
+  <circle cx="124" cy="278" r="2" fill="#0d1117"/>
+
+  <circle cx="480" cy="280" r="18" fill="#c4c4c4"/>
+  <path d="M 462 270 Q 480 250 498 270 L 498 295 L 462 295 Z" fill="#161b22"/>
+  <circle cx="476" cy="278" r="2" fill="#0d1117"/>
+  <circle cx="484" cy="278" r="2" fill="#0d1117"/>
+
+  <!-- Latin chant -->
+  <text x="300" y="50" font-family="monospace" font-size="13" fill="#00ff88" text-anchor="middle">DIAMANTI MANUBUS</text>
+  <text x="300" y="68" font-family="monospace" font-size="10" fill="#8b949e" text-anchor="middle">in saecula saeculorum</text>
+
+  <!-- Floor -->
+  <rect x="0" y="370" width="600" height="30" fill="#161b22"/>
+</svg>
+<p class="illustration-caption">Abbot Moony at the altar of cost basis. Twelve hundred years of fundamentals.</p>
+</div>
+
+## Chapter 2: Sails
+
+I had been at sea for three weeks. The wind was favourable. The wind, in this metaphor, was implied volatility, and it had just rolled from 12 to 38 overnight.
+
+My longboat was lean. Carved keel, low draft, no cargo but a hold full of dry powder. The crew rowed silently. We were not here to negotiate. We were here to take.
+
+Lindisfarne came into view at dawn. A pretty island. Cloisters, gardens, a single tidal causeway that cut off twice a day. Defenseless. Unhedged. Long-only since the days of Bede.
+
+We beached at the north shore. No watchtower. No sentinel. No stop-loss.
+
+"Captain," whispered Olaf at the oar, "they're still chanting."
+
+"Of course they are. They think the chant is the position."
+
+<div class="story-illustration">
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#0d1117"/>
+
+  <!-- Sky -->
+  <circle cx="500" cy="80" r="30" fill="#ffaa00" opacity="0.6"/>
+
+  <!-- Sea -->
+  <path d="M 0 280 Q 150 270 300 280 Q 450 290 600 280 L 600 400 L 0 400 Z" fill="#161b22"/>
+  <path d="M 0 300 Q 150 295 300 305 Q 450 300 600 305" stroke="#30363d" stroke-width="1" fill="none"/>
+  <path d="M 0 325 Q 150 320 300 330 Q 450 325 600 330" stroke="#30363d" stroke-width="1" fill="none"/>
+
+  <!-- Distant Lindisfarne -->
+  <path d="M 460 270 L 480 240 L 500 250 L 520 235 L 540 245 L 560 240 L 580 250 L 580 280 L 460 280 Z" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <rect x="500" y="232" width="6" height="12" fill="#30363d"/>
+  <rect x="540" y="238" width="6" height="10" fill="#30363d"/>
+
+  <!-- Longboat hull -->
+  <path d="M 100 310 Q 80 295 130 290 L 320 290 Q 360 295 340 310 Z" fill="#161b22" stroke="#00cc66" stroke-width="2"/>
+
+  <!-- Dragon prow -->
+  <path d="M 320 290 Q 360 280 370 260 Q 365 270 355 270 Q 365 275 360 285" stroke="#00cc66" stroke-width="2" fill="#161b22"/>
+  <circle cx="362" cy="272" r="2" fill="#ff4444"/>
+
+  <!-- Mast and sail -->
+  <line x1="210" y1="290" x2="210" y2="160" stroke="#30363d" stroke-width="3"/>
+  <rect x="150" y="160" width="120" height="100" fill="#161b22" stroke="#00ff88" stroke-width="2"/>
+  <text x="210" y="200" font-family="monospace" font-size="22" fill="#00ff88" text-anchor="middle" font-weight="bold">VOL</text>
+  <text x="210" y="225" font-family="monospace" font-size="22" fill="#00ff88" text-anchor="middle">38 ↑</text>
+
+  <!-- Oars -->
+  <line x1="140" y1="305" x2="120" y2="335" stroke="#8b949e" stroke-width="2"/>
+  <line x1="170" y1="305" x2="150" y2="335" stroke="#8b949e" stroke-width="2"/>
+  <line x1="240" y1="305" x2="220" y2="335" stroke="#8b949e" stroke-width="2"/>
+  <line x1="270" y1="305" x2="250" y2="335" stroke="#8b949e" stroke-width="2"/>
+
+  <!-- Dippy at prow -->
+  <ellipse cx="335" cy="270" rx="14" ry="12" fill="#00ff88"/>
+  <polygon points="325,260 330,250 335,260" fill="#00cc66"/>
+  <polygon points="335,257 340,247 345,257" fill="#00cc66"/>
+  <circle cx="340" cy="268" r="2.5" fill="#0d1117"/>
+  <circle cx="341" cy="267" r="1" fill="#ffffff"/>
+  <path d="M 335 275 Q 340 280 345 275" stroke="#0d1117" stroke-width="1.5" fill="none"/>
+
+  <!-- Title -->
+  <text x="50" y="50" font-family="monospace" font-size="11" fill="#8b949e">DAWN — NORTH SHORE</text>
+</svg>
+<p class="illustration-caption">The longboat puts in at first candle. The sail is rolled from 12 to 38.</p>
+</div>
+
+## Chapter 3: The Raid
+
+We came over the dunes at first candle. Moony saw us across the cloister and dropped his chalice.
+
+"BRETHREN!" he shrieked. "PROTECT THE LEDGERS!"
+
+The monks formed a defensive ring around the manuscripts. Their weapons were fundamentals. They held them high. We walked through them.
+
+"Greetings, abbot," I said. "I am Dippy of the Northmen. I have come for your unrealized gains."
+
+"WE HAVE NO UNREALIZED GAINS. WE HAVE UNREALIZED LOSSES."
+
+"Same thing. They mark to market."
+
+I plundered the ledgers. Each entry, marked to current price, was a stop-hunt trigger. The momentum cascaded through the cloister. The relics flew off the walls — GoPro 2014, Peloton 2021, a small framed bag of WeWork 2019 — each one liquidating into my longboat at the closing bid. By the time the tide turned, Moony's twelve-century holdfast had been reduced to a single Post-it note that read: STILL EARLY.
+
+The monastery did not burn. It simply repriced.
+
+<div class="story-illustration">
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#0d1117"/>
+
+  <!-- Cloister wall -->
+  <rect x="0" y="280" width="600" height="120" fill="#161b22"/>
+  <line x1="0" y1="280" x2="600" y2="280" stroke="#30363d" stroke-width="1"/>
+
+  <!-- Empty hooks on wall -->
+  <line x1="80" y1="290" x2="80" y2="298" stroke="#8b949e" stroke-width="1.5"/>
+  <line x1="160" y1="290" x2="160" y2="298" stroke="#8b949e" stroke-width="1.5"/>
+  <line x1="240" y1="290" x2="240" y2="298" stroke="#8b949e" stroke-width="1.5"/>
+
+  <!-- Flying relics (tickers) -->
+  <g>
+    <rect x="100" y="120" width="70" height="30" fill="#ff4444" opacity="0.85"/>
+    <text x="135" y="140" font-family="monospace" font-size="13" fill="#0d1117" text-anchor="middle" font-weight="bold">GPRO</text>
+  </g>
+  <g transform="rotate(-15 230 80)">
+    <rect x="195" y="60" width="70" height="30" fill="#ff4444" opacity="0.85"/>
+    <text x="230" y="80" font-family="monospace" font-size="13" fill="#0d1117" text-anchor="middle" font-weight="bold">PTON</text>
+  </g>
+  <g transform="rotate(20 360 100)">
+    <rect x="325" y="85" width="70" height="30" fill="#ff4444" opacity="0.85"/>
+    <text x="360" y="105" font-family="monospace" font-size="13" fill="#0d1117" text-anchor="middle" font-weight="bold">WE</text>
+  </g>
+  <g transform="rotate(-8 470 180)">
+    <rect x="435" y="165" width="70" height="30" fill="#ff4444" opacity="0.85"/>
+    <text x="470" y="185" font-family="monospace" font-size="11" fill="#0d1117" text-anchor="middle" font-weight="bold">SPCE</text>
+  </g>
+  <g transform="rotate(12 180 200)">
+    <rect x="145" y="185" width="70" height="30" fill="#ff4444" opacity="0.85"/>
+    <text x="180" y="205" font-family="monospace" font-size="11" fill="#0d1117" text-anchor="middle" font-weight="bold">AMC</text>
+  </g>
+
+  <!-- Trajectory lines -->
+  <path d="M 135 150 Q 250 200 380 250" stroke="#ff4444" stroke-width="1" stroke-dasharray="3,3" fill="none" opacity="0.5"/>
+  <path d="M 230 95 Q 320 180 400 240" stroke="#ff4444" stroke-width="1" stroke-dasharray="3,3" fill="none" opacity="0.5"/>
+
+  <!-- Moony panicked -->
+  <circle cx="150" cy="335" r="32" fill="#c4c4c4"/>
+  <ellipse cx="138" cy="328" rx="4" ry="6" fill="#0d1117"/>
+  <ellipse cx="162" cy="328" rx="4" ry="6" fill="#0d1117"/>
+  <ellipse cx="150" cy="352" rx="8" ry="6" fill="#0d1117"/>
+  <text x="150" y="280" font-family="monospace" font-size="20" fill="#ff4444" text-anchor="middle">!?!</text>
+
+  <!-- Dippy plundering -->
+  <ellipse cx="450" cy="345" rx="40" ry="32" fill="#00ff88"/>
+  <polygon points="420,318 432,300 444,318" fill="#00cc66"/>
+  <polygon points="444,315 456,297 468,315" fill="#00cc66"/>
+  <polygon points="468,318 480,300 492,318" fill="#00cc66"/>
+  <circle cx="438" cy="340" r="5" fill="#0d1117"/>
+  <circle cx="440" cy="338" r="2" fill="#ffffff"/>
+  <circle cx="462" cy="340" r="5" fill="#0d1117"/>
+  <circle cx="464" cy="338" r="2" fill="#ffffff"/>
+  <path d="M 432 360 Q 450 372 468 360" stroke="#0d1117" stroke-width="2.5" fill="none"/>
+
+  <!-- Sack of plunder -->
+  <path d="M 495 330 Q 510 320 525 330 L 530 380 L 490 380 Z" fill="#161b22" stroke="#ffaa00" stroke-width="2"/>
+  <text x="510" y="365" font-family="monospace" font-size="10" fill="#ffaa00" text-anchor="middle">$$</text>
+
+  <!-- Post-it -->
+  <rect x="270" y="335" width="60" height="40" fill="#ffaa00" transform="rotate(-5 300 355)"/>
+  <text x="300" y="358" font-family="monospace" font-size="9" fill="#0d1117" text-anchor="middle" transform="rotate(-5 300 355)">STILL</text>
+  <text x="300" y="370" font-family="monospace" font-size="9" fill="#0d1117" text-anchor="middle" transform="rotate(-5 300 355)">EARLY</text>
+</svg>
+<p class="illustration-caption">The repricing. Each relic marks to market on the way to the longboat.</p>
+</div>
+
+## Chapter 4: The Chronicle
+
+Moony fled across the causeway as the water rose. He reached the mainland soaked to the cowl and immediately sat down to write.
+
+The Anglo-Saxon Chronicle, AD 793, in Moony's own hand:
+
+> *In this year, fierce omens came over the land of the Northumbrians. Whirlwinds. Dragons in the sky. Manipulation. The Heathen Men came and ravaged the Holy Isle and took from us what was rightfully ours, namely, our cost basis. The fault lay with the gods, who failed to defend us. Also possibly the SEC.*
+
+He signed it BAG-HOLDERICUS MAXIMUS and sent it to every monastery in Christendom. The other monasteries read it, nodded gravely, and continued holding.
+
+I sailed home with my hold full of forced exits. Olaf passed me a horn of mead. We toasted to fundamentals. We laughed for a long time.
+
+The wind shifted. Implied vol came in to 20. Somewhere in the dark, Moony was already writing his second chronicle. He titled it *I Was Early, Not Wrong.* It would become a bestseller.
+
+<div class="story-illustration">
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="400" fill="#0d1117"/>
+
+  <!-- Parchment scroll -->
+  <path d="M 80 80 Q 60 80 60 100 L 60 320 Q 60 340 80 340 L 520 340 Q 540 340 540 320 L 540 100 Q 540 80 520 80 Z" fill="#ffaa00" opacity="0.15" stroke="#ffaa00" stroke-width="2"/>
+
+  <!-- Scroll text -->
+  <text x="300" y="120" font-family="monospace" font-size="14" fill="#ffaa00" text-anchor="middle" font-weight="bold">ANGLO-SAXON CHRONICLE</text>
+  <text x="300" y="140" font-family="monospace" font-size="11" fill="#8b949e" text-anchor="middle">— ANNO 793 —</text>
+
+  <line x1="100" y1="160" x2="500" y2="160" stroke="#30363d" stroke-width="1"/>
+
+  <text x="100" y="185" font-family="monospace" font-size="11" fill="#c4c4c4">Fierce omens came over the land.</text>
+  <text x="100" y="205" font-family="monospace" font-size="11" fill="#c4c4c4">Whirlwinds. Dragons. Manipulation.</text>
+  <text x="100" y="225" font-family="monospace" font-size="11" fill="#c4c4c4">The Heathen Men took our cost basis.</text>
+  <text x="100" y="245" font-family="monospace" font-size="11" fill="#c4c4c4">The fault lay with the gods.</text>
+  <text x="100" y="265" font-family="monospace" font-size="11" fill="#ff4444">Also possibly the SEC.</text>
+
+  <line x1="100" y1="285" x2="500" y2="285" stroke="#30363d" stroke-width="1"/>
+
+  <text x="300" y="310" font-family="monospace" font-size="11" fill="#8b949e" text-anchor="middle" font-style="italic">— signed —</text>
+  <text x="300" y="328" font-family="monospace" font-size="13" fill="#c4c4c4" text-anchor="middle" font-weight="bold">BAG-HOLDERICUS MAXIMUS</text>
+
+  <!-- Quill -->
+  <line x1="480" y1="300" x2="520" y2="340" stroke="#c4c4c4" stroke-width="2"/>
+  <path d="M 475 295 Q 470 280 485 285 Q 490 295 480 300" fill="#c4c4c4"/>
+
+  <!-- Wax seal -->
+  <circle cx="120" cy="320" r="14" fill="#ff4444"/>
+  <text x="120" y="324" font-family="monospace" font-size="9" fill="#0d1117" text-anchor="middle" font-weight="bold">M</text>
+</svg>
+<p class="illustration-caption">The official record: not a strategy failure, but a failure of dragons.</p>
+</div>
