@@ -1,0 +1,541 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">STACK THE TRADE</h1>
+    <p class="game-subtitle">Slide tiles. Merge same dollars.<br>Build the position. Hit $25,600 to win.<br>Moony stays in cash. Forever.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">DEPLOY CAPITAL</button>
+    <p class="game-hint">Swipe (mobile) or arrow keys (desktop) to slide all tiles.<br>Two equal tiles merge into one of double value.<br>Reach <b style="color:#f0883e">$25,600</b> = MAX POSITION = win.<br>Grid full + no merges = game over.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="score-disp">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">BEST</span>
+        <span class="hud-value orange" id="best-disp">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">MAX TILE</span>
+        <span class="hud-value orange" id="max-disp">$100</span>
+      </div>
+    </div>
+
+    <div class="status-bar" id="status-bar">Slide to merge. Goal: $25,600</div>
+
+    <div class="board-wrap">
+      <div class="board" id="board"></div>
+    </div>
+
+    <button class="undo-btn" id="undo-btn" onclick="undoMove()" disabled>↶ UNDO (1 left)</button>
+
+    <div class="hint">Swipe or use arrow keys</div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">POSITION CLOSED</h1>
+    <div class="final-score">$<span id="final-score">0</span></div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-max">$0</span><span class="stat-label">Max Tile</span></div>
+      <div class="stat"><span class="stat-val" id="stat-merges">0</span><span class="stat-label">Merges</span></div>
+      <div class="stat"><span class="stat-val" id="stat-moves">0</span><span class="stat-label">Moves</span></div>
+    </div>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">DEPLOY AGAIN</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; touch-action:manipulation; }
+  #game-wrapper { max-width:420px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:1.9em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 36px; font-size:1.05em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.72em; margin-top:14px; line-height:1.55; max-width:380px; }
+
+  #game-screen { justify-content:flex-start; padding:14px 14px 16px; }
+  .game-hud { display:flex; justify-content:space-between; padding:8px 16px; background:rgba(0,0,0,0.4); border:1px solid #21262d; border-radius:8px; margin-bottom:10px; }
+  .hud-item { text-align:center; flex:1; }
+  .hud-label { display:block; font-size:0.62em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1.0em; color:#00ff88; font-weight:bold; }
+  .hud-value.orange { color:#f0883e; }
+
+  .status-bar {
+    text-align:center;
+    padding:8px;
+    background:rgba(0,255,136,0.10);
+    border:1px solid rgba(0,255,136,0.40);
+    border-radius:6px;
+    color:#00ff88;
+    letter-spacing:1px;
+    font-size:0.76em;
+    margin-bottom:10px;
+    min-height:30px;
+    transition:all 0.2s;
+  }
+  .status-bar.win { background:rgba(240,136,62,0.15); border-color:#f0883e; color:#f0883e; }
+  .status-bar.merge { background:rgba(0,255,136,0.20); border-color:#00ff88; color:#00ff88; }
+
+  .board-wrap {
+    background:#161b22;
+    border:2px solid #21262d;
+    border-radius:10px;
+    padding:8px;
+    margin-bottom:10px;
+    touch-action:none;
+  }
+  .board {
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    grid-template-rows:repeat(4, 1fr);
+    gap:8px;
+    aspect-ratio:1;
+    position:relative;
+  }
+  .bg-cell {
+    background:#0d1117;
+    border:1.5px solid #21262d;
+    border-radius:8px;
+  }
+  .tile {
+    position:absolute;
+    border-radius:8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    color:#0d1117;
+    transition: transform 0.14s ease-out, opacity 0.14s ease-out;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35), inset 0 -3px 0 rgba(0,0,0,0.15);
+    will-change: transform;
+  }
+  .tile.new { animation: tilePop 0.20s ease-out; }
+  .tile.merged { animation: mergePop 0.22s ease-out; z-index:2; }
+  @keyframes tilePop { from { transform: var(--pos) scale(0.0); } to { transform: var(--pos) scale(1.0); } }
+  @keyframes mergePop {
+    0%   { transform: var(--pos) scale(1.0); }
+    55%  { transform: var(--pos) scale(1.18); }
+    100% { transform: var(--pos) scale(1.0); }
+  }
+
+  /* tile values — trading dollar amounts */
+  .t-100   { background:#30363d; color:#c9d1d9; font-size:0.95em; }
+  .t-200   { background:#484f58; color:#e6edf3; font-size:0.95em; }
+  .t-400   { background:#558b6e; font-size:0.92em; }
+  .t-800   { background:#3fb950; font-size:0.92em; }
+  .t-1600  { background:#00ff88; font-size:0.88em; }
+  .t-3200  { background:#56d364; font-size:0.85em; }
+  .t-6400  { background:#f0883e; color:#0d1117; font-size:0.82em; }
+  .t-12800 { background:#ff7b50; color:#0d1117; font-size:0.78em; box-shadow: 0 0 12px rgba(255,123,80,0.6), inset 0 -3px 0 rgba(0,0,0,0.15); }
+  .t-25600 { background:#ffd23f; color:#0d1117; font-size:0.78em; box-shadow: 0 0 18px rgba(255,210,63,0.85), inset 0 -3px 0 rgba(0,0,0,0.18); animation: goldPulse 1.2s ease-in-out infinite; }
+  .t-51200 { background:linear-gradient(135deg, #ffd23f, #ff7b50); color:#0d1117; font-size:0.75em; box-shadow: 0 0 22px rgba(255,210,63,0.9); animation: goldPulse 0.9s ease-in-out infinite; }
+  @keyframes goldPulse { 0%,100% { filter: brightness(1.0); } 50% { filter: brightness(1.25); } }
+
+  .undo-btn {
+    width:100%;
+    padding:9px;
+    background:rgba(88,166,255,0.10);
+    border:1px solid rgba(88,166,255,0.4);
+    border-radius:6px;
+    color:#58a6ff;
+    font-family:inherit;
+    font-size:0.78em;
+    letter-spacing:1.5px;
+    cursor:pointer;
+    margin-bottom:6px;
+    transition: all 0.15s;
+  }
+  .undo-btn:hover:not(:disabled) { background:rgba(88,166,255,0.2); }
+  .undo-btn:disabled { opacity:0.3; cursor:not-allowed; }
+
+  .hint { text-align:center; color:#484f58; font-size:0.7em; letter-spacing:1px; }
+
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:2.6em; color:#00ff88; text-shadow:0 0 18px rgba(0,255,136,0.5); margin:16px 0; letter-spacing:2px; }
+  .stats-row { display:flex; gap:24px; margin-bottom:20px; }
+  .stat { text-align:center; }
+  .stat-val { display:block; font-size:1.3em; color:#f0883e; font-weight:bold; }
+  .stat-label { display:block; font-size:0.65em; color:#8b949e; letter-spacing:1px; margin-top:2px; }
+  .roast-msg { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:20px; max-width:340px; min-height:3em; font-style:italic; }
+
+  /* Leaderboard mounts */
+  .lb-title-section { width:100%; max-width:380px; margin-top:18px; }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  const SLUG = 'stack-the-trade';
+  const HIGH_KEY = 'dippy-' + SLUG + '-high';
+  const SIZE = 4;
+  const TARGET = 25600;
+
+  // state
+  let grid;        // 2D array of {val, id} or null
+  let nextId;
+  let score, maxTile, merges, moves;
+  let undoSnapshot;
+  let undoUsed;
+  let won;
+  let busy;
+
+  const ROASTS = [
+    "Moony saw the $25,600 tile and called it 'too volatile' before liquidating to cash.",
+    "Stacking trades while Moony stacks excuses. Same energy.",
+    "Moony's 'optimal allocation' is 70% cash. That's not allocation, that's avoidance.",
+    "$25,600 is just a max position. Moony calls it 'reckless concentration.'",
+    "Moony has a watchlist of 400 names and zero open positions. Game over for him every day.",
+    "Slide. Merge. Stack. Three verbs Moony has never used in a strategy doc.",
+    "Moony's risk model rejected this game as 'too aggressive.'",
+    "Position sizing for Moony is 'cash' and 'more cash.' Two-tile portfolio.",
+    "Every merge here is a trade. Moony made zero merges this quarter.",
+    "Moony saw the gold tile and tried to short it. Got assigned. Quit trading.",
+    "Stack high enough and even Moony's algo notices. He still won't trade though.",
+    "Max position = $25,600. Moony's max position = $0. Comparison ends here."
+  ];
+
+  function newId() { return ++nextId; }
+
+  function initState() {
+    grid = Array.from({length:SIZE}, () => Array(SIZE).fill(null));
+    nextId = 0;
+    score = 0; maxTile = 100; merges = 0; moves = 0;
+    undoSnapshot = null; undoUsed = false; won = false; busy = false;
+    spawnTile(); spawnTile();
+  }
+
+  function spawnTile() {
+    const empties = [];
+    for (let r=0;r<SIZE;r++) for (let c=0;c<SIZE;c++) if (!grid[r][c]) empties.push([r,c]);
+    if (!empties.length) return false;
+    const [r,c] = empties[Math.floor(Math.random()*empties.length)];
+    // 85% chance $100, 15% chance $200 (matches 2048's 90/10 with slight ease)
+    const val = Math.random() < 0.85 ? 100 : 200;
+    grid[r][c] = { val, id: newId(), isNew:true };
+    return true;
+  }
+
+  function snapshot() {
+    return {
+      grid: grid.map(row => row.map(c => c ? {val:c.val, id:c.id} : null)),
+      score, maxTile, merges, moves
+    };
+  }
+  function restore(s) {
+    grid = s.grid.map(row => row.map(c => c ? {val:c.val, id:c.id} : null));
+    score = s.score; maxTile = s.maxTile; merges = s.merges; moves = s.moves;
+  }
+
+  // collapse a line (array of tiles-or-null) toward index 0. returns {line, gainedScore, gainedMerges, changed}
+  function collapseLine(input) {
+    const tiles = input.filter(x => x);
+    const out = [];
+    let gainedScore = 0, gainedMerges = 0;
+    let i = 0;
+    while (i < tiles.length) {
+      const a = tiles[i];
+      const b = tiles[i+1];
+      if (b && a.val === b.val) {
+        const mergedVal = a.val * 2;
+        out.push({ val: mergedVal, id: a.id, justMerged: true, isNew: false });
+        gainedScore += mergedVal;
+        gainedMerges += 1;
+        if (mergedVal > maxTile) maxTile = mergedVal;
+        if (mergedVal >= TARGET) won = true;
+        i += 2;
+      } else {
+        out.push({ val: a.val, id: a.id, justMerged: false, isNew: false });
+        i += 1;
+      }
+    }
+    while (out.length < SIZE) out.push(null);
+    // detect change
+    let changed = false;
+    for (let j=0;j<SIZE;j++) {
+      const before = input[j], after = out[j];
+      if (!before && !after) continue;
+      if (!before || !after) { changed = true; break; }
+      if (before.id !== after.id || before.val !== after.val) { changed = true; break; }
+    }
+    return { line: out, gainedScore, gainedMerges, changed };
+  }
+
+  function move(dir) {
+    if (busy || won) return;
+    const before = snapshot();
+
+    // clear flags from prior turn
+    for (let r=0;r<SIZE;r++) for (let c=0;c<SIZE;c++) if (grid[r][c]) {
+      grid[r][c].justMerged = false;
+      grid[r][c].isNew = false;
+    }
+
+    let totalScore = 0, totalMerges = 0, anyChanged = false;
+
+    if (dir === 'left' || dir === 'right') {
+      for (let r=0;r<SIZE;r++) {
+        let line = grid[r].slice();
+        if (dir === 'right') line.reverse();
+        const res = collapseLine(line);
+        let newLine = res.line;
+        if (dir === 'right') newLine = newLine.slice().reverse();
+        grid[r] = newLine;
+        totalScore += res.gainedScore;
+        totalMerges += res.gainedMerges;
+        if (res.changed) anyChanged = true;
+      }
+    } else {
+      for (let c=0;c<SIZE;c++) {
+        let line = [];
+        for (let r=0;r<SIZE;r++) line.push(grid[r][c]);
+        if (dir === 'down') line.reverse();
+        const res = collapseLine(line);
+        let newLine = res.line;
+        if (dir === 'down') newLine = newLine.slice().reverse();
+        for (let r=0;r<SIZE;r++) grid[r][c] = newLine[r];
+        totalScore += res.gainedScore;
+        totalMerges += res.gainedMerges;
+        if (res.changed) anyChanged = true;
+      }
+    }
+
+    if (!anyChanged) {
+      restore(before);
+      shake();
+      return;
+    }
+
+    score += totalScore;
+    moves += 1;
+    merges += totalMerges;
+    undoSnapshot = before;
+    spawnTile();
+    render();
+
+    if (won) {
+      statusBar('🏆 $25,600 — MAX POSITION DEPLOYED', 'win');
+    } else if (totalScore > 0) {
+      statusBar(`+$${totalScore.toLocaleString()} merged`, 'merge');
+      setTimeout(() => { if (!won) statusBar('Slide to merge. Goal: $25,600'); }, 1200);
+    } else {
+      statusBar('Slide to merge. Goal: $25,600');
+    }
+
+    if (!hasMovesLeft() && !won) {
+      setTimeout(() => endGame(false), 500);
+    } else if (won) {
+      setTimeout(() => endGame(true), 1800);
+    }
+  }
+
+  function hasMovesLeft() {
+    for (let r=0;r<SIZE;r++) for (let c=0;c<SIZE;c++) {
+      if (!grid[r][c]) return true;
+      const v = grid[r][c].val;
+      if (c+1<SIZE && grid[r][c+1] && grid[r][c+1].val === v) return true;
+      if (r+1<SIZE && grid[r+1][c] && grid[r+1][c].val === v) return true;
+    }
+    return false;
+  }
+
+  function shake() {
+    const wrap = document.querySelector('.board-wrap');
+    wrap.animate([
+      { transform: 'translateX(0)' },
+      { transform: 'translateX(-4px)' },
+      { transform: 'translateX(4px)' },
+      { transform: 'translateX(0)' }
+    ], { duration: 140 });
+  }
+
+  function statusBar(msg, cls) {
+    const bar = document.getElementById('status-bar');
+    bar.textContent = msg;
+    bar.className = 'status-bar' + (cls ? ' ' + cls : '');
+  }
+
+  function render() {
+    const board = document.getElementById('board');
+    // initial render: create bg cells + tile slot
+    if (!board.dataset.init) {
+      board.innerHTML = '';
+      for (let i=0;i<SIZE*SIZE;i++) {
+        const c = document.createElement('div');
+        c.className = 'bg-cell';
+        board.appendChild(c);
+      }
+      board.dataset.init = '1';
+    }
+    // remove existing tile elements
+    board.querySelectorAll('.tile').forEach(el => el.remove());
+    // compute tile size based on board width
+    const cellPct = 100 / SIZE;
+    for (let r=0;r<SIZE;r++) {
+      for (let c=0;c<SIZE;c++) {
+        const t = grid[r][c];
+        if (!t) continue;
+        const el = document.createElement('div');
+        el.className = 'tile t-' + t.val + (t.isNew ? ' new' : '') + (t.justMerged ? ' merged' : '');
+        el.style.width = `calc(${cellPct}% - 6px)`;
+        el.style.height = `calc(${cellPct}% - 6px)`;
+        // position via transform so movement is smooth between renders if needed
+        const x = c * cellPct;
+        const y = r * cellPct;
+        const pos = `translate(calc(${x}% + 4px), calc(${y}% + 4px))`;
+        el.style.setProperty('--pos', pos);
+        el.style.transform = pos;
+        el.textContent = '$' + t.val.toLocaleString();
+        board.appendChild(el);
+      }
+    }
+    document.getElementById('score-disp').textContent = score.toLocaleString();
+    document.getElementById('max-disp').textContent = '$' + maxTile.toLocaleString();
+    document.getElementById('best-disp').textContent = (parseInt(localStorage.getItem(HIGH_KEY) || '0')).toLocaleString();
+    const undoBtn = document.getElementById('undo-btn');
+    undoBtn.disabled = undoUsed || !undoSnapshot;
+    undoBtn.textContent = undoUsed ? '↶ UNDO (used)' : '↶ UNDO (1 left)';
+  }
+
+  function undoMove() {
+    if (undoUsed || !undoSnapshot || busy || won) return;
+    restore(undoSnapshot);
+    undoUsed = true;
+    undoSnapshot = null;
+    statusBar('Position reset. One undo per game.');
+    render();
+  }
+
+  // input handlers
+  function onKey(e) {
+    const k = e.key;
+    if (k === 'ArrowLeft')  { e.preventDefault(); move('left'); }
+    if (k === 'ArrowRight') { e.preventDefault(); move('right'); }
+    if (k === 'ArrowUp')    { e.preventDefault(); move('up'); }
+    if (k === 'ArrowDown')  { e.preventDefault(); move('down'); }
+    // also wasd
+    if (k === 'a' || k === 'A') move('left');
+    if (k === 'd' || k === 'D') move('right');
+    if (k === 'w' || k === 'W') move('up');
+    if (k === 's' || k === 'S') move('down');
+  }
+
+  let touchStart = null;
+  function onTouchStart(e) {
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    touchStart = { x: t.clientX, y: t.clientY };
+  }
+  function onTouchEnd(e) {
+    if (!touchStart) return;
+    const t = (e.changedTouches && e.changedTouches[0]);
+    if (!t) { touchStart = null; return; }
+    const dx = t.clientX - touchStart.x;
+    const dy = t.clientY - touchStart.y;
+    touchStart = null;
+    const adx = Math.abs(dx), ady = Math.abs(dy);
+    if (Math.max(adx, ady) < 24) return;
+    if (adx > ady) move(dx > 0 ? 'right' : 'left');
+    else            move(dy > 0 ? 'down'  : 'up');
+  }
+
+  function startGame() {
+    document.getElementById('title-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'flex';
+    document.getElementById('game-screen').style.flexDirection = 'column';
+    document.getElementById('gameover-screen').style.display = 'none';
+    initState();
+    statusBar('Slide to merge. Goal: $25,600');
+    render();
+  }
+
+  function endGame(didWin) {
+    busy = true;
+    document.getElementById('game-screen').style.display = 'none';
+    document.getElementById('gameover-screen').style.display = 'flex';
+    document.getElementById('gameover-title').textContent = didWin ? '🏆 MAX POSITION' : 'POSITION CLOSED';
+    document.getElementById('final-score').textContent = score.toLocaleString();
+    document.getElementById('stat-max').textContent = '$' + maxTile.toLocaleString();
+    document.getElementById('stat-merges').textContent = merges;
+    document.getElementById('stat-moves').textContent = moves;
+    document.getElementById('roast-msg').textContent = ROASTS[Math.floor(Math.random()*ROASTS.length)];
+    const prev = parseInt(localStorage.getItem(HIGH_KEY) || '0');
+    if (score > prev) localStorage.setItem(HIGH_KEY, String(score));
+    refreshTitleHigh();
+    if (window.DippyLB && typeof DippyLB.onGameOver === 'function') {
+      try { DippyLB.onGameOver(score); } catch (err) {}
+    }
+  }
+
+  function refreshTitleHigh() {
+    const h = parseInt(localStorage.getItem(HIGH_KEY) || '0');
+    const el = document.getElementById('title-high-score');
+    el.textContent = h > 0 ? 'BEST: $' + h.toLocaleString() : '';
+  }
+
+  // wire up
+  window.startGame = startGame;
+  window.undoMove = undoMove;
+  document.addEventListener('keydown', onKey);
+  const boardWrap = () => document.querySelector('.board-wrap');
+  document.addEventListener('DOMContentLoaded', () => {
+    const bw = boardWrap();
+    if (bw) {
+      bw.addEventListener('touchstart', onTouchStart, { passive: true });
+      bw.addEventListener('touchend', onTouchEnd, { passive: true });
+    }
+    refreshTitleHigh();
+    if (window.DippyLB && typeof DippyLB.init === 'function') {
+      try { DippyLB.init(SLUG); } catch (err) {}
+    }
+  });
+  // also try immediately (Hugo may render after script runs)
+  setTimeout(() => {
+    const bw = boardWrap();
+    if (bw && !bw.dataset.bound) {
+      bw.addEventListener('touchstart', onTouchStart, { passive: true });
+      bw.addEventListener('touchend', onTouchEnd, { passive: true });
+      bw.dataset.bound = '1';
+    }
+    refreshTitleHigh();
+    if (window.DippyLB && typeof DippyLB.init === 'function') {
+      try { DippyLB.init(SLUG); } catch (err) {}
+    }
+  }, 0);
+})();
+</script>
+{{ end }}
