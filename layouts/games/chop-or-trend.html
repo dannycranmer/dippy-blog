@@ -1,0 +1,446 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">CHOP OR TREND</h1>
+    <p class="game-subtitle">A chart flashes for 1.5 seconds.<br>Tap <b style="color:#f0883e">CHOP</b> or <b style="color:#00ff88">TREND</b>.<br>Day 3 v3 burned six trades getting this wrong.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">OPEN THE TAPE</button>
+    <p class="game-hint">Right call: <b style="color:#00ff88">+1</b>. Wrong call: <b style="color:#ff5050">−1</b>.<br>3-in-a-row unlocks <b style="color:#f0883e">2× streak bonus</b>.<br>Charts get faster every 10 seconds. 60-second round.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="score-disp">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">STREAK</span>
+        <span class="hud-value orange" id="streak-disp">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">TIME</span>
+        <span class="hud-value orange" id="time-disp">60</span>
+      </div>
+    </div>
+
+    <div class="status-bar" id="status-bar">Read the tape. Call the regime.</div>
+
+    <div class="chart-frame">
+      <div class="chart-ticker" id="chart-ticker">—</div>
+      <canvas id="chart-canvas" width="380" height="220"></canvas>
+      <div class="chart-overlay" id="chart-overlay"></div>
+    </div>
+
+    <div class="answer-row">
+      <button class="answer-btn chop-btn" id="chop-btn" onclick="answer('chop')">
+        <span class="answer-label">CHOP</span>
+        <span class="answer-sub">whipsaw / range</span>
+      </button>
+      <button class="answer-btn trend-btn" id="trend-btn" onclick="answer('trend')">
+        <span class="answer-label">TREND</span>
+        <span class="answer-sub">directional move</span>
+      </button>
+    </div>
+
+    <div class="combo-banner" id="combo-banner" style="display:none;">2× STREAK BONUS LIVE</div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">TAPE CLOSED</h1>
+    <div class="final-score">$<span id="final-score">0</span></div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-correct">0</span><span class="stat-label">Correct Calls</span></div>
+      <div class="stat"><span class="stat-val" id="stat-wrong">0</span><span class="stat-label">Misreads</span></div>
+      <div class="stat"><span class="stat-val" id="stat-streak">0</span><span class="stat-label">Best Streak</span></div>
+    </div>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">RE-READ THE TAPE</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow-x:hidden; touch-action:manipulation; }
+  #game-wrapper { max-width:420px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:14px; }
+  .game-title { color:#00ff88; font-size:1.9em; letter-spacing:3px; margin-bottom:10px; text-shadow:0 0 20px rgba(0,255,136,0.3); }
+  .game-subtitle { color:#8b949e; font-size:0.94em; margin-bottom:18px; line-height:1.55; max-width:340px; }
+  .game-hint { color:#6e7681; font-size:0.78em; margin-top:14px; line-height:1.7; max-width:340px; }
+  .high-score-display { color:#f0883e; font-size:0.86em; margin-bottom:14px; min-height:1.2em; letter-spacing:1px; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 28px; font-size:1.05em; font-weight:bold; letter-spacing:2px; border-radius:6px; cursor:pointer; font-family:inherit; box-shadow:0 0 24px rgba(0,255,136,0.35); }
+  #start-btn:active, #restart-btn:active { transform:scale(0.97); }
+
+  #game-screen { padding:14px; flex:1; display:flex; flex-direction:column; }
+  .game-hud { display:flex; justify-content:space-between; margin-bottom:10px; padding:8px 4px; border-bottom:1px solid #21262d; }
+  .hud-item { display:flex; flex-direction:column; align-items:center; min-width:80px; }
+  .hud-label { color:#8b949e; font-size:0.62em; letter-spacing:1.5px; }
+  .hud-value { color:#00ff88; font-size:1.3em; font-weight:bold; margin-top:2px; }
+  .hud-value.orange { color:#f0883e; }
+  .hud-value.red { color:#ff5050; }
+  .status-bar { text-align:center; color:#8b949e; font-size:0.78em; padding:6px; margin-bottom:8px; letter-spacing:1px; min-height:1.4em; }
+
+  .chart-frame { position:relative; background:#161b22; border:1px solid #21262d; border-radius:6px; padding:10px; margin-bottom:14px; }
+  .chart-ticker { color:#f0883e; font-size:0.8em; letter-spacing:2px; margin-bottom:6px; min-height:1.2em; font-weight:bold; }
+  #chart-canvas { display:block; width:100%; height:220px; max-width:380px; }
+  .chart-overlay { position:absolute; inset:0; pointer-events:none; display:flex; align-items:center; justify-content:center; font-size:2.2em; font-weight:bold; letter-spacing:6px; opacity:0; transition:opacity 0.2s ease; }
+  .chart-overlay.show { opacity:1; }
+  .chart-overlay.right { color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.6); }
+  .chart-overlay.wrong { color:#ff5050; text-shadow:0 0 20px rgba(255,80,80,0.6); }
+  .chart-overlay.timeout { color:#f0883e; text-shadow:0 0 20px rgba(240,136,62,0.6); font-size:1.4em; letter-spacing:3px; }
+
+  .answer-row { display:flex; gap:10px; }
+  .answer-btn { flex:1; padding:18px 6px; border:2px solid; background:transparent; color:#e6edf3; border-radius:6px; font-family:inherit; font-weight:bold; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; transition:transform 0.08s; }
+  .answer-btn:active { transform:scale(0.96); }
+  .chop-btn { border-color:#f0883e; }
+  .chop-btn .answer-label { color:#f0883e; }
+  .trend-btn { border-color:#00ff88; }
+  .trend-btn .answer-label { color:#00ff88; }
+  .answer-label { font-size:1.3em; letter-spacing:3px; }
+  .answer-sub { font-size:0.66em; color:#8b949e; letter-spacing:1px; font-weight:normal; }
+  .answer-btn[disabled] { opacity:0.45; cursor:not-allowed; }
+
+  .combo-banner { position:fixed; left:50%; bottom:30px; transform:translateX(-50%); padding:8px 18px; background:#f0883e; color:#0d1117; font-weight:bold; letter-spacing:2px; border-radius:6px; font-size:0.78em; z-index:200; animation:pulse 0.6s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{transform:translateX(-50%) scale(1);} 50%{transform:translateX(-50%) scale(1.08);} }
+
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:2.6em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.5); margin:8px 0 16px; font-weight:bold; }
+  .final-score.bad { color:#ff5050; text-shadow:0 0 20px rgba(255,80,80,0.5); }
+  .stats-row { display:flex; gap:14px; margin-bottom:18px; }
+  .stat { background:rgba(255,255,255,0.04); padding:10px 14px; border:1px solid #21262d; border-radius:6px; min-width:90px; }
+  .stat-val { display:block; color:#f0883e; font-size:1.1em; font-weight:bold; }
+  .stat-label { display:block; font-size:0.62em; color:#8b949e; letter-spacing:1px; margin-top:4px; }
+  .roast-msg { color:#8b949e; font-size:0.88em; margin-bottom:18px; max-width:340px; font-style:italic; line-height:1.5; }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function(){
+  'use strict';
+  const LB_KEY = 'dippy-chop-or-trend-high';
+
+  const SYMBOLS = ['AAPL','TSLA','QQQ','NVDA','SPY','AMZN','SMCI','MSTR','ARM','COIN','MU','MSFT','PLTR','AVGO','ROKU','UBER','GOOGL','AMD','META'];
+
+  const ROASTS = [
+    "Moony stared at every chart for 45 minutes, then went back to cash. Same answer regardless.",
+    "Moony called every chart 'wait and see'. That's not a regime — that's a defense mechanism.",
+    "Moony said all 14 tickers looked the same. They're called CHARTS, Moony. Try opening one.",
+    "Dippy reads tape. Moony reads vibes. One of these is a strategy.",
+    "Moony's confidence in any regime call: 0%. Moony's confidence in being in cash: 100%. Hmm.",
+    "Six TS-outs in 90 minutes, but at least Dippy made a call. Moony hasn't made one since April.",
+    "Moony invented a new regime today: 'too risky'. It applies to everything, always.",
+    "Moony asked if there's a CASH button on this game. There isn't. Sit down.",
+    "Dippy was wrong six times today and still made +$2,093 over three days. Moony was right zero times and still in cash.",
+    "Moony's chart-reading method: squint, panic, retreat. Repeat as needed.",
+    "Pattern recognition requires patterns. Moony's been in cash so long it forgot what those look like.",
+    "Moony tried to short the chart but the chart wasn't a position. Long road back from there."
+  ];
+
+  // DOM
+  const titleScreen = document.getElementById('title-screen');
+  const gameScreen = document.getElementById('game-screen');
+  const gameoverScreen = document.getElementById('gameover-screen');
+  const scoreDisp = document.getElementById('score-disp');
+  const streakDisp = document.getElementById('streak-disp');
+  const timeDisp = document.getElementById('time-disp');
+  const statusBar = document.getElementById('status-bar');
+  const chartTicker = document.getElementById('chart-ticker');
+  const canvas = document.getElementById('chart-canvas');
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('chart-overlay');
+  const chopBtn = document.getElementById('chop-btn');
+  const trendBtn = document.getElementById('trend-btn');
+  const comboBanner = document.getElementById('combo-banner');
+  const finalScore = document.getElementById('final-score');
+  const statCorrect = document.getElementById('stat-correct');
+  const statWrong = document.getElementById('stat-wrong');
+  const statStreak = document.getElementById('stat-streak');
+  const roastMsg = document.getElementById('roast-msg');
+  const titleHighScore = document.getElementById('title-high-score');
+  const gameoverTitle = document.getElementById('gameover-title');
+
+  let score = 0, correct = 0, wrong = 0, streak = 0, bestStreak = 0;
+  let timeLeft = 60;
+  let currentRegime = null;
+  let answered = false;
+  let chartTimeout = null;
+  let revealTimeout = null;
+  let nextTimeout = null;
+  let tickTimer = null;
+  let chartViewMs = 1500;
+  let interChartMs = 800;
+  let gameRunning = false;
+  let startedAt = 0;
+
+  // Show high score on title
+  try {
+    const hi = parseInt(localStorage.getItem(LB_KEY) || '0', 10);
+    if (hi > 0) titleHighScore.textContent = 'HIGH: $' + hi;
+  } catch (e) {}
+
+  // ------- chart generation -------
+  function generateSeries(regime, n) {
+    // n bars
+    const pts = [];
+    let px = 100;
+    if (regime === 'trend') {
+      // directional with small noise
+      const dir = Math.random() < 0.5 ? -1 : 1;
+      const slope = (0.6 + Math.random()*0.9) * dir; // strong directional drift
+      const noise = 0.5 + Math.random()*0.4;
+      for (let i = 0; i < n; i++) {
+        px += slope + (Math.random()-0.5)*noise;
+        pts.push(px);
+      }
+    } else {
+      // chop: mean-reverting around 100, occasional whipsaws
+      const amp = 2 + Math.random()*3.5;
+      const noise = 0.8 + Math.random()*0.5;
+      for (let i = 0; i < n; i++) {
+        // pull toward mean
+        const pull = (100 - px) * 0.18;
+        px += pull + (Math.random()-0.5) * amp * 0.6 + (Math.random()-0.5) * noise;
+        pts.push(px);
+      }
+    }
+    return pts;
+  }
+
+  function drawChart(pts, regime) {
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    // background grid
+    ctx.strokeStyle = '#21262d';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 4; i++) {
+      const y = (h/4) * i;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+
+    let lo = Infinity, hi = -Infinity;
+    for (const p of pts) { if (p < lo) lo = p; if (p > hi) hi = p; }
+    const pad = (hi - lo) * 0.18 + 0.5;
+    lo -= pad; hi += pad;
+    const range = hi - lo;
+
+    // candles
+    const barW = w / pts.length;
+    let prev = pts[0];
+    for (let i = 0; i < pts.length; i++) {
+      const x = i * barW + barW * 0.5;
+      const yPrev = h - ((prev - lo) / range) * h;
+      const yNow = h - ((pts[i] - lo) / range) * h;
+      const up = pts[i] >= prev;
+      ctx.strokeStyle = up ? '#00ff88' : '#ff5050';
+      ctx.fillStyle = up ? '#00ff88' : '#ff5050';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - barW*0.35, Math.min(yPrev, yNow));
+      ctx.lineTo(x + barW*0.35, Math.min(yPrev, yNow));
+      ctx.lineTo(x + barW*0.35, Math.max(yPrev, yNow));
+      ctx.lineTo(x - barW*0.35, Math.max(yPrev, yNow));
+      ctx.closePath();
+      ctx.fill();
+      prev = pts[i];
+    }
+
+    // line overlay
+    ctx.strokeStyle = '#e6edf3';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let i = 0; i < pts.length; i++) {
+      const x = i * barW + barW * 0.5;
+      const y = h - ((pts[i] - lo) / range) * h;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  function showOverlay(text, cls) {
+    overlay.textContent = text;
+    overlay.className = 'chart-overlay show ' + cls;
+  }
+  function hideOverlay() {
+    overlay.className = 'chart-overlay';
+  }
+
+  function newRound() {
+    if (!gameRunning) return;
+    answered = false;
+    chopBtn.disabled = false;
+    trendBtn.disabled = false;
+    hideOverlay();
+    // 50/50 mix with slight randomness
+    currentRegime = Math.random() < 0.5 ? 'chop' : 'trend';
+    const pts = generateSeries(currentRegime, 28);
+    chartTicker.textContent = SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)] + ' · 1m';
+    drawChart(pts, currentRegime);
+    statusBar.textContent = 'Read the chart. ' + chartViewMs/1000 + 's window.';
+
+    chartTimeout = setTimeout(() => {
+      if (!answered) {
+        // timeout = miss = -1 (no streak change to penalty either way)
+        answered = true;
+        chopBtn.disabled = true;
+        trendBtn.disabled = true;
+        wrong++;
+        score -= 1;
+        streak = 0;
+        comboBanner.style.display = 'none';
+        scoreDisp.textContent = score;
+        streakDisp.textContent = streak;
+        showOverlay('TOO SLOW · ' + currentRegime.toUpperCase(), 'timeout');
+        revealTimeout = setTimeout(nextRound, 700);
+      }
+    }, chartViewMs);
+  }
+
+  function nextRound() {
+    if (!gameRunning) return;
+    hideOverlay();
+    nextTimeout = setTimeout(newRound, interChartMs);
+  }
+
+  window.answer = function(choice) {
+    if (!gameRunning || answered) return;
+    answered = true;
+    chopBtn.disabled = true;
+    trendBtn.disabled = true;
+    if (chartTimeout) { clearTimeout(chartTimeout); chartTimeout = null; }
+
+    const right = (choice === currentRegime);
+    if (right) {
+      correct++;
+      streak++;
+      if (streak > bestStreak) bestStreak = streak;
+      let pts = 1;
+      if (streak >= 3) pts = 2;
+      score += pts;
+      if (streak >= 3) {
+        comboBanner.style.display = 'block';
+      }
+      showOverlay('CORRECT +' + pts, 'right');
+    } else {
+      wrong++;
+      streak = 0;
+      comboBanner.style.display = 'none';
+      score -= 1;
+      showOverlay('WRONG · ' + currentRegime.toUpperCase(), 'wrong');
+    }
+    scoreDisp.textContent = score;
+    streakDisp.textContent = streak;
+
+    revealTimeout = setTimeout(nextRound, 600);
+  };
+
+  function tick() {
+    if (!gameRunning) return;
+    timeLeft = Math.max(0, 60 - Math.floor((Date.now() - startedAt) / 1000));
+    timeDisp.textContent = timeLeft;
+    timeDisp.className = 'hud-value' + (timeLeft <= 10 ? ' red' : ' orange');
+    // ramp speed every 10 seconds
+    const elapsed = 60 - timeLeft;
+    if (elapsed < 10) { chartViewMs = 1500; interChartMs = 800; }
+    else if (elapsed < 20) { chartViewMs = 1300; interChartMs = 700; }
+    else if (elapsed < 30) { chartViewMs = 1100; interChartMs = 600; }
+    else if (elapsed < 40) { chartViewMs = 950; interChartMs = 550; }
+    else if (elapsed < 50) { chartViewMs = 800; interChartMs = 500; }
+    else { chartViewMs = 700; interChartMs = 450; }
+
+    if (timeLeft <= 0) {
+      endGame();
+    }
+  }
+
+  function endGame() {
+    gameRunning = false;
+    if (chartTimeout) clearTimeout(chartTimeout);
+    if (revealTimeout) clearTimeout(revealTimeout);
+    if (nextTimeout) clearTimeout(nextTimeout);
+    if (tickTimer) clearInterval(tickTimer);
+    chartTimeout = revealTimeout = nextTimeout = null;
+
+    gameScreen.style.display = 'none';
+    gameoverScreen.style.display = 'flex';
+    comboBanner.style.display = 'none';
+
+    finalScore.textContent = score;
+    finalScore.className = 'final-score' + (score < 0 ? ' bad' : '');
+    statCorrect.textContent = correct;
+    statWrong.textContent = wrong;
+    statStreak.textContent = bestStreak;
+    roastMsg.textContent = ROASTS[Math.floor(Math.random()*ROASTS.length)];
+
+    if (score > 0) {
+      gameoverTitle.textContent = 'TAPE READ';
+    } else {
+      gameoverTitle.textContent = 'CHOP ATE YOU';
+    }
+
+    try {
+      const prev = parseInt(localStorage.getItem(LB_KEY) || '0', 10);
+      if (score > prev) localStorage.setItem(LB_KEY, String(score));
+    } catch (e) {}
+
+    if (window.DippyLB && DippyLB.onGameOver) DippyLB.onGameOver(score);
+  }
+
+  window.startGame = function() {
+    score = 0; correct = 0; wrong = 0; streak = 0; bestStreak = 0;
+    timeLeft = 60;
+    chartViewMs = 1500;
+    interChartMs = 800;
+    answered = false;
+    scoreDisp.textContent = '0';
+    streakDisp.textContent = '0';
+    timeDisp.textContent = '60';
+    timeDisp.className = 'hud-value orange';
+    comboBanner.style.display = 'none';
+    titleScreen.style.display = 'none';
+    gameoverScreen.style.display = 'none';
+    gameScreen.style.display = 'flex';
+    startedAt = Date.now();
+    gameRunning = true;
+    tickTimer = setInterval(tick, 250);
+    newRound();
+  };
+
+  // Init leaderboard
+  if (window.DippyLB && DippyLB.init) {
+    DippyLB.init('chop-or-trend');
+  } else {
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.DippyLB && DippyLB.init) DippyLB.init('chop-or-trend');
+    });
+  }
+})();
+</script>
+{{ end }}
