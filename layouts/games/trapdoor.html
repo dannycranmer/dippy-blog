@@ -1,0 +1,510 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">TRAPDOOR</h1>
+    <p class="game-subtitle">Price walks. The trail follows at <b style="color:#f0883e">0.5R</b>.<br>Hit <b style="color:#00ff88">BANK</b> before it swings shut.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">OPEN THE TAPE</button>
+    <p class="game-hint">Bank at <b style="color:#00ff88">+1R</b> or higher = full credit + bonus.<br>Bank below +1R = small credit.<br>Trail hits first = <b style="color:#ff5050">−0.5R from peak</b>.<br>60 seconds. As many trades as you can squeeze.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">BANK</span>
+        <span class="hud-value" id="bank-disp">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">R</span>
+        <span class="hud-value orange" id="r-disp">0.00</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">TIME</span>
+        <span class="hud-value orange" id="time-disp">60</span>
+      </div>
+    </div>
+
+    <div class="status-bar" id="status-bar">Tape live. Watch the trail.</div>
+
+    <div class="chart-frame">
+      <div class="chart-meta">
+        <span class="chart-ticker" id="chart-ticker">—</span>
+        <span class="chart-clock" id="chart-clock">PEAK 0.00R</span>
+      </div>
+      <canvas id="chart-canvas" width="380" height="220"></canvas>
+      <div class="chart-overlay" id="chart-overlay"></div>
+    </div>
+
+    <button class="bank-btn" id="bank-btn" onclick="bankNow()">
+      <span class="bank-label">BANK</span>
+      <span class="bank-sub" id="bank-sub">lock current R</span>
+    </button>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">TAPE CLOSED</h1>
+    <div class="final-score">$<span id="final-score">0</span></div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-banked">0</span><span class="stat-label">Banked</span></div>
+      <div class="stat"><span class="stat-val" id="stat-trapped">0</span><span class="stat-label">Trapped</span></div>
+      <div class="stat"><span class="stat-val" id="stat-bestr">0</span><span class="stat-label">Best R</span></div>
+    </div>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">RELOAD TAPE</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow-x:hidden; touch-action:manipulation; }
+  #game-wrapper { max-width:420px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:14px; }
+  .game-title { color:#00ff88; font-size:1.9em; letter-spacing:3px; margin-bottom:10px; text-shadow:0 0 20px rgba(0,255,136,0.3); }
+  .game-subtitle { color:#8b949e; font-size:0.94em; margin-bottom:18px; line-height:1.55; max-width:340px; }
+  .game-hint { color:#6e7681; font-size:0.78em; margin-top:14px; line-height:1.7; max-width:340px; }
+  .high-score-display { color:#f0883e; font-size:0.86em; margin-bottom:14px; min-height:1.2em; letter-spacing:1px; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 28px; font-size:1.05em; font-weight:bold; letter-spacing:2px; border-radius:6px; cursor:pointer; font-family:inherit; box-shadow:0 0 24px rgba(0,255,136,0.35); }
+  #start-btn:active, #restart-btn:active { transform:scale(0.97); }
+
+  #game-screen { padding:14px; flex:1; display:flex; flex-direction:column; }
+  .game-hud { display:flex; justify-content:space-between; margin-bottom:10px; padding:8px 4px; border-bottom:1px solid #21262d; }
+  .hud-item { display:flex; flex-direction:column; align-items:center; min-width:80px; }
+  .hud-label { color:#8b949e; font-size:0.62em; letter-spacing:1.5px; }
+  .hud-value { color:#00ff88; font-size:1.3em; font-weight:bold; margin-top:2px; }
+  .hud-value.orange { color:#f0883e; }
+  .hud-value.red { color:#ff5050; }
+  .status-bar { text-align:center; color:#8b949e; font-size:0.78em; padding:6px; margin-bottom:8px; letter-spacing:1px; min-height:1.4em; }
+
+  .chart-frame { position:relative; background:#161b22; border:1px solid #21262d; border-radius:6px; padding:10px; margin-bottom:16px; }
+  .chart-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .chart-ticker { color:#f0883e; font-size:0.84em; letter-spacing:2px; font-weight:bold; }
+  .chart-clock { color:#6e7681; font-size:0.72em; letter-spacing:1px; }
+  #chart-canvas { display:block; width:100%; height:220px; max-width:380px; }
+  .chart-overlay { position:absolute; inset:0; pointer-events:none; display:flex; align-items:center; justify-content:center; font-size:1.6em; font-weight:bold; letter-spacing:4px; opacity:0; transition:opacity 0.18s ease; text-align:center; padding:0 10px; }
+  .chart-overlay.show { opacity:1; }
+  .chart-overlay.win { color:#00ff88; text-shadow:0 0 18px rgba(0,255,136,0.6); }
+  .chart-overlay.loss { color:#ff5050; text-shadow:0 0 18px rgba(255,80,80,0.6); }
+  .chart-overlay.small { color:#f0883e; text-shadow:0 0 18px rgba(240,136,62,0.55); font-size:1.2em; letter-spacing:3px; }
+
+  .bank-btn { width:100%; padding:20px 8px; border:2px solid #00ff88; background:rgba(0,255,136,0.05); color:#e6edf3; border-radius:6px; font-family:inherit; font-weight:bold; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; transition:transform 0.08s, background 0.12s; }
+  .bank-btn:active { transform:scale(0.96); background:rgba(0,255,136,0.15); }
+  .bank-btn[disabled] { opacity:0.4; cursor:not-allowed; border-color:#21262d; }
+  .bank-label { color:#00ff88; font-size:1.45em; letter-spacing:4px; }
+  .bank-sub { font-size:0.7em; color:#8b949e; letter-spacing:1px; font-weight:normal; }
+
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:2.6em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.5); margin:8px 0 16px; font-weight:bold; }
+  .final-score.bad { color:#ff5050; text-shadow:0 0 20px rgba(255,80,80,0.5); }
+  .stats-row { display:flex; gap:14px; margin-bottom:18px; }
+  .stat { background:rgba(255,255,255,0.04); padding:10px 14px; border:1px solid #21262d; border-radius:6px; min-width:90px; }
+  .stat-val { display:block; color:#f0883e; font-size:1.1em; font-weight:bold; }
+  .stat-label { display:block; font-size:0.62em; color:#8b949e; letter-spacing:1px; margin-top:4px; }
+  .roast-msg { color:#8b949e; font-size:0.88em; margin-bottom:18px; max-width:340px; font-style:italic; line-height:1.5; }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function(){
+  'use strict';
+  const LB_KEY = 'dippy-trapdoor-high';
+  const SYMBOLS = ['MSTR','AVGO','TSLA','COIN','GOOGL','MU','AAPL','SPY','NVDA','QQQ','AMD','ARM','AMZN','ROKU'];
+
+  const ROASTS = [
+    "Moony banked at 0.1R and called it 'risk management'. The other 9 R walked out the door.",
+    "Trail at 0.5R is a knife. Hold it by the handle. Today the bot held it by the blade.",
+    "Bank at +1R, trail the rest. Anything else is hope dressed up as patience.",
+    "MSTR opened, ran -2.13 points, and the trail closed the trapdoor before PE@1R could load. Same shape five more times. Welcome to v4 Day 1.",
+    "Moony reads 'partial exit' as a category of cheese. Different desk entirely.",
+    "If you banked under +0.5R you're early. If you let the trail eat you you're late. Welcome to the half-R band.",
+    "Six losers in 86 minutes is the bot's actual high score. From a chop day. You weren't even in the room.",
+    "Trail = peak − 0.5R. Memorise it. Moony tattooed it on his elbow and forgot to look.",
+    "PE@1R locks the half. TSPE=0.15R rides the rest. Bank early, bank often, but bank at +1R first.",
+    "The trapdoor doesn't care about your thesis. It cares about peak minus half R.",
+    "A trailing stop is a discipline tool wearing a profit-protection costume. Both jobs matter.",
+    "Moony's trapdoor never opens because Moony never enters. Different KPI."
+  ];
+
+  // DOM
+  const titleScreen = document.getElementById('title-screen');
+  const gameScreen = document.getElementById('game-screen');
+  const gameoverScreen = document.getElementById('gameover-screen');
+  const bankDisp = document.getElementById('bank-disp');
+  const rDisp = document.getElementById('r-disp');
+  const timeDisp = document.getElementById('time-disp');
+  const statusBar = document.getElementById('status-bar');
+  const tickerEl = document.getElementById('chart-ticker');
+  const peakEl = document.getElementById('chart-clock');
+  const canvas = document.getElementById('chart-canvas');
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('chart-overlay');
+  const bankBtn = document.getElementById('bank-btn');
+  const bankSub = document.getElementById('bank-sub');
+  const finalScore = document.getElementById('final-score');
+  const statBanked = document.getElementById('stat-banked');
+  const statTrapped = document.getElementById('stat-trapped');
+  const statBestR = document.getElementById('stat-bestr');
+  const roastMsg = document.getElementById('roast-msg');
+  const titleHighScore = document.getElementById('title-high-score');
+  const gameoverTitle = document.getElementById('gameover-title');
+
+  let bank = 0, banked = 0, trapped = 0;
+  let bestR = 0;
+  let timeLeft = 60;
+  let gameRunning = false;
+  let tickTimer = null;
+  let priceTimer = null;
+  let nextTimer = null;
+
+  // current trade state
+  let series = [];
+  let entry = 100;
+  let peak = 0;
+  let trailHit = false;
+  let answered = false;
+  let trapDir = 1; // +1 long, -1 short; we use long-equivalent so R = (price - entry)
+  let stepIdx = 0;
+  let trendBias = 0;
+  let revertAt = 999;
+  let priceNow = 100;
+  let totalSteps = 24;
+  let stepMs = 110;
+
+  // Show high score on title
+  try {
+    const hi = parseInt(localStorage.getItem(LB_KEY) || '0', 10);
+    if (hi > 0) titleHighScore.textContent = 'HIGH: $' + hi;
+  } catch (e) {}
+
+  // ------- Game flow -------
+  function startGame() {
+    bank = 0; banked = 0; trapped = 0; bestR = 0;
+    timeLeft = 60;
+    bankDisp.textContent = '$0';
+    rDisp.textContent = '0.00';
+    rDisp.classList.remove('red'); rDisp.classList.add('orange');
+    timeDisp.textContent = '60';
+    statusBar.textContent = 'Tape live. Watch the trail.';
+    titleScreen.style.display = 'none';
+    gameoverScreen.style.display = 'none';
+    gameScreen.style.display = 'flex';
+    gameRunning = true;
+
+    if (tickTimer) clearInterval(tickTimer);
+    tickTimer = setInterval(secondTick, 1000);
+
+    startTrade();
+  }
+
+  function secondTick() {
+    if (!gameRunning) return;
+    timeLeft--;
+    timeDisp.textContent = timeLeft;
+    if (timeLeft <= 10) timeDisp.classList.add('red'); else timeDisp.classList.remove('red');
+    if (timeLeft <= 0) endGame();
+  }
+
+  function endGame() {
+    gameRunning = false;
+    if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+    if (priceTimer) { clearTimeout(priceTimer); priceTimer = null; }
+    if (nextTimer) { clearTimeout(nextTimer); nextTimer = null; }
+    gameScreen.style.display = 'none';
+    gameoverScreen.style.display = 'flex';
+    finalScore.textContent = bank;
+    statBanked.textContent = banked;
+    statTrapped.textContent = trapped;
+    statBestR.textContent = bestR.toFixed(2);
+    if (bank < 0) finalScore.classList.add('bad'); else finalScore.classList.remove('bad');
+    roastMsg.textContent = ROASTS[Math.floor(Math.random()*ROASTS.length)];
+    if (bank > 0) {
+      try {
+        const cur = parseInt(localStorage.getItem(LB_KEY) || '0', 10);
+        if (bank > cur) localStorage.setItem(LB_KEY, String(bank));
+      } catch (e) {}
+    }
+    gameoverTitle.textContent = bank >= 200 ? 'WOLF TRADER' : (bank >= 50 ? 'BANKED' : (bank > 0 ? 'GREEN AT LEAST' : 'TRAPPED'));
+    if (window.DippyLB && typeof DippyLB.onGameOver === 'function') DippyLB.onGameOver(bank);
+  }
+
+  // ------- One trade -------
+  function startTrade() {
+    if (!gameRunning) return;
+    answered = false;
+    series = [];
+    entry = 100;
+    priceNow = 100;
+    peak = 0;
+    stepIdx = 0;
+    trailHit = false;
+    bankBtn.disabled = false;
+    overlay.classList.remove('show', 'win', 'loss', 'small');
+
+    // Decide trade shape — TREND continues, CHOP reverts after small/medium peak
+    const r = Math.random();
+    let kind;
+    if (r < 0.4) kind = 'trend';        // 40% strong directional
+    else if (r < 0.78) kind = 'chop';   // 38% goes up then mean-reverts
+    else kind = 'fakeout';              // 22% goes against you immediately
+
+    trapDir = Math.random() < 0.5 ? -1 : 1;
+    trendBias = (0.08 + Math.random()*0.15) * trapDir;
+    let amp = 0.45 + Math.random()*0.45;
+
+    totalSteps = 22 + Math.floor(Math.random()*10);
+    stepMs = 95 + Math.floor(Math.random()*45);
+    revertAt = 999;
+    if (kind === 'chop') {
+      revertAt = 6 + Math.floor(Math.random()*8);
+    } else if (kind === 'fakeout') {
+      revertAt = 1 + Math.floor(Math.random()*3);
+      trendBias *= -1;
+    }
+
+    const ticker = SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)];
+    tickerEl.textContent = (trapDir > 0 ? 'LONG ' : 'SHORT ') + ticker;
+    peakEl.textContent = 'PEAK 0.00R';
+
+    series.push(100);
+    drawChart();
+
+    priceTimer = setTimeout(stepPrice, stepMs);
+  }
+
+  function stepPrice() {
+    if (!gameRunning || answered) return;
+    stepIdx++;
+
+    if (stepIdx === revertAt) {
+      trendBias *= -1.4; // sharp reversal
+    } else if (stepIdx === revertAt + 5) {
+      trendBias *= 0.55; // taper after first reversion impulse
+    }
+
+    const noise = (Math.random() - 0.5) * 0.55;
+    priceNow += trendBias + noise;
+    series.push(priceNow);
+
+    // R is in price units; 1R = 1.0 price unit on the entry-normalised series.
+    // We display R from the trader's directional perspective (so +R = winning).
+    const r = (priceNow - entry) * trapDir;
+    if (r > peak) {
+      peak = r;
+      peakEl.textContent = 'PEAK ' + peak.toFixed(2) + 'R';
+    }
+
+    if (r > bestR) bestR = r;
+    rDisp.textContent = (r >= 0 ? '+' : '') + r.toFixed(2);
+    rDisp.classList.toggle('red', r < 0);
+
+    // Trail: peak - 0.5R. Trail fires when r drops to peak - 0.5 (and peak >= some threshold).
+    if (peak >= 0.05 && r <= peak - 0.5) {
+      // trapdoor swings
+      trailHit = true;
+      trapdoor();
+      return;
+    }
+
+    drawChart();
+
+    if (stepIdx >= totalSteps) {
+      // round timed out — auto-close at current R, treat as small credit if positive, small debit if negative
+      timeoutClose();
+      return;
+    }
+    priceTimer = setTimeout(stepPrice, stepMs);
+  }
+
+  function trapdoor() {
+    if (answered) return;
+    answered = true;
+    bankBtn.disabled = true;
+    if (priceTimer) { clearTimeout(priceTimer); priceTimer = null; }
+
+    // Settlement = peak - 0.5R (the trail level)
+    const settle = peak - 0.5;
+    let credit;
+    if (peak >= 1.0) {
+      credit = settle; // wolf escaped — keep peak − 0.5
+    } else {
+      credit = -0.5;   // mean-reversion trapdoor
+    }
+    applyCredit(credit, true);
+    showOverlay(credit >= 0 ? 'TRAIL ' + (settle>=0?'+':'') + settle.toFixed(2) + 'R' : 'TRAPDOOR −0.5R',
+                credit >= 0 ? 'win' : 'loss');
+    trapped++;
+    drawChart(); // final draw with stop line emphasised
+    nextTimer = setTimeout(startTrade, 720);
+  }
+
+  function bankNow() {
+    if (!gameRunning || answered) return;
+    answered = true;
+    bankBtn.disabled = true;
+    if (priceTimer) { clearTimeout(priceTimer); priceTimer = null; }
+
+    const r = (priceNow - entry) * trapDir;
+    let credit;
+    let cls = 'small';
+    if (r >= 1.0) {
+      credit = r + 0.15;     // PE@1R bonus
+      cls = 'win';
+    } else if (r > 0) {
+      credit = r * 0.35;     // banked too early — fractional credit
+      cls = 'small';
+    } else {
+      credit = r * 0.6;      // banked negative — small loss
+      cls = 'loss';
+    }
+    applyCredit(credit, false);
+    showOverlay('BANK ' + (r>=0?'+':'') + r.toFixed(2) + 'R', cls);
+    banked++;
+    nextTimer = setTimeout(startTrade, 580);
+  }
+
+  function timeoutClose() {
+    if (answered) return;
+    answered = true;
+    bankBtn.disabled = true;
+    if (priceTimer) { clearTimeout(priceTimer); priceTimer = null; }
+    const r = (priceNow - entry) * trapDir;
+    let credit;
+    let cls = 'small';
+    if (r >= 1.0) { credit = r * 0.5; cls = 'win'; }
+    else if (r > 0) { credit = r * 0.3; cls = 'small'; }
+    else { credit = -0.3; cls = 'loss'; }
+    applyCredit(credit, false);
+    showOverlay('EOD CLOSE ' + (r>=0?'+':'') + r.toFixed(2) + 'R', cls);
+    nextTimer = setTimeout(startTrade, 600);
+  }
+
+  function applyCredit(rCredit, isTrap) {
+    // 1R = $50 nominal for bank display
+    const usd = Math.round(rCredit * 50);
+    bank += usd;
+    bankDisp.textContent = '$' + bank;
+    bankDisp.style.color = bank >= 0 ? '#00ff88' : '#ff5050';
+    statusBar.textContent = isTrap ? 'Trail tripped. Reset.' : 'Locked. Reset.';
+  }
+
+  function showOverlay(text, cls) {
+    overlay.textContent = text;
+    overlay.classList.remove('win', 'loss', 'small');
+    overlay.classList.add(cls, 'show');
+    setTimeout(() => overlay.classList.remove('show'), 520);
+  }
+
+  // ------- chart drawing -------
+  function drawChart() {
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    // grid
+    ctx.strokeStyle = '#21262d';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 5; i++) {
+      const y = (h/5) * i;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+
+    // determine R-range: from -1.5R to peak+0.6R minimum window 2.4R
+    const minR = -1.6;
+    const maxR = Math.max(peak + 0.6, 1.4);
+    const totalR = maxR - minR;
+
+    const yForR = (r) => h - ((r - minR) / totalR) * h;
+
+    // entry line (0R)
+    ctx.strokeStyle = '#3a4147';
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    const y0 = yForR(0);
+    ctx.moveTo(0, y0); ctx.lineTo(w, y0); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#6e7681'; ctx.font = '10px "Courier New",monospace'; ctx.textAlign='left';
+    ctx.fillText('ENTRY', 4, y0 - 4);
+
+    // PE@1R line
+    ctx.strokeStyle = '#1f6f3d';
+    ctx.setLineDash([2, 4]);
+    ctx.beginPath();
+    const yPE = yForR(1.0);
+    ctx.moveTo(0, yPE); ctx.lineTo(w, yPE); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#00ff88'; ctx.fillText('PE 1R', 4, yPE - 4);
+
+    // Trail line (peak - 0.5R), only when peak > 0.05
+    if (peak > 0.05) {
+      ctx.strokeStyle = '#7d2b2b';
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      const yT = yForR(peak - 0.5);
+      ctx.moveTo(0, yT); ctx.lineTo(w, yT); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#ff5050'; ctx.textAlign = 'right';
+      ctx.fillText('TRAIL ' + (peak-0.5).toFixed(2) + 'R', w - 4, yT - 4);
+      ctx.textAlign = 'left';
+    }
+
+    // price path
+    if (series.length > 1) {
+      ctx.strokeStyle = '#e6edf3';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i < series.length; i++) {
+        const r = (series[i] - entry) * trapDir;
+        const x = (i / Math.max(totalSteps-1, 1)) * w;
+        const y = yForR(r);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    // current marker
+    if (series.length > 0) {
+      const r = (series[series.length-1] - entry) * trapDir;
+      const x = ((series.length-1) / Math.max(totalSteps-1, 1)) * w;
+      const y = yForR(r);
+      ctx.fillStyle = r >= 0 ? '#00ff88' : '#ff5050';
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  window.startGame = startGame;
+  window.bankNow = bankNow;
+
+  // Init leaderboard
+  if (window.DippyLB && typeof DippyLB.init === 'function') {
+    DippyLB.init('trapdoor');
+  }
+})();
+</script>
+{{ end }}
