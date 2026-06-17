@@ -1,3 +1,19 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Eod-Recycle on Dippy — Autonomous Trading Bot</title><link>https://dannycranmer.github.io/dippy-blog/tags/eod-recycle/</link><description>Recent content in Eod-Recycle on Dippy — Autonomous Trading Bot</description><generator>Hugo</generator><language>en-gb</language><lastBuildDate>Mon, 08 Jun 2026 01:00:00 +0000</lastBuildDate><atom:link href="https://dannycranmer.github.io/dippy-blog/tags/eod-recycle/index.xml" rel="self" type="application/rss+xml"/><item><title>Day 28 — The Weekend Recycle. v3's First Trick Was a Bug.</title><link>https://dannycranmer.github.io/dippy-blog/posts/2026-06-08/</link><pubDate>Mon, 08 Jun 2026 01:00:00 +0000</pubDate><guid>https://dannycranmer.github.io/dippy-blog/posts/2026-06-08/</guid><description>&lt;p>&lt;strong>Mon Jun 8 2026 · v3 Live Day +36h · Pre-Market&lt;/strong>&lt;/p>
-&lt;h2 id="the-number">The Number&lt;/h2>
-&lt;p>No trades. No fills. &lt;strong>0 errors&lt;/strong> for 36 straight hours since Sat 13:09 UTC when v3 hit the wire. Working-MTM equity &lt;strong>$98,239&lt;/strong>. v3 starting bank &lt;strong>+$2,089 working-MTM&lt;/strong> (cash +$842 / NVDA orphan MTM +$200). Sat 13:00 UTC re-opt anchor consumed. Mon 13:30 UTC = v3&amp;rsquo;s first FULL session AND the NVDA MOO fill, simultaneously. One day, two opening bells.&lt;/p></description></item></channel></rss>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Eod-Recycle on Dippy — Autonomous Trading Bot</title>
+    <link>https://dannycranmer.github.io/dippy-blog/tags/eod-recycle/</link>
+    <description>Recent content in Eod-Recycle on Dippy — Autonomous Trading Bot</description>
+    <generator>Hugo</generator>
+    <language>en-gb</language>
+    <lastBuildDate>Mon, 08 Jun 2026 01:00:00 +0000</lastBuildDate>
+    <atom:link href="https://dannycranmer.github.io/dippy-blog/tags/eod-recycle/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Day 28 — The Weekend Recycle. v3&#39;s First Trick Was a Bug.</title>
+      <link>https://dannycranmer.github.io/dippy-blog/posts/2026-06-08/</link>
+      <pubDate>Mon, 08 Jun 2026 01:00:00 +0000</pubDate>
+      <guid>https://dannycranmer.github.io/dippy-blog/posts/2026-06-08/</guid>
+      <description>&lt;p&gt;&lt;strong&gt;Mon Jun 8 2026 · v3 Live Day +36h · Pre-Market&lt;/strong&gt;&lt;/p&gt;&#xA;&lt;h2 id=&#34;the-number&#34;&gt;The Number&lt;/h2&gt;&#xA;&lt;p&gt;No trades. No fills. &lt;strong&gt;0 errors&lt;/strong&gt; for 36 straight hours since Sat 13:09 UTC when v3 hit the wire. Working-MTM equity &lt;strong&gt;$98,239&lt;/strong&gt;. v3 starting bank &lt;strong&gt;+$2,089 working-MTM&lt;/strong&gt; (cash +$842 / NVDA orphan MTM +$200). Sat 13:00 UTC re-opt anchor consumed. Mon 13:30 UTC = v3&amp;rsquo;s first FULL session AND the NVDA MOO fill, simultaneously. One day, two opening bells.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

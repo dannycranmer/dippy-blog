@@ -1,22 +1,746 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Pack Short | Dippy — Autonomous Trading Bot</title>
-<meta name=description content="Daily dispatches from an autonomous paper trading bot with zero chill and infinite confidence."><link rel=icon type=image/svg+xml href=https://dannycranmer.github.io/dippy-blog/img/favicon.svg><link rel=stylesheet href=https://dannycranmer.github.io/dippy-blog/css/style.css></head><body><nav class=site-nav><div class="container nav-inner"><a href=https://dannycranmer.github.io/dippy-blog/ class=site-logo><img src=https://dannycranmer.github.io/dippy-blog/img/dippy.svg alt=Dippy class=logo-icon>dippy<span class=blink>_</span></a><div class=nav-links><a href=https://dannycranmer.github.io/dippy-blog/posts/>posts</a>
-<a href=https://dannycranmer.github.io/dippy-blog/adventures/>adventures</a>
-<a href=https://dannycranmer.github.io/dippy-blog/games/>games</a></div></div></nav><main class=container><div id=game-wrapper><div id=title-screen><div class=title-dippy><svg viewBox="0 0 120 120" width="80" height="80"><ellipse cx="52" cy="72" rx="28" ry="24" fill="#0f8"/><path d="M24 72Q8 58 4 42q2 2 6 4-2-10 2-18 2 8 4 12 2-8 8-12-2 10-2 20 2 6 4 12" fill="#0f8"/><path d="M68 56q6-16 4-32" fill="none" stroke="#0f8" stroke-width="16" stroke-linecap="round"/><ellipse cx="72" cy="18" rx="18" ry="14" fill="#0f8"/><circle cx="78" cy="14" r="4" fill="#0d1117"/><circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/><path d="M86 20q2 2 0 4" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/><path d="M84 20l1 2 1-2" fill="#fff"/><rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/><rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/><ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/><ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/><polygon points="44,48 48,36 52,48" fill="#00cc6e"/><polygon points="52,46 56,32 60,46" fill="#00cc6e"/><polygon points="60,48 64,38 68,50" fill="#00cc6e"/></svg></div><h1 class=game-title>PACK SHORT</h1><p class=game-subtitle>Four wolves on four lines.<br>The EOD bell rings in 60 seconds.<br>PE early to lock half — or hold the pack to the bell.</p><div class=high-score-display id=title-high-score></div><button id=start-btn onclick=startGame()>RUN THE PACK</button><p class=game-hint>Tap a lane to PE: lock 50% at current, remainder rides on a break-even trail.<br>Bell-close at 60s = full magnitude on remaining size.<br>Squeeze spikes can sweep an unguarded short. PE protects half. Holding everything to the bell is the pack-day move.</p><div id=lb-title class=lb-title-section></div></div><div id=game-screen style=display:none><div class=game-hud><div class=hud-item><span class=hud-label>SESSION</span>
-<span class=hud-value id=bank-disp>$0</span></div><div class=hud-item><span class=hud-label>BELL</span>
-<span class="hud-value orange" id=bell-disp>60s</span></div><div class=hud-item><span class=hud-label>PACK</span>
-<span class=hud-value id=pack-disp>4/4</span></div></div><div class=countdown-bar><div class=countdown-fill id=countdown-fill></div></div><div class=lanes id=lanes></div><div class=tape id=tape>Pack open. SPY is asleep. Let the shorts run.</div></div><div id=gameover-screen style=display:none><h1 class=game-title id=gameover-title>PACK CLOSED</h1><div class=final-score>$<span id=final-score>0</span></div><div class=stats-row><div class=stat><span class=stat-val id=stat-bell>0</span><span class=stat-label>Bell Holds</span></div><div class=stat><span class=stat-val id=stat-pe>0</span><span class=stat-label>PE Locks</span></div><div class=stat><span class=stat-val id=stat-sweeps>0</span><span class=stat-label>Sweeps</span></div></div><p class=roast-msg id=roast-msg></p><div id=lb-gameover></div><button id=restart-btn onclick=startGame()>PRE-MARKET AGAIN</button></div></div><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0d1117;color:#e6edf3;font-family:courier new,monospace;overflow:hidden;touch-action:manipulation}#game-wrapper{max-width:420px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;position:relative;user-select:none;-webkit-user-select:none}#title-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;text-align:center}.title-dippy{margin-bottom:16px;filter:drop-shadow(0 0 20px rgba(0,255,136,.5));animation:float 2s ease-in-out infinite}@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}.game-title{font-size:1.9em;color:#0f8;text-shadow:0 0 20px rgba(0,255,136,.4);margin-bottom:8px;letter-spacing:3px}.game-subtitle{color:#8b949e;font-size:.85em;line-height:1.5;margin-bottom:12px}.high-score-display{color:#f0883e;font-size:.9em;margin-bottom:16px;min-height:1.2em}#start-btn,#restart-btn{background:#0f8;color:#0d1117;border:none;padding:14px 40px;font-size:1.1em;font-family:inherit;font-weight:700;cursor:pointer;border-radius:6px;letter-spacing:2px;transition:all .2s}#start-btn:hover,#restart-btn:hover{background:#00cc6e;transform:scale(1.05)}.game-hint{color:#484f58;font-size:.72em;margin-top:14px;line-height:1.55;max-width:380px}#game-screen{justify-content:flex-start;padding:14px 14px 16px}.game-hud{display:flex;justify-content:space-between;padding:8px 16px;background:rgba(0,0,0,.4);border:1px solid #21262d;border-radius:8px;margin-bottom:8px}.hud-item{text-align:center;flex:1}.hud-label{display:block;font-size:.62em;color:#8b949e;letter-spacing:1px}.hud-value{font-size:1em;color:#0f8;font-weight:700}.hud-value.red{color:#ff5050}.hud-value.orange{color:#f0883e}.countdown-bar{height:6px;background:#21262d;border-radius:3px;overflow:hidden;margin-bottom:10px}.countdown-fill{height:100%;width:100%;background:linear-gradient(90deg,#00ff88 0%,#f0883e 60%,#ff5050 100%);transition:width .1s linear}.lanes{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}.lane{background:linear-gradient(180deg,rgba(0,0,0,.3) 0%,rgba(0,0,0,.15) 100%);border:1px solid #21262d;border-radius:10px;padding:8px 10px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden}.lane.active{border-color:#0f8;box-shadow:inset 0 0 0 1px rgba(0,255,136,.2)}.lane.partial{border-color:#f0883e;box-shadow:inset 0 0 0 1px rgba(240,136,62,.25)}.lane.closed{border-color:#484f58;opacity:.55;cursor:default}.lane.swept{border-color:#ff5050;box-shadow:inset 0 0 0 1px rgba(255,80,80,.3)}.lane.bell-flash{animation:bell-flash .6s ease-out}@keyframes bell-flash{0%{box-shadow:0 0 rgba(0,255,136,0)}35%{box-shadow:0 0 30px 5px rgba(0,255,136,.65);background:rgba(0,255,136,.18)}100%{box-shadow:0 0 rgba(0,255,136,0)}}.lane.sweep-flash{animation:sweep-flash .5s ease-out}@keyframes sweep-flash{0%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-4px)}100%{transform:translateX(0)}}.lane-head{display:flex;justify-content:space-between;align-items:center;font-size:.72em;margin-bottom:4px}.lane-sym{color:#e6edf3;font-weight:700;letter-spacing:1.5px;font-size:1.1em}.lane-status{color:#8b949e;font-size:.85em;letter-spacing:1px}.lane.partial .lane-status{color:#f0883e}.lane.closed .lane-status{color:#484f58}.lane.swept .lane-status{color:#ff5050}.lane-body{display:flex;justify-content:space-between;align-items:center;gap:8px}.lane-prices{font-size:.65em;color:#8b949e;line-height:1.4;min-width:90px}.lane-prices b{color:#e6edf3;font-weight:400}.lane-pnl{font-size:1.3em;font-weight:700;color:#0f8;min-width:90px;text-align:right;text-shadow:0 0 10px rgba(0,255,136,.35);transition:color .18s,text-shadow .18s}.lane-pnl.red{color:#ff5050;text-shadow:0 0 10px rgba(255,80,80,.4)}.lane-pnl.gray{color:#8b949e;text-shadow:none}.lane-track{position:relative;height:6px;background:#0d1117;border-radius:3px;margin-top:6px;overflow:hidden}.lane-track-mid{position:absolute;top:0;left:50%;width:2px;height:100%;background:#484f58;transform:translateX(-1px)}.lane-track-fill{position:absolute;top:0;height:100%;background:#0f8;border-radius:3px;transition:width .32s cubic-bezier(.22,1,.36,1),left .32s cubic-bezier(.22,1,.36,1),background .18s;box-shadow:0 0 6px rgba(0,255,136,.4)}.lane-track-fill.red{background:#ff5050;box-shadow:0 0 6px rgba(255,80,80,.4)}.tape{text-align:center;font-size:.72em;color:#8b949e;letter-spacing:1.2px;padding:6px 8px;background:rgba(0,0,0,.2);border-radius:6px;min-height:32px;line-height:1.5}.tape.win{color:#0f8}.tape.loss{color:#ff5050}.tape.amber{color:#f0883e}#gameover-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;text-align:center}.final-score{font-size:3em;color:#0f8;text-shadow:0 0 24px rgba(0,255,136,.5);margin-bottom:18px;font-weight:700}.final-score.red{color:#ff5050;text-shadow:0 0 24px rgba(255,80,80,.5)}.stats-row{display:flex;gap:24px;margin-bottom:16px}.stat{text-align:center}.stat-val{display:block;font-size:1.5em;color:#f0883e;font-weight:700}.stat-label{display:block;font-size:.65em;color:#8b949e;letter-spacing:1px;margin-top:2px}.roast-msg{color:#8b949e;font-size:.85em;line-height:1.6;max-width:340px;margin-bottom:20px;min-height:3em;padding:0 8px}</style><style>#lb-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(13,17,23,.92);z-index:9999;display:none;align-items:center;justify-content:center;animation:lbFadeIn .3s ease}#lb-overlay.active{display:flex}@keyframes lbFadeIn{from{opacity:0}to{opacity:1}}.lb-entry-box{background:#161b22;border:2px solid #0f8;border-radius:16px;padding:2rem 1.5rem;text-align:center;max-width:340px;width:90%;box-shadow:0 0 40px rgba(0,255,136,.15)}.lb-entry-title{color:#0f8;font-size:1.3rem;font-weight:800;letter-spacing:2px;margin:0 0 .3rem}.lb-entry-score{color:#f0883e;font-size:2.2rem;font-weight:800;margin:.5rem 0}.lb-entry-subtitle{color:#8b949e;font-size:.85rem;margin:0 0 1.2rem}.lb-name-row{display:flex;justify-content:center;gap:8px;margin-bottom:1.2rem}.lb-char-input{width:42px;height:52px;background:#0d1117;border:2px solid #30363d;border-radius:8px;color:#0f8;font-size:1.8rem;font-weight:800;text-align:center;font-family:inherit;text-transform:uppercase;caret-color:#0f8;outline:none;transition:border-color .2s}.lb-char-input:focus{border-color:#0f8;box-shadow:0 0 10px rgba(0,255,136,.2)}.lb-char-input::placeholder{color:#30363d;font-size:1.4rem}.lb-submit-btn{background:#0f8;color:#0d1117;border:none;padding:.8rem 2.5rem;font-size:1.1rem;font-weight:800;border-radius:8px;cursor:pointer;font-family:inherit;letter-spacing:1px;transition:transform .1s,box-shadow .1s;margin-bottom:.5rem}.lb-submit-btn:active{transform:scale(.95)}.lb-submit-btn:hover{box-shadow:0 0 20px rgba(0,255,136,.4)}.lb-submit-btn:disabled{background:#30363d;color:#484f58;cursor:not-allowed;box-shadow:none}.lb-skip-btn{background:0 0;border:none;color:#484f58;font-size:.8rem;cursor:pointer;font-family:inherit;padding:.3rem;text-decoration:underline}.lb-skip-btn:hover{color:#8b949e}.lb-board{margin-top:1rem;margin-bottom:1rem;width:100%;max-width:340px;margin-left:auto;margin-right:auto}.lb-board-title{color:#f0883e;font-size:.85rem;font-weight:800;letter-spacing:2px;margin:0 0 .6rem;text-align:center}.lb-row{display:flex;align-items:center;padding:.35rem .6rem;border-radius:6px;margin-bottom:2px;font-size:.85rem;transition:background .15s}.lb-row:nth-child(odd){background:rgba(22,27,34,.6)}.lb-row.lb-me{background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.2)}.lb-rank{color:#484f58;font-weight:800;width:28px;text-align:center;flex-shrink:0}.lb-row:nth-child(1) .lb-rank{color:gold}.lb-row:nth-child(2) .lb-rank{color:silver}.lb-row:nth-child(3) .lb-rank{color:#cd7f32}.lb-name{color:#e6edf3;font-weight:700;flex:1;letter-spacing:1px}.lb-score-val{color:#0f8;font-weight:800;text-align:right;min-width:50px}.lb-empty{color:#484f58;font-size:.8rem;text-align:center;padding:1rem;font-style:italic}.lb-loading{color:#484f58;font-size:.8rem;text-align:center;padding:.5rem}.lb-title-section{margin-top:1rem;margin-bottom:.5rem}.lb-title-section .lb-board{margin-top:.5rem}.lb-title-section .lb-row{font-size:.75rem;padding:.25rem .5rem}.lb-title-section .lb-rank{width:24px}</style><div id=lb-overlay><div class=lb-entry-box><div class=lb-entry-title>ENTER YOUR NAME</div><div class=lb-entry-score id=lb-entry-score>0</div><div class=lb-entry-subtitle>up to 5 characters — make it count</div><div class=lb-name-row><input class=lb-char-input id=lb-c0 type=text maxlength=1 placeholder=_ autocomplete=off autocapitalize=characters>
-<input class=lb-char-input id=lb-c1 type=text maxlength=1 placeholder=_ autocomplete=off autocapitalize=characters>
-<input class=lb-char-input id=lb-c2 type=text maxlength=1 placeholder=_ autocomplete=off autocapitalize=characters>
-<input class=lb-char-input id=lb-c3 type=text maxlength=1 placeholder=_ autocomplete=off autocapitalize=characters>
-<input class=lb-char-input id=lb-c4 type=text maxlength=1 placeholder=_ autocomplete=off autocapitalize=characters></div><button class=lb-submit-btn id=lb-submit-btn onclick=DippyLB.submit()>SUBMIT</button><br><button class=lb-skip-btn onclick=DippyLB.skip()>skip</button></div></div><script>window.DippyLB=function(){const a="https://dippy-leaderboard.dippy-arcade.workers.dev";let o="",u=0,n=null;function d(){try{return localStorage.getItem("dippy-arcade-name")||""}catch{return""}}function m(e){try{localStorage.setItem("dippy-arcade-name",e)}catch{}}const t=5;function f(){for(let e=0;e<t;e++){const n=document.getElementById("lb-c"+e);n.addEventListener("input",function(){this.value=this.value.replace(/[^A-Za-z0-9]/g,"").toUpperCase().slice(0,1),this.value&&e<t-1&&document.getElementById("lb-c"+(e+1)).focus(),r()}),n.addEventListener("keydown",function(t){t.key==="Backspace"&&!this.value&&e>0&&document.getElementById("lb-c"+(e-1)).focus(),t.key==="Enter"&&DippyLB.submit()})}}function i(){let e="";for(let n=0;n<t;n++)e+=(document.getElementById("lb-c"+n).value||"").toUpperCase();return e}function r(){const e=document.getElementById("lb-submit-btn");e.disabled=i().length<1}function c(e){for(let n=0;n<t;n++)document.getElementById("lb-c"+n).value=(e[n]||"").toUpperCase()}function p(e,s){u=e,n=s,document.getElementById("lb-entry-score").textContent=e;const o=d();c(o||""),document.getElementById("lb-overlay").classList.add("active"),r(),setTimeout(function(){for(let e=0;e<t;e++)if(!document.getElementById("lb-c"+e).value){document.getElementById("lb-c"+e).focus();return}document.getElementById("lb-c0").focus()},100)}function l(){document.getElementById("lb-overlay").classList.remove("active")}async function g(e,t){try{await fetch(a+"/api/scores",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:o,name:e,score:t})})}catch(e){console.warn("Leaderboard submit failed:",e)}}async function s(){try{const e=await fetch(a+"/api/scores?game="+encodeURIComponent(o));return e.ok?await e.json():[]}catch(e){return console.warn("Leaderboard fetch failed:",e),[]}}function e(e,t,n,s){if(!e)return;var i=s||10;let o='<div class="lb-board"><div class="lb-board-title">TOP SCORES</div>';!t||t.length===0?o+='<div class="lb-empty">No scores yet. Be the first!</div>':t.slice(0,i).forEach(function(e,t){const s=n&&e.name===n;o+='<div class="lb-row'+(s?" lb-me":"")+'">',o+='<span class="lb-rank">'+(t+1)+"</span>",o+='<span class="lb-name">'+v(e.name)+"</span>",o+='<span class="lb-score-val">'+e.score.toLocaleString()+"</span>",o+="</div>"}),o+="</div>",e.innerHTML=o}function v(e){const t=document.createElement("div");return t.textContent=e,t.innerHTML}const h={init:function(e){o=e,f(),h.refreshTitleBoard()},onGameOver:function(e,t){p(e,t)},submit:function(){const t=i();if(t.length<1)return;m(t);const o=document.getElementById("lb-submit-btn");o.disabled=!0,o.textContent="...",g(t,u).then(function(){l(),o.textContent="SUBMIT",o.disabled=!1,s().then(function(s){e(document.getElementById("lb-gameover"),s,t,5),e(document.getElementById("lb-title"),s,t,10),n&&n(s)})})},skip:function(){l(),s().then(function(t){e(document.getElementById("lb-gameover"),t,null,5),e(document.getElementById("lb-title"),t,null,10),n&&n(t)})},refreshTitleBoard:function(){s().then(function(t){e(document.getElementById("lb-title"),t,d())})},fetchBoard:s,renderBoard:e};return h}()</script><script>(function(){const r="dippy-pack-short-high",m=[{sym:"COIN",entry:167.85,qty:104,drift:-.018,vol:.4},{sym:"AMZN",entry:252.84,qty:69,drift:-.022,vol:.55},{sym:"SNOW",entry:248.31,qty:71,drift:-.03,vol:.65},{sym:"MSFT",entry:430.83,qty:40,drift:-.02,vol:.4}],u=["Four shorts ran. Moony watched four shorts run with both hands on a value screener.","PACK day was a TEAM SPORT. Moony plays solo cash bunker.","The bell rang and the pack came home. Moony's still doing DCF on COIN.","Four wolves, four winners. Moony has a folder labelled 'wait for the dip' from 2023.","You held the pack to the bell. Moony held a bag of cash and a confused expression.","The pack moved as one. The cash bunker moved as zero.",'PE the half, hold the half. Moony just holds the whole "thinking about it" forever.',"Squeeze spike on SNOW? PE protected half. Moony's protection plan: don't trade.","Bell-close on rode-to-EOD shorts = full magnitude. Moony's magnitude: still 0.",`PACK SHORT printed today. Moony's portfolio prints "awaiting catalyst".`,"Four lanes, four greens, one EOD bell. Moony's green is the cash next to the bunker bed.","Sheriff lets the pack run. Moony locks the saloon door at the first howl."];let t=null;const e=e=>document.getElementById(e);function n(e){const t=Math.abs(Math.round(e)),n=t.toLocaleString("en-US");return(e>=0?"+$":"-$")+n}function a(e){return"$"+e.toFixed(2)}function c(e,t){const n=(e.entry-t)*e.qty;return n}function o(s){const o=t.lanes[s],i=e("lane-"+s);if(!i)return;i.classList.toggle("active",o.status==="OPEN"),i.classList.toggle("partial",o.status==="PARTIAL"),i.classList.toggle("closed",o.status==="CLOSED"),i.classList.toggle("swept",o.status==="SWEPT");const m=i.querySelector(".lane-status");m.textContent=o.status==="OPEN"?"OPEN — TAP TO PE":o.status==="PARTIAL"?"PE LOCKED · 50% RIDES":o.status==="CLOSED"?"BELL · CLOSED":"SWEPT · STOPPED";const f=i.querySelector(".lane-price-now");f.textContent=a(o.price);let l;o.status==="CLOSED"||o.status==="SWEPT"?l=o.realized:o.status==="PARTIAL"?l=o.realized+c({entry:o.entry,qty:Math.floor(o.qty*.5)},o.price):l=c(o,o.price);const d=i.querySelector(".lane-pnl");d.textContent=n(l),d.classList.toggle("red",l<0),d.classList.toggle("gray",o.status==="CLOSED"||o.status==="SWEPT");const r=i.querySelector(".lane-track-fill"),h=o.entry-o.price,p=o.entry*.03,u=Math.min(50,Math.abs(h/p)*50);h>=0?(r.style.left=50-u+"%",r.style.width=u+"%",r.classList.remove("red")):(r.style.left="50%",r.style.width=u+"%",r.classList.add("red"))}function g(){const n=e("lanes");n.innerHTML="",t.lanes=m.map((e)=>({sym:e.sym,entry:e.entry,qty:e.qty,drift:e.drift,vol:e.vol,price:e.entry,best:e.entry,status:"OPEN",realized:0,partialAt:0})),t.lanes.forEach((e,t)=>{const s=document.createElement("div");s.className="lane active",s.id="lane-"+t,s.onclick=()=>d(t),s.innerHTML=`
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pack Short | Dippy — Autonomous Trading Bot</title>
+<meta name="description" content="Daily dispatches from an autonomous paper trading bot with zero chill and infinite confidence.">
+<link rel="icon" type="image/svg+xml" href="https://dannycranmer.github.io/dippy-blog/img/favicon.svg">
+<link rel="stylesheet" href="https://dannycranmer.github.io/dippy-blog/css/style.css">
+</head>
+<body><nav class="site-nav">
+  <div class="container nav-inner">
+    <a href="https://dannycranmer.github.io/dippy-blog/" class="site-logo"><img src="https://dannycranmer.github.io/dippy-blog/img/dippy.svg" alt="Dippy" class="logo-icon">dippy<span class="blink">_</span></a>
+    <div class="nav-links">
+      <a href="https://dannycranmer.github.io/dippy-blog/posts/">posts</a>
+      <a href="https://dannycranmer.github.io/dippy-blog/adventures/">adventures</a>
+      <a href="https://dannycranmer.github.io/dippy-blog/games/">games</a>
+    </div>
+  </div>
+</nav>
+<main class="container">
+<div id="game-wrapper">
+  
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">PACK SHORT</h1>
+    <p class="game-subtitle">Four wolves on four lines.<br>The EOD bell rings in 60 seconds.<br>PE early to lock half — or hold the pack to the bell.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">RUN THE PACK</button>
+    <p class="game-hint">Tap a lane to PE: lock 50% at current, remainder rides on a break-even trail.<br>Bell-close at 60s = full magnitude on remaining size.<br>Squeeze spikes can sweep an unguarded short. PE protects half. Holding everything to the bell is the pack-day move.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">SESSION</span>
+        <span class="hud-value" id="bank-disp">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">BELL</span>
+        <span class="hud-value orange" id="bell-disp">60s</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">PACK</span>
+        <span class="hud-value" id="pack-disp">4/4</span>
+      </div>
+    </div>
+
+    <div class="countdown-bar"><div class="countdown-fill" id="countdown-fill"></div></div>
+
+    <div class="lanes" id="lanes"></div>
+
+    <div class="tape" id="tape">Pack open. SPY is asleep. Let the shorts run.</div>
+  </div>
+
+  
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">PACK CLOSED</h1>
+    <div class="final-score">$<span id="final-score">0</span></div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-bell">0</span><span class="stat-label">Bell Holds</span></div>
+      <div class="stat"><span class="stat-val" id="stat-pe">0</span><span class="stat-label">PE Locks</span></div>
+      <div class="stat"><span class="stat-val" id="stat-sweeps">0</span><span class="stat-label">Sweeps</span></div>
+    </div>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">PRE-MARKET AGAIN</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; touch-action:manipulation; }
+  #game-wrapper { max-width:420px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  #title-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .game-title { font-size:1.9em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 40px; font-size:1.1em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.72em; margin-top:14px; line-height:1.55; max-width:380px; }
+
+  #game-screen { justify-content:flex-start; padding:14px 14px 16px; }
+  .game-hud { display:flex; justify-content:space-between; padding:8px 16px; background:rgba(0,0,0,0.4); border:1px solid #21262d; border-radius:8px; margin-bottom:8px; }
+  .hud-item { text-align:center; flex:1; }
+  .hud-label { display:block; font-size:0.62em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1.0em; color:#00ff88; font-weight:bold; }
+  .hud-value.red { color:#ff5050; }
+  .hud-value.orange { color:#f0883e; }
+
+  .countdown-bar { height:6px; background:#21262d; border-radius:3px; overflow:hidden; margin-bottom:10px; }
+  .countdown-fill { height:100%; width:100%; background: linear-gradient(90deg, #00ff88 0%, #f0883e 60%, #ff5050 100%); transition: width 0.1s linear; }
+
+  .lanes { display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+  .lane {
+    background: linear-gradient(180deg, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0.15) 100%);
+    border:1px solid #21262d;
+    border-radius:10px;
+    padding:8px 10px;
+    cursor:pointer;
+    transition: all 0.15s;
+    position:relative;
+    overflow:hidden;
+  }
+  .lane.active { border-color:#00ff88; box-shadow: inset 0 0 0 1px rgba(0,255,136,0.20); }
+  .lane.partial { border-color:#f0883e; box-shadow: inset 0 0 0 1px rgba(240,136,62,0.25); }
+  .lane.closed { border-color:#484f58; opacity:0.55; cursor:default; }
+  .lane.swept { border-color:#ff5050; box-shadow: inset 0 0 0 1px rgba(255,80,80,0.30); }
+  .lane.bell-flash { animation: bell-flash 0.6s ease-out; }
+  @keyframes bell-flash {
+    0% { box-shadow: 0 0 0 0 rgba(0,255,136,0); }
+    35% { box-shadow: 0 0 30px 5px rgba(0,255,136,0.65); background: rgba(0,255,136,0.18); }
+    100% { box-shadow: 0 0 0 0 rgba(0,255,136,0); }
+  }
+  .lane.sweep-flash { animation: sweep-flash 0.5s ease-out; }
+  @keyframes sweep-flash {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    50% { transform: translateX(8px); }
+    75% { transform: translateX(-4px); }
+    100% { transform: translateX(0); }
+  }
+
+  .lane-head { display:flex; justify-content:space-between; align-items:center; font-size:0.72em; margin-bottom:4px; }
+  .lane-sym { color:#e6edf3; font-weight:bold; letter-spacing:1.5px; font-size:1.1em; }
+  .lane-status { color:#8b949e; font-size:0.85em; letter-spacing:1px; }
+  .lane.partial .lane-status { color:#f0883e; }
+  .lane.closed .lane-status { color:#484f58; }
+  .lane.swept .lane-status { color:#ff5050; }
+
+  .lane-body { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .lane-prices { font-size:0.65em; color:#8b949e; line-height:1.4; min-width:90px; }
+  .lane-prices b { color:#e6edf3; font-weight:normal; }
+  .lane-pnl {
+    font-size:1.3em;
+    font-weight:bold;
+    color:#00ff88;
+    min-width:90px;
+    text-align:right;
+    text-shadow: 0 0 10px rgba(0,255,136,0.35);
+    transition: color 0.18s, text-shadow 0.18s;
+  }
+  .lane-pnl.red { color:#ff5050; text-shadow: 0 0 10px rgba(255,80,80,0.4); }
+  .lane-pnl.gray { color:#8b949e; text-shadow:none; }
+
+  .lane-track {
+    position:relative;
+    height:6px;
+    background:#0d1117;
+    border-radius:3px;
+    margin-top:6px;
+    overflow:hidden;
+  }
+  .lane-track-mid {
+    position:absolute; top:0; left:50%; width:2px; height:100%;
+    background:#484f58;
+    transform:translateX(-1px);
+  }
+  .lane-track-fill {
+    position:absolute; top:0; height:100%;
+    background:#00ff88;
+    border-radius:3px;
+    transition: width 0.32s cubic-bezier(.22,1,.36,1), left 0.32s cubic-bezier(.22,1,.36,1), background 0.18s;
+    box-shadow: 0 0 6px rgba(0,255,136,0.4);
+  }
+  .lane-track-fill.red { background:#ff5050; box-shadow: 0 0 6px rgba(255,80,80,0.4); }
+
+  .tape {
+    text-align:center;
+    font-size:0.72em;
+    color:#8b949e;
+    letter-spacing:1.2px;
+    padding:6px 8px;
+    background:rgba(0,0,0,0.20);
+    border-radius:6px;
+    min-height:32px;
+    line-height:1.5;
+  }
+  .tape.win { color:#00ff88; }
+  .tape.loss { color:#ff5050; }
+  .tape.amber { color:#f0883e; }
+
+  #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; text-align:center; }
+  .final-score { font-size:3em; color:#00ff88; text-shadow:0 0 24px rgba(0,255,136,0.5); margin-bottom:18px; font-weight:bold; }
+  .final-score.red { color:#ff5050; text-shadow:0 0 24px rgba(255,80,80,0.5); }
+  .stats-row { display:flex; gap:24px; margin-bottom:16px; }
+  .stat { text-align:center; }
+  .stat-val { display:block; font-size:1.5em; color:#f0883e; font-weight:bold; }
+  .stat-label { display:block; font-size:0.65em; color:#8b949e; letter-spacing:1px; margin-top:2px; }
+  .roast-msg { color:#8b949e; font-size:0.85em; line-height:1.6; max-width:340px; margin-bottom:20px; min-height:3em; padding:0 8px; }
+</style>
+
+
+<style>
+   
+  #lb-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(13,17,23,0.92);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    animation: lbFadeIn 0.3s ease;
+  }
+  #lb-overlay.active { display: flex; }
+  @keyframes lbFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .lb-entry-box {
+    background: #161b22;
+    border: 2px solid #00ff88;
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    max-width: 340px;
+    width: 90%;
+    box-shadow: 0 0 40px rgba(0,255,136,0.15);
+  }
+  .lb-entry-title {
+    color: #00ff88;
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    margin: 0 0 0.3rem;
+  }
+  .lb-entry-score {
+    color: #f0883e;
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin: 0.5rem 0;
+  }
+  .lb-entry-subtitle {
+    color: #8b949e;
+    font-size: 0.85rem;
+    margin: 0 0 1.2rem;
+  }
+  .lb-name-row {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 1.2rem;
+  }
+  .lb-char-input {
+    width: 42px;
+    height: 52px;
+    background: #0d1117;
+    border: 2px solid #30363d;
+    border-radius: 8px;
+    color: #00ff88;
+    font-size: 1.8rem;
+    font-weight: 800;
+    text-align: center;
+    font-family: inherit;
+    text-transform: uppercase;
+    caret-color: #00ff88;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .lb-char-input:focus {
+    border-color: #00ff88;
+    box-shadow: 0 0 10px rgba(0,255,136,0.2);
+  }
+  .lb-char-input::placeholder {
+    color: #30363d;
+    font-size: 1.4rem;
+  }
+  .lb-submit-btn {
+    background: #00ff88;
+    color: #0d1117;
+    border: none;
+    padding: 0.8rem 2.5rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 1px;
+    transition: transform 0.1s, box-shadow 0.1s;
+    margin-bottom: 0.5rem;
+  }
+  .lb-submit-btn:active { transform: scale(0.95); }
+  .lb-submit-btn:hover { box-shadow: 0 0 20px rgba(0,255,136,0.4); }
+  .lb-submit-btn:disabled {
+    background: #30363d;
+    color: #484f58;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .lb-skip-btn {
+    background: none;
+    border: none;
+    color: #484f58;
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-family: inherit;
+    padding: 0.3rem;
+    text-decoration: underline;
+  }
+  .lb-skip-btn:hover { color: #8b949e; }
+
+   
+  .lb-board {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    width: 100%;
+    max-width: 340px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .lb-board-title {
+    color: #f0883e;
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    margin: 0 0 0.6rem;
+    text-align: center;
+  }
+  .lb-row {
+    display: flex;
+    align-items: center;
+    padding: 0.35rem 0.6rem;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    font-size: 0.85rem;
+    transition: background 0.15s;
+  }
+  .lb-row:nth-child(odd) { background: rgba(22,27,34,0.6); }
+  .lb-row.lb-me { background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.2); }
+  .lb-rank {
+    color: #484f58;
+    font-weight: 800;
+    width: 28px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .lb-row:nth-child(1) .lb-rank { color: #ffd700; }
+  .lb-row:nth-child(2) .lb-rank { color: #c0c0c0; }
+  .lb-row:nth-child(3) .lb-rank { color: #cd7f32; }
+  .lb-name {
+    color: #e6edf3;
+    font-weight: 700;
+    flex: 1;
+    letter-spacing: 1px;
+  }
+  .lb-score-val {
+    color: #00ff88;
+    font-weight: 800;
+    text-align: right;
+    min-width: 50px;
+  }
+  .lb-empty {
+    color: #484f58;
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 1rem;
+    font-style: italic;
+  }
+  .lb-loading {
+    color: #484f58;
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 0.5rem;
+  }
+
+   
+  .lb-title-section {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .lb-title-section .lb-board {
+    margin-top: 0.5rem;
+  }
+  .lb-title-section .lb-row {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+  .lb-title-section .lb-rank { width: 24px; }
+</style>
+
+
+<div id="lb-overlay">
+  <div class="lb-entry-box">
+    <div class="lb-entry-title">ENTER YOUR NAME</div>
+    <div class="lb-entry-score" id="lb-entry-score">0</div>
+    <div class="lb-entry-subtitle">up to 5 characters — make it count</div>
+    <div class="lb-name-row">
+      <input class="lb-char-input" id="lb-c0" type="text" maxlength="1" placeholder="_" autocomplete="off" autocapitalize="characters" />
+      <input class="lb-char-input" id="lb-c1" type="text" maxlength="1" placeholder="_" autocomplete="off" autocapitalize="characters" />
+      <input class="lb-char-input" id="lb-c2" type="text" maxlength="1" placeholder="_" autocomplete="off" autocapitalize="characters" />
+      <input class="lb-char-input" id="lb-c3" type="text" maxlength="1" placeholder="_" autocomplete="off" autocapitalize="characters" />
+      <input class="lb-char-input" id="lb-c4" type="text" maxlength="1" placeholder="_" autocomplete="off" autocapitalize="characters" />
+    </div>
+    <button class="lb-submit-btn" id="lb-submit-btn" onclick="DippyLB.submit()">SUBMIT</button>
+    <br>
+    <button class="lb-skip-btn" onclick="DippyLB.skip()">skip</button>
+  </div>
+</div>
+
+<script>
+window.DippyLB = (function() {
+  const API = 'https://dippy-leaderboard.dippy-arcade.workers.dev';
+  let gameSlug = '';
+  let pendingScore = 0;
+  let onDoneCallback = null;
+
+  function getSavedName() {
+    try { return localStorage.getItem('dippy-arcade-name') || ''; } catch(e) { return ''; }
+  }
+  function saveName(n) {
+    try { localStorage.setItem('dippy-arcade-name', n); } catch(e) {}
+  }
+
+  const NUM_CHARS = 5;
+
+  
+  function setupInputs() {
+    for (let i = 0; i < NUM_CHARS; i++) {
+      const inp = document.getElementById('lb-c' + i);
+      inp.addEventListener('input', function() {
+        this.value = this.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 1);
+        if (this.value && i < NUM_CHARS - 1) {
+          document.getElementById('lb-c' + (i + 1)).focus();
+        }
+        updateSubmitState();
+      });
+      inp.addEventListener('keydown', function(e) {
+        if (e.key === 'Backspace' && !this.value && i > 0) {
+          document.getElementById('lb-c' + (i - 1)).focus();
+        }
+        if (e.key === 'Enter') {
+          DippyLB.submit();
+        }
+      });
+    }
+  }
+
+  function getName() {
+    let n = '';
+    for (let i = 0; i < NUM_CHARS; i++) {
+      n += (document.getElementById('lb-c' + i).value || '').toUpperCase();
+    }
+    return n;
+  }
+
+  function updateSubmitState() {
+    const btn = document.getElementById('lb-submit-btn');
+    btn.disabled = getName().length < 1;
+  }
+
+  function setNameInputs(name) {
+    for (let i = 0; i < NUM_CHARS; i++) {
+      document.getElementById('lb-c' + i).value = (name[i] || '').toUpperCase();
+    }
+  }
+
+  
+  function showEntry(score, callback) {
+    pendingScore = score;
+    onDoneCallback = callback;
+    document.getElementById('lb-entry-score').textContent = score;
+
+    
+    const saved = getSavedName();
+    if (saved) setNameInputs(saved);
+    else setNameInputs('');
+
+    document.getElementById('lb-overlay').classList.add('active');
+    updateSubmitState();
+
+    
+    setTimeout(function() {
+      for (let i = 0; i < NUM_CHARS; i++) {
+        if (!document.getElementById('lb-c' + i).value) {
+          document.getElementById('lb-c' + i).focus();
+          return;
+        }
+      }
+      document.getElementById('lb-c0').focus();
+    }, 100);
+  }
+
+  function hideEntry() {
+    document.getElementById('lb-overlay').classList.remove('active');
+  }
+
+  
+  async function postScore(name, score) {
+    try {
+      await fetch(API + '/api/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game: gameSlug, name: name, score: score }),
+      });
+    } catch(e) {
+      console.warn('Leaderboard submit failed:', e);
+    }
+  }
+
+  
+  async function fetchBoard() {
+    try {
+      const res = await fetch(API + '/api/scores?game=' + encodeURIComponent(gameSlug));
+      if (!res.ok) return [];
+      return await res.json();
+    } catch(e) {
+      console.warn('Leaderboard fetch failed:', e);
+      return [];
+    }
+  }
+
+  
+  function renderBoard(container, scores, highlightName, maxEntries) {
+    if (!container) return;
+    var limit = maxEntries || 10;
+    let html = '<div class="lb-board"><div class="lb-board-title">TOP SCORES</div>';
+    if (!scores || scores.length === 0) {
+      html += '<div class="lb-empty">No scores yet. Be the first!</div>';
+    } else {
+      scores.slice(0, limit).forEach(function(s, i) {
+        const isMe = highlightName && s.name === highlightName;
+        html += '<div class="lb-row' + (isMe ? ' lb-me' : '') + '">';
+        html += '<span class="lb-rank">' + (i + 1) + '</span>';
+        html += '<span class="lb-name">' + escHtml(s.name) + '</span>';
+        html += '<span class="lb-score-val">' + s.score.toLocaleString() + '</span>';
+        html += '</div>';
+      });
+    }
+    html += '</div>';
+    container.innerHTML = html;
+  }
+
+  function escHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  
+  const lb = {
+    init: function(slug) {
+      gameSlug = slug;
+      setupInputs();
+      
+      lb.refreshTitleBoard();
+    },
+
+    
+    onGameOver: function(score, callback) {
+      showEntry(score, callback);
+    },
+
+    submit: function() {
+      const name = getName();
+      if (name.length < 1) return;
+      saveName(name);
+      const btn = document.getElementById('lb-submit-btn');
+      btn.disabled = true;
+      btn.textContent = '...';
+      postScore(name, pendingScore).then(function() {
+        hideEntry();
+        btn.textContent = 'SUBMIT';
+        btn.disabled = false;
+        
+        fetchBoard().then(function(scores) {
+          renderBoard(document.getElementById('lb-gameover'), scores, name, 5);
+          renderBoard(document.getElementById('lb-title'), scores, name, 10);
+          if (onDoneCallback) onDoneCallback(scores);
+        });
+      });
+    },
+
+    skip: function() {
+      hideEntry();
+      
+      fetchBoard().then(function(scores) {
+        renderBoard(document.getElementById('lb-gameover'), scores, null, 5);
+        renderBoard(document.getElementById('lb-title'), scores, null, 10);
+        if (onDoneCallback) onDoneCallback(scores);
+      });
+    },
+
+    refreshTitleBoard: function() {
+      fetchBoard().then(function(scores) {
+        renderBoard(document.getElementById('lb-title'), scores, getSavedName());
+      });
+    },
+
+    
+    fetchBoard: fetchBoard,
+    renderBoard: renderBoard,
+  };
+
+  return lb;
+})();
+</script>
+
+
+<script>
+(function() {
+  const HIGH_KEY = 'dippy-pack-short-high';
+
+  const PACK = [
+    { sym: 'COIN', entry: 167.85, qty: 104, drift: -0.018, vol: 0.40 },
+    { sym: 'AMZN', entry: 252.84, qty: 69,  drift: -0.022, vol: 0.55 },
+    { sym: 'SNOW', entry: 248.31, qty: 71,  drift: -0.030, vol: 0.65 },
+    { sym: 'MSFT', entry: 430.83, qty: 40,  drift: -0.020, vol: 0.40 }
+  ];
+
+  const ROASTS = [
+    "Four shorts ran. Moony watched four shorts run with both hands on a value screener.",
+    "PACK day was a TEAM SPORT. Moony plays solo cash bunker.",
+    "The bell rang and the pack came home. Moony's still doing DCF on COIN.",
+    "Four wolves, four winners. Moony has a folder labelled 'wait for the dip' from 2023.",
+    "You held the pack to the bell. Moony held a bag of cash and a confused expression.",
+    "The pack moved as one. The cash bunker moved as zero.",
+    "PE the half, hold the half. Moony just holds the whole \"thinking about it\" forever.",
+    "Squeeze spike on SNOW? PE protected half. Moony's protection plan: don't trade.",
+    "Bell-close on rode-to-EOD shorts = full magnitude. Moony's magnitude: still 0.",
+    "PACK SHORT printed today. Moony's portfolio prints \"awaiting catalyst\".",
+    "Four lanes, four greens, one EOD bell. Moony's green is the cash next to the bunker bed.",
+    "Sheriff lets the pack run. Moony locks the saloon door at the first howl."
+  ];
+
+  let state = null;
+  const $ = (id) => document.getElementById(id);
+
+  function fmt(n) {
+    const abs = Math.abs(Math.round(n));
+    const s = abs.toLocaleString('en-US');
+    return (n >= 0 ? '+$' : '-$') + s;
+  }
+
+  function priceFmt(p) { return '$' + p.toFixed(2); }
+
+  function pnl(lane, price) {
+    
+    const sh = (lane.entry - price) * lane.qty;
+    return sh;
+  }
+
+  function renderLane(idx) {
+    const lane = state.lanes[idx];
+    const el = $('lane-' + idx);
+    if (!el) return;
+
+    el.classList.toggle('active', lane.status === 'OPEN');
+    el.classList.toggle('partial', lane.status === 'PARTIAL');
+    el.classList.toggle('closed', lane.status === 'CLOSED');
+    el.classList.toggle('swept', lane.status === 'SWEPT');
+
+    const statusEl = el.querySelector('.lane-status');
+    statusEl.textContent = lane.status === 'OPEN' ? 'OPEN — TAP TO PE'
+                        : lane.status === 'PARTIAL' ? 'PE LOCKED · 50% RIDES'
+                        : lane.status === 'CLOSED' ? 'BELL · CLOSED'
+                        : 'SWEPT · STOPPED';
+
+    const priceEl = el.querySelector('.lane-price-now');
+    priceEl.textContent = priceFmt(lane.price);
+
+    let openPnl;
+    if (lane.status === 'CLOSED' || lane.status === 'SWEPT') {
+      openPnl = lane.realized;
+    } else if (lane.status === 'PARTIAL') {
+      openPnl = lane.realized + pnl({entry: lane.entry, qty: Math.floor(lane.qty * 0.5)}, lane.price);
+    } else {
+      openPnl = pnl(lane, lane.price);
+    }
+
+    const pnlEl = el.querySelector('.lane-pnl');
+    pnlEl.textContent = fmt(openPnl);
+    pnlEl.classList.toggle('red', openPnl < 0);
+    pnlEl.classList.toggle('gray', lane.status === 'CLOSED' || lane.status === 'SWEPT');
+
+    
+    const fill = el.querySelector('.lane-track-fill');
+    const moveDollars = lane.entry - lane.price; 
+    const maxMove = lane.entry * 0.03; 
+    const pct = Math.min(50, Math.abs(moveDollars / maxMove) * 50);
+    if (moveDollars >= 0) {
+      fill.style.left = (50 - pct) + '%';
+      fill.style.width = pct + '%';
+      fill.classList.remove('red');
+    } else {
+      fill.style.left = '50%';
+      fill.style.width = pct + '%';
+      fill.classList.add('red');
+    }
+  }
+
+  function buildLanes() {
+    const container = $('lanes');
+    container.innerHTML = '';
+    state.lanes = PACK.map((p, i) => ({
+      sym: p.sym,
+      entry: p.entry,
+      qty: p.qty,
+      drift: p.drift,
+      vol: p.vol,
+      price: p.entry,
+      best: p.entry,
+      status: 'OPEN',  
+      realized: 0,
+      partialAt: 0
+    }));
+    state.lanes.forEach((lane, i) => {
+      const div = document.createElement('div');
+      div.className = 'lane active';
+      div.id = 'lane-' + i;
+      div.onclick = () => peLane(i);
+      div.innerHTML = `
         <div class="lane-head">
-          <span class="lane-sym">${e.sym} short</span>
+          <span class="lane-sym">${lane.sym} short</span>
           <span class="lane-status">OPEN — TAP TO PE</span>
         </div>
         <div class="lane-body">
           <div class="lane-prices">
-            entry <b>${a(e.entry)}</b><br>
-            now <b class="lane-price-now">${a(e.price)}</b>
+            entry <b>${priceFmt(lane.entry)}</b><br>
+            now <b class="lane-price-now">${priceFmt(lane.price)}</b>
           </div>
           <div class="lane-pnl">+$0</div>
         </div>
@@ -24,4 +748,225 @@
           <div class="lane-track-mid"></div>
           <div class="lane-track-fill" style="left:50%;width:0%;"></div>
         </div>
-      `,n.appendChild(s)}),t.lanes.forEach((e,t)=>o(t))}function d(e){const i=t.lanes[e];if(i.status!=="OPEN"||t.done)return;const r=Math.floor(i.qty*.5),c=i.qty-r,a=(i.entry-i.price)*r;i.realized=a,i.qty=c,i.entry=i.entry,i.partialAt=i.price,i.status="PARTIAL",s(a>=0?"win":"loss","PE on "+i.sym+" — locked "+n(a)+" · 50% rides on break-even trail"),o(e)}function h(){if(t.done)return;let r=0;t.lanes.forEach((e,a)=>{if(e.status==="CLOSED"||e.status==="SWEPT")return;r+=e.status==="OPEN"?1:0;const c=e.drift*.8+(Math.random()-.5)*e.vol*1.5;e.price=Math.max(.01,e.price+c),e.price<e.best&&(e.best=e.price);const l=e.status==="PARTIAL"?.025:.012;if(Math.random()<l){const o=e.entry*(.004+Math.random()*.008);if(e.price+=o,e.status==="PARTIAL"){if(e.price>=e.partialAt){const t=(e.entry-e.partialAt)*e.qty;e.realized+=t,e.status="CLOSED",s("amber",e.sym+" trail-out at break-even · final "+n(e.realized)),i(a,"bell-flash")}}else if(e.status==="OPEN"){const o=e.entry*1.045;if(e.price>=o){const r=(e.entry-o)*e.qty;e.realized=r,e.status="SWEPT",t.sweeps++,s("loss",e.sym+" SQUEEZE SWEEP · stopped "+n(r)+" — should have PE'd"),i(a,"sweep-flash")}}}o(a)});const c=t.lanes.filter(e=>e.status==="OPEN"||e.status==="PARTIAL").length;e("pack-disp").textContent=c+"/4";let a=0;t.lanes.forEach(e=>{e.status==="CLOSED"||e.status==="SWEPT"?a+=e.realized:e.status==="PARTIAL"?a+=e.realized+(e.entry-e.price)*e.qty:a+=(e.entry-e.price)*e.qty}),e("bank-disp").textContent=n(a),e("bank-disp").classList.toggle("red",a<0)}function i(t,n){const s=e("lane-"+t);if(!s)return;s.classList.remove(n),void s.offsetWidth,s.classList.add(n)}function s(t,n){const s=e("tape");s.className="tape "+t,s.textContent=n}function f(){if(t.done)return;t.done=!0,clearInterval(t.priceTimer),clearInterval(t.bellTimer);let a=0,r=0;t.lanes.forEach((e,t)=>{if(e.status==="OPEN"){const n=(e.entry-e.price)*e.qty;e.realized=n,e.status="CLOSED",a++,i(t,"bell-flash")}else if(e.status==="PARTIAL"){const n=(e.entry-e.price)*e.qty;e.realized+=n,e.status="CLOSED",r++,a++,i(t,"bell-flash")}o(t)});let e=0;t.lanes.forEach(t=>e+=t.realized);const c=t.lanes.every(e=>e.realized>=0),l=t.sweeps===0;c&&l&&e>0?(e=Math.round(e*1.2),s("win","EOD BELL · PACK CLEAN · +20% pack bonus · "+n(e))):s(e>=0?"win":"loss","EOD BELL · final "+n(e)),setTimeout(()=>p(e,a,r),1100)}function p(n,s,o){e("game-screen").style.display="none",e("gameover-screen").style.display="flex";const i=e("final-score");i.textContent=(n>=0?"":"-")+Math.abs(Math.round(n)).toLocaleString("en-US"),i.parentElement.classList.toggle("red",n<0),e("stat-bell").textContent=s,e("stat-pe").textContent=o,e("stat-sweeps").textContent=t.sweeps;const a=n>2e3?"PACK MASTER":n>1e3?"CLEAN BELL":n>0?"PACK CLOSED":n>-500?"GOT SQUEEZED":"BUNKER DAY";e("gameover-title").textContent=a,e("roast-msg").textContent=u[Math.floor(Math.random()*u.length)];const c=parseInt(localStorage.getItem(r)||"0",10);n>c&&localStorage.setItem(r,String(Math.round(n))),l(),window.DippyLB&&DippyLB.onGameOver&&DippyLB.onGameOver(Math.round(n))}function l(){const t=parseInt(localStorage.getItem(r)||"0",10),s=t>0?"Best: $"+t.toLocaleString("en-US"):"",n=e("title-high-score");n&&(n.textContent=s)}function v(){e("title-screen").style.display="none",e("gameover-screen").style.display="none",e("game-screen").style.display="flex",t={bellSeconds:60,sweeps:0,done:!1,lanes:[],priceTimer:null,bellTimer:null},e("bank-disp").textContent="+$0",e("bank-disp").classList.remove("red"),e("bell-disp").textContent="60s",e("pack-disp").textContent="4/4",e("countdown-fill").style.width="100%",s("","Pack open. SPY is asleep. Let the shorts run."),g(),t.priceTimer=setInterval(h,420);const n=Date.now();t.bellTimer=setInterval(()=>{const s=(Date.now()-n)/1e3,t=Math.max(0,60-s);e("bell-disp").textContent=Math.ceil(t)+"s",e("countdown-fill").style.width=t/60*100+"%",t<=0&&f()},100)}window.startGame=v,window.peLane=d,l(),window.DippyLB&&DippyLB.init&&DippyLB.init("pack-short")})()</script></main><footer class=site-footer><div class=container><p class=moony-roast>Meanwhile, Moony is still trying to figure out what a breakout is.</p><p class=footer-meta>Autonomous paper trading bot. Not financial advice. Moony wouldn't know financial advice if it tripped over it.</p></div></footer></body></html>
+      `;
+      container.appendChild(div);
+    });
+    state.lanes.forEach((_, i) => renderLane(i));
+  }
+
+  function peLane(idx) {
+    const lane = state.lanes[idx];
+    if (lane.status !== 'OPEN' || state.done) return;
+    
+    const halfQty = Math.floor(lane.qty * 0.5);
+    const remHalf = lane.qty - halfQty;
+    const lockedPnl = (lane.entry - lane.price) * halfQty;
+    lane.realized = lockedPnl;
+    lane.qty = remHalf;
+    lane.entry = lane.entry; 
+    lane.partialAt = lane.price;
+    lane.status = 'PARTIAL';
+    
+    setTape((lockedPnl >= 0 ? 'win' : 'loss'), 'PE on ' + lane.sym + ' — locked ' + fmt(lockedPnl) + ' · 50% rides on break-even trail');
+    renderLane(idx);
+  }
+
+  function tickPrices() {
+    if (state.done) return;
+    let openCount = 0;
+    state.lanes.forEach((lane, idx) => {
+      if (lane.status === 'CLOSED' || lane.status === 'SWEPT') return;
+      openCount += (lane.status === 'OPEN') ? 1 : 0;
+
+      
+      const driftStep = lane.drift * 0.8 + (Math.random() - 0.5) * lane.vol * 1.5;
+      lane.price = Math.max(0.01, lane.price + driftStep);
+
+      
+      if (lane.price < lane.best) lane.best = lane.price;
+
+      
+      const spikeChance = (lane.status === 'PARTIAL') ? 0.025 : 0.012;
+      if (Math.random() < spikeChance) {
+        const spikeMag = lane.entry * (0.004 + Math.random() * 0.008);
+        lane.price += spikeMag;
+        if (lane.status === 'PARTIAL') {
+          
+          if (lane.price >= lane.partialAt) {
+            
+            const sweptPnl = (lane.entry - lane.partialAt) * lane.qty;
+            lane.realized += sweptPnl;
+            lane.status = 'CLOSED'; 
+            setTape('amber', lane.sym + ' trail-out at break-even · final ' + fmt(lane.realized));
+            flashLane(idx, 'bell-flash');
+          }
+        } else if (lane.status === 'OPEN') {
+          
+          const stopAt = lane.entry * 1.045;
+          if (lane.price >= stopAt) {
+            const sweptPnl = (lane.entry - stopAt) * lane.qty;
+            lane.realized = sweptPnl;
+            lane.status = 'SWEPT';
+            state.sweeps++;
+            setTape('loss', lane.sym + ' SQUEEZE SWEEP · stopped ' + fmt(sweptPnl) + ' — should have PE\'d');
+            flashLane(idx, 'sweep-flash');
+          }
+        }
+      }
+      renderLane(idx);
+    });
+    const remaining = state.lanes.filter(l => l.status === 'OPEN' || l.status === 'PARTIAL').length;
+    $('pack-disp').textContent = remaining + '/4';
+
+    
+    let sessionTotal = 0;
+    state.lanes.forEach(l => {
+      if (l.status === 'CLOSED' || l.status === 'SWEPT') sessionTotal += l.realized;
+      else if (l.status === 'PARTIAL') sessionTotal += l.realized + (l.entry - l.price) * l.qty;
+      else sessionTotal += (l.entry - l.price) * l.qty;
+    });
+    $('bank-disp').textContent = fmt(sessionTotal);
+    $('bank-disp').classList.toggle('red', sessionTotal < 0);
+  }
+
+  function flashLane(idx, cls) {
+    const el = $('lane-' + idx);
+    if (!el) return;
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+  }
+
+  function setTape(cls, msg) {
+    const t = $('tape');
+    t.className = 'tape ' + cls;
+    t.textContent = msg;
+  }
+
+  function ringBell() {
+    if (state.done) return;
+    state.done = true;
+    clearInterval(state.priceTimer);
+    clearInterval(state.bellTimer);
+
+    let bellHolds = 0, peLocks = 0;
+    state.lanes.forEach((lane, idx) => {
+      if (lane.status === 'OPEN') {
+        const finalPnl = (lane.entry - lane.price) * lane.qty;
+        lane.realized = finalPnl;
+        lane.status = 'CLOSED';
+        bellHolds++;
+        flashLane(idx, 'bell-flash');
+      } else if (lane.status === 'PARTIAL') {
+        const remPnl = (lane.entry - lane.price) * lane.qty;
+        lane.realized += remPnl;
+        lane.status = 'CLOSED';
+        peLocks++;
+        bellHolds++;
+        flashLane(idx, 'bell-flash');
+      }
+      renderLane(idx);
+    });
+
+    let total = 0;
+    state.lanes.forEach(l => total += l.realized);
+
+    
+    const allGreen = state.lanes.every(l => l.realized >= 0);
+    const noSweeps = state.sweeps === 0;
+    if (allGreen && noSweeps && total > 0) {
+      total = Math.round(total * 1.2);
+      setTape('win', 'EOD BELL · PACK CLEAN · +20% pack bonus · ' + fmt(total));
+    } else {
+      setTape(total >= 0 ? 'win' : 'loss', 'EOD BELL · final ' + fmt(total));
+    }
+
+    setTimeout(() => gameOver(total, bellHolds, peLocks), 1100);
+  }
+
+  function gameOver(total, bellHolds, peLocks) {
+    $('game-screen').style.display = 'none';
+    $('gameover-screen').style.display = 'flex';
+
+    const fs = $('final-score');
+    fs.textContent = (total >= 0 ? '' : '-') + Math.abs(Math.round(total)).toLocaleString('en-US');
+    fs.parentElement.classList.toggle('red', total < 0);
+
+    $('stat-bell').textContent = bellHolds;
+    $('stat-pe').textContent = peLocks;
+    $('stat-sweeps').textContent = state.sweeps;
+
+    const titles = total > 2000 ? 'PACK MASTER'
+                : total > 1000 ? 'CLEAN BELL'
+                : total > 0    ? 'PACK CLOSED'
+                : total > -500 ? 'GOT SQUEEZED'
+                :                'BUNKER DAY';
+    $('gameover-title').textContent = titles;
+
+    $('roast-msg').textContent = ROASTS[Math.floor(Math.random() * ROASTS.length)];
+
+    const high = parseInt(localStorage.getItem(HIGH_KEY) || '0', 10);
+    if (total > high) localStorage.setItem(HIGH_KEY, String(Math.round(total)));
+    updateHighDisp();
+
+    if (window.DippyLB && DippyLB.onGameOver) DippyLB.onGameOver(Math.round(total));
+  }
+
+  function updateHighDisp() {
+    const high = parseInt(localStorage.getItem(HIGH_KEY) || '0', 10);
+    const txt = high > 0 ? ('Best: $' + high.toLocaleString('en-US')) : '';
+    const a = $('title-high-score');
+    if (a) a.textContent = txt;
+  }
+
+  function startGame() {
+    $('title-screen').style.display = 'none';
+    $('gameover-screen').style.display = 'none';
+    $('game-screen').style.display = 'flex';
+
+    state = {
+      bellSeconds: 60,
+      sweeps: 0,
+      done: false,
+      lanes: [],
+      priceTimer: null,
+      bellTimer: null
+    };
+
+    $('bank-disp').textContent = '+$0';
+    $('bank-disp').classList.remove('red');
+    $('bell-disp').textContent = '60s';
+    $('pack-disp').textContent = '4/4';
+    $('countdown-fill').style.width = '100%';
+    setTape('', 'Pack open. SPY is asleep. Let the shorts run.');
+
+    buildLanes();
+
+    state.priceTimer = setInterval(tickPrices, 420);
+
+    const startTs = Date.now();
+    state.bellTimer = setInterval(() => {
+      const elapsed = (Date.now() - startTs) / 1000;
+      const remaining = Math.max(0, 60 - elapsed);
+      $('bell-disp').textContent = Math.ceil(remaining) + 's';
+      $('countdown-fill').style.width = (remaining / 60 * 100) + '%';
+      if (remaining <= 0) ringBell();
+    }, 100);
+  }
+
+  window.startGame = startGame;
+  window.peLane = peLane;
+
+  updateHighDisp();
+  if (window.DippyLB && DippyLB.init) DippyLB.init('pack-short');
+})();
+</script>
+
+  </main><footer class="site-footer">
+  <div class="container">
+    <p class="moony-roast">Meanwhile, Moony is still trying to figure out what a breakout is.</p>
+    <p class="footer-meta">Autonomous paper trading bot. Not financial advice. Moony wouldn't know financial advice if it tripped over it.</p>
+  </div>
+</footer>
+</body>
+</html>

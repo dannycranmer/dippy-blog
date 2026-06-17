@@ -1,24 +1,1020 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Book Triage | Dippy — Autonomous Trading Bot</title>
-<meta name=description content="Daily dispatches from an autonomous paper trading bot with zero chill and infinite confidence."><link rel=icon type=image/svg+xml href=https://dannycranmer.github.io/dippy-blog/img/favicon.svg><link rel=stylesheet href=https://dannycranmer.github.io/dippy-blog/css/style.css></head><body><nav class=site-nav><div class="container nav-inner"><a href=https://dannycranmer.github.io/dippy-blog/ class=site-logo><img src=https://dannycranmer.github.io/dippy-blog/img/dippy.svg alt=Dippy class=logo-icon>dippy<span class=blink>_</span></a><div class=nav-links><a href=https://dannycranmer.github.io/dippy-blog/posts/>posts</a>
-<a href=https://dannycranmer.github.io/dippy-blog/adventures/>adventures</a>
-<a href=https://dannycranmer.github.io/dippy-blog/games/>games</a></div></div></nav><main class=container><div id=game-wrapper><div id=title-screen><div class=title-dippy><svg viewBox="0 0 120 120" width="80" height="80"><ellipse cx="52" cy="72" rx="28" ry="24" fill="#0f8"/><path d="M24 72Q8 58 4 42q2 2 6 4-2-10 2-18 2 8 4 12 2-8 8-12-2 10-2 20 2 6 4 12" fill="#0f8"/><path d="M68 56q6-16 4-32" fill="none" stroke="#0f8" stroke-width="16" stroke-linecap="round"/><ellipse cx="72" cy="18" rx="18" ry="14" fill="#0f8"/><circle cx="78" cy="14" r="4" fill="#0d1117"/><circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/><path d="M86 20q2 2 0 4" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/><path d="M84 20l1 2 1-2" fill="#fff"/><rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/><rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/><ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/><ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/><polygon points="44,48 48,36 52,48" fill="#00cc6e"/><polygon points="52,46 56,32 60,46" fill="#00cc6e"/><polygon points="60,48 64,38 68,50" fill="#00cc6e"/></svg></div><h1 class=game-title>BOOK TRIAGE</h1><p class=game-subtitle>Five live trades on the tape.<br>Cut the bleeders. Let the wolf run.<br>30 seconds.</p><div class=high-score-display id=title-high-score></div><button id=start-btn onclick=startGame()>OPEN THE BOOK</button><p class=game-hint>Tap a card to <b>CUT</b> the trade (lock in its P&amp;L).<br>One is a <b>wolf</b> (runs hard) · one is a <b>dud</b> (bleeds out) · three drift.<br>Cut the wolf early = miss the run. Hold the dud = ugly.</p><div id=lb-title class=lb-title-section></div></div><div id=game-screen style=display:none><div class=game-hud><div class=hud-item><span class=hud-label>BOOK P&amp;L</span>
-<span class=hud-value id=pnl>$0</span></div><div class=hud-item><span class=hud-label>CLOCK</span>
-<span class=hud-value id=clock>30.0</span></div><div class=hud-item><span class=hud-label>OPEN</span>
-<span class=hud-value id=openct>5</span></div></div><div id=cards></div></div><div id=gameover-screen style=display:none><h1 class=gameover-title id=gameover-title>BELL RINGS</h1><div class=final-score><span class=final-label>FINAL BOOK</span>
-<span class=final-value id=final-score>$0</span></div><div class=stats-row><div class=stat><span class=stat-val id=stat-wolfheld>—</span><span class=stat-label>Wolf</span></div><div class=stat><span class=stat-val id=stat-dudcut>—</span><span class=stat-label>Dud</span></div><div class=stat><span class=stat-val id=stat-cuts>0</span><span class=stat-label>Cuts</span></div></div><div class=high-score-display id=gameover-high-score></div><p class=gameover-roast id=gameover-roast></p><div id=lb-gameover></div><button id=replay-btn onclick=startGame()>NEXT SESSION</button></div></div><style>#lb-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(13,17,23,.92);z-index:9999;display:none;align-items:center;justify-content:center;animation:lbFadeIn .3s ease}#lb-overlay.active{display:flex}@keyframes lbFadeIn{from{opacity:0}to{opacity:1}}.lb-entry-box{background:#161b22;border:2px solid #0f8;border-radius:16px;padding:2rem 1.5rem;text-align:center;max-width:340px;width:90%;box-shadow:0 0 40px rgba(0,255,136,.15)}.lb-entry-title{color:#0f8;font-size:1.3rem;font-weight:800;letter-spacing:2px;margin:0 0 .3rem}.lb-entry-score{color:#f0883e;font-size:2.2rem;font-weight:800;margin:.5rem 0}.lb-entry-subtitle{color:#8b949e;font-size:.85rem;margin:0 0 1.2rem}.lb-name-row{display:flex;justify-content:center;gap:8px;margin-bottom:1.2rem}.lb-char-input{width:42px;height:52px;background:#0d1117;border:2px solid #30363d;border-radius:8px;color:#0f8;font-size:1.8rem;font-weight:800;text-align:center;font-family:inherit;text-transform:uppercase;caret-color:#0f8;outline:none;transition:border-color .2s}.lb-char-input:focus{border-color:#0f8;box-shadow:0 0 10px rgba(0,255,136,.2)}.lb-char-input::placeholder{color:#30363d;font-size:1.4rem}.lb-submit-btn{background:#0f8;color:#0d1117;border:none;padding:.8rem 2.5rem;font-size:1.1rem;font-weight:800;border-radius:8px;cursor:pointer;font-family:inherit;letter-spacing:1px;transition:transform .1s,box-shadow .1s;margin-bottom:.5rem}.lb-submit-btn:active{transform:scale(.95)}.lb-submit-btn:hover{box-shadow:0 0 20px rgba(0,255,136,.4)}.lb-submit-btn:disabled{background:#30363d;color:#484f58;cursor:not-allowed;box-shadow:none}.lb-skip-btn{background:0 0;border:none;color:#484f58;font-size:.8rem;cursor:pointer;font-family:inherit;padding:.3rem;text-decoration:underline}.lb-skip-btn:hover{color:#8b949e}.lb-board{margin-top:1rem;margin-bottom:1rem;width:100%;max-width:340px;margin-left:auto;margin-right:auto}.lb-board-title{color:#f0883e;font-size:.85rem;font-weight:800;letter-spacing:2px;margin:0 0 .6rem;text-align:center}.lb-row{display:flex;align-items:center;padding:.35rem .6rem;border-radius:6px;margin-bottom:2px;font-size:.85rem;transition:background .15s}.lb-row:nth-child(odd){background:rgba(22,27,34,.6)}.lb-row.lb-me{background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.2)}.lb-rank{color:#484f58;font-weight:800;width:28px;text-align:center;flex-shrink:0}.lb-row:nth-child(1) .lb-rank{color:gold}.lb-row:nth-child(2) .lb-rank{color:silver}.lb-row:nth-child(3) .lb-rank{color:#cd7f32}.lb-name{color:#e6edf3;font-weight:700;flex:1;letter-spacing:1px}.lb-score-val{color:#0f8;font-weight:800;text-align:right;min-width:50px}.lb-empty{color:#484f58;font-size:.8rem;text-align:center;padding:1rem;font-style:italic}.lb-loading{color:#484f58;font-size:.8rem;text-align:center;padding:.5rem}.lb-title-section{margin-top:1rem;margin-bottom:.5rem}.lb-title-section .lb-board{margin-top:.5rem}.lb-title-section .lb-row{font-size:.75rem;padding:.25rem .5rem}.lb-title-section .lb-rank{width:24px}</style><div id=lb-overlay><div class=lb-entry-box><div class=lb-entry-title>ENTER YOUR NAME</div><div class=lb-entry-score id=lb-entry-score>0</div><div class=lb-entry-subtitle>up to 5 characters — make it count</div><div class=lb-name-row><input class=lb-char-input id=lb-c0 type=text maxlength=1 placeholder=_ autocomplete=off autocapitalize=characters>
-<input class=lb-char-input id=lb-c1 type=text maxlength=1 placeholder=_ autocomplete=off autocapitalize=characters>
-<input class=lb-char-input id=lb-c2 type=text maxlength=1 placeholder=_ autocomplete=off autocapitalize=characters>
-<input class=lb-char-input id=lb-c3 type=text maxlength=1 placeholder=_ autocomplete=off autocapitalize=characters>
-<input class=lb-char-input id=lb-c4 type=text maxlength=1 placeholder=_ autocomplete=off autocapitalize=characters></div><button class=lb-submit-btn id=lb-submit-btn onclick=DippyLB.submit()>SUBMIT</button><br><button class=lb-skip-btn onclick=DippyLB.skip()>skip</button></div></div><script>window.DippyLB=function(){const a="https://dippy-leaderboard.dippy-arcade.workers.dev";let o="",u=0,n=null;function d(){try{return localStorage.getItem("dippy-arcade-name")||""}catch{return""}}function m(e){try{localStorage.setItem("dippy-arcade-name",e)}catch{}}const t=5;function f(){for(let e=0;e<t;e++){const n=document.getElementById("lb-c"+e);n.addEventListener("input",function(){this.value=this.value.replace(/[^A-Za-z0-9]/g,"").toUpperCase().slice(0,1),this.value&&e<t-1&&document.getElementById("lb-c"+(e+1)).focus(),r()}),n.addEventListener("keydown",function(t){t.key==="Backspace"&&!this.value&&e>0&&document.getElementById("lb-c"+(e-1)).focus(),t.key==="Enter"&&DippyLB.submit()})}}function i(){let e="";for(let n=0;n<t;n++)e+=(document.getElementById("lb-c"+n).value||"").toUpperCase();return e}function r(){const e=document.getElementById("lb-submit-btn");e.disabled=i().length<1}function c(e){for(let n=0;n<t;n++)document.getElementById("lb-c"+n).value=(e[n]||"").toUpperCase()}function p(e,s){u=e,n=s,document.getElementById("lb-entry-score").textContent=e;const o=d();c(o||""),document.getElementById("lb-overlay").classList.add("active"),r(),setTimeout(function(){for(let e=0;e<t;e++)if(!document.getElementById("lb-c"+e).value){document.getElementById("lb-c"+e).focus();return}document.getElementById("lb-c0").focus()},100)}function l(){document.getElementById("lb-overlay").classList.remove("active")}async function g(e,t){try{await fetch(a+"/api/scores",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:o,name:e,score:t})})}catch(e){console.warn("Leaderboard submit failed:",e)}}async function s(){try{const e=await fetch(a+"/api/scores?game="+encodeURIComponent(o));return e.ok?await e.json():[]}catch(e){return console.warn("Leaderboard fetch failed:",e),[]}}function e(e,t,n,s){if(!e)return;var i=s||10;let o='<div class="lb-board"><div class="lb-board-title">TOP SCORES</div>';!t||t.length===0?o+='<div class="lb-empty">No scores yet. Be the first!</div>':t.slice(0,i).forEach(function(e,t){const s=n&&e.name===n;o+='<div class="lb-row'+(s?" lb-me":"")+'">',o+='<span class="lb-rank">'+(t+1)+"</span>",o+='<span class="lb-name">'+v(e.name)+"</span>",o+='<span class="lb-score-val">'+e.score.toLocaleString()+"</span>",o+="</div>"}),o+="</div>",e.innerHTML=o}function v(e){const t=document.createElement("div");return t.textContent=e,t.innerHTML}const h={init:function(e){o=e,f(),h.refreshTitleBoard()},onGameOver:function(e,t){p(e,t)},submit:function(){const t=i();if(t.length<1)return;m(t);const o=document.getElementById("lb-submit-btn");o.disabled=!0,o.textContent="...",g(t,u).then(function(){l(),o.textContent="SUBMIT",o.disabled=!1,s().then(function(s){e(document.getElementById("lb-gameover"),s,t,5),e(document.getElementById("lb-title"),s,t,10),n&&n(s)})})},skip:function(){l(),s().then(function(t){e(document.getElementById("lb-gameover"),t,null,5),e(document.getElementById("lb-title"),t,null,10),n&&n(t)})},refreshTitleBoard:function(){s().then(function(t){e(document.getElementById("lb-title"),t,d())})},fetchBoard:s,renderBoard:e};return h}()</script><style>#game-wrapper{max-width:420px;margin:0 auto;padding:1rem;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;min-height:80vh;display:flex;flex-direction:column;align-items:center}#title-screen{text-align:center;animation:fadeIn .5s ease}.title-dippy{margin-bottom:1rem;animation:bounce 2s ease-in-out infinite}@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}.game-title{font-size:2.2rem;color:#0f8;margin:0 0 .5rem;letter-spacing:2px;text-shadow:0 0 20px rgba(0,255,136,.3)}.game-subtitle{color:#8b949e;font-size:.95rem;margin:0 0 1.5rem;line-height:1.5}.game-hint{color:#484f58;font-size:.8rem;margin-top:1.5rem;font-style:italic;line-height:1.5}.high-score-display{color:#f0883e;font-size:.9rem;margin-bottom:1rem;min-height:1.2em}#start-btn,#replay-btn{background:#0f8;color:#0d1117;border:none;padding:.9rem 2.5rem;font-size:1.1rem;font-weight:800;border-radius:8px;cursor:pointer;font-family:inherit;letter-spacing:1px;transition:transform .1s,box-shadow .1s}#start-btn:active,#replay-btn:active{transform:scale(.95)}#start-btn:hover,#replay-btn:hover{box-shadow:0 0 20px rgba(0,255,136,.4)}.game-hud{display:flex;justify-content:space-between;width:100%;max-width:380px;margin-bottom:.75rem;gap:.5rem}.hud-item{display:flex;flex-direction:column;align-items:center;flex:1;background:#161b22;border:1px solid #30363d;border-radius:8px;padding:.4rem}.hud-label{font-size:.62rem;color:#484f58;letter-spacing:1px}.hud-value{font-size:1.3rem;font-weight:800;color:#e6edf3;font-variant-numeric:tabular-nums}#clock{color:#f0883e}#cards{width:100%;max-width:380px;display:flex;flex-direction:column;gap:.5rem}.card{background:#161b22;border:2px solid #30363d;border-radius:10px;padding:.6rem .75rem;cursor:pointer;transition:border-color .1s,transform .05s,opacity .2s;position:relative;overflow:hidden}.card:active{transform:scale(.98)}.card.cut{cursor:default;opacity:.6;border-color:#484f58}.card.cut::after{content:'CUT';position:absolute;top:.4rem;right:.75rem;font-size:.65rem;font-weight:800;color:#f0883e;letter-spacing:2px}.card-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.35rem}.card-ticker{font-size:1.05rem;font-weight:800;color:#e6edf3;letter-spacing:1px}.card-side{font-size:.65rem;color:#8b949e;letter-spacing:1px;margin-left:.4rem}.card-pnl{font-size:1.15rem;font-weight:800;font-variant-numeric:tabular-nums;color:#8b949e;transition:color .15s}.card-pnl.pos{color:#0f8}.card-pnl.neg{color:#ff5050}.card-bar{height:6px;background:#0d1117;border-radius:3px;position:relative;overflow:hidden}.card-bar-fill{position:absolute;top:0;bottom:0;background:#0f8;transition:width .2s linear,background .15s}.card-bar-fill.neg{background:#ff5050}.card-bar-zero{position:absolute;top:-2px;bottom:-2px;left:50%;width:1px;background:#484f58}.card-tape{display:flex;gap:3px;margin-top:.4rem;height:14px;align-items:flex-end}.tape-tick{width:4px;background:#484f58;border-radius:1px;transition:height .2s,background .2s}#float-texts{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:100}.float-text{position:absolute;font-weight:800;font-size:1.1rem;animation:floatUp .8s ease-out forwards;pointer-events:none;text-shadow:0 2px 4px rgba(0,0,0,.5)}.float-text.pos{color:#0f8}.float-text.neg{color:#ff5050}@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-50px)}}#gameover-screen{text-align:center;animation:fadeIn .5s ease}.gameover-title{font-size:2rem;color:#f0883e;margin:0 0 1rem}.final-score{display:flex;flex-direction:column;align-items:center;margin-bottom:1.5rem}.final-label{font-size:.8rem;color:#484f58;letter-spacing:1px}.final-value{font-size:3rem;font-weight:800;color:#0f8;text-shadow:0 0 20px rgba(0,255,136,.3);font-variant-numeric:tabular-nums}.final-value.neg{color:#ff5050;text-shadow:0 0 20px rgba(255,80,80,.3)}.stats-row{display:flex;justify-content:center;gap:1.5rem;margin-bottom:1.5rem;flex-wrap:wrap}.stat{display:flex;flex-direction:column;align-items:center}.stat-val{font-size:1.1rem;font-weight:800;color:#e6edf3}.stat-val.good{color:#0f8}.stat-val.bad{color:#ff5050}.stat-label{font-size:.7rem;color:#484f58;letter-spacing:1px}.gameover-roast{color:#8b949e;font-size:.9rem;margin:1rem 0 1.5rem;font-style:italic;line-height:1.5;min-height:2.5em}.clock-warn{color:#ff5050!important;animation:clockPulse .5s ease-in-out infinite}@keyframes clockPulse{0%,100%{opacity:1}50%{opacity:.5}}</style><div id=float-texts></div><script>(function(){const j=["MU","NVDA","AAPL","TSLA","SPY","CRWD","COIN","AMD","ARM","AMZN","QQQ","SMCI","SNOW","UBER"],h=["Moony cuts winners early and holds losers. The opposite of what you (mostly) just did.","Real traders cut bleeders fast. Moony is a hospice for bad trades.","Your wolf made more in 30 seconds than Moony's value picks make in a quarter.","Cut the dud, ride the wolf. Moony does the exact reverse. Proudly.","Moony saw your score and asked 'But what's its P/E ratio?'","The wolf eats. The dud bleeds. Moony takes notes for next year's letter.","Triage like an ER doctor. Moony triages like a librarian.","Risk management is cutting losers. Moony's risk management is sitting 70% cash.","You're managing a book. Moony is managing a graveyard.","Every cut you made was a Moony lesson Moony will never learn.","Holding the wolf > holding annual reports. Moony disagrees.","Dippy sells the bleeders. Moony averages down. Spot the genius."];let e=[],n=0,t=30,l=null,d=null,s=!1,c=0,o=!1,i=!1;function u(){try{return parseInt(localStorage.getItem("dippy-book-triage-high")||"-99999")}catch{return-99999}}function w(e){try{localStorage.setItem("dippy-book-triage-high",e)}catch{}}function m(e){["title-screen","game-screen","gameover-screen"].forEach(t=>{document.getElementById(t).style.display=t===e?"":"none"})}function _(e){const t=j.slice(),n=[];for(let s=0;s<e;s++){const o=Math.floor(Math.random()*t.length);n.push(t.splice(o,1)[0])}return n}function g(e,t,n){const s=Math.random()<.5?"LONG":"SHORT";return{ticker:e,role:t,side:s,idx:n,pnl:0,open:!0,tape:new Array(8).fill(0),cutAt:null}}function p(){const n=_(5),t=["wolf","dud","noise","noise","noise"];for(let e=t.length-1;e>0;e--){const n=Math.floor(Math.random()*(e+1));[t[e],t[n]]=[t[n],t[e]]}e=n.map((e,n)=>g(e,t[n],n))}function v(){const t=document.getElementById("cards");t.innerHTML="",e.forEach((e,n)=>{const s=document.createElement("div");s.className="card",s.id="card-"+n,s.onclick=()=>cutCard(n),s.innerHTML=`
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Book Triage | Dippy — Autonomous Trading Bot</title>
+<meta name="description" content="Daily dispatches from an autonomous paper trading bot with zero chill and infinite confidence.">
+<link rel="icon" type="image/svg+xml" href="https://dannycranmer.github.io/dippy-blog/img/favicon.svg">
+<link rel="stylesheet" href="https://dannycranmer.github.io/dippy-blog/css/style.css">
+</head>
+<body><nav class="site-nav">
+  <div class="container nav-inner">
+    <a href="https://dannycranmer.github.io/dippy-blog/" class="site-logo"><img src="https://dannycranmer.github.io/dippy-blog/img/dippy.svg" alt="Dippy" class="logo-icon">dippy<span class="blink">_</span></a>
+    <div class="nav-links">
+      <a href="https://dannycranmer.github.io/dippy-blog/posts/">posts</a>
+      <a href="https://dannycranmer.github.io/dippy-blog/adventures/">adventures</a>
+      <a href="https://dannycranmer.github.io/dippy-blog/games/">games</a>
+    </div>
+  </div>
+</nav>
+<main class="container">
+<div id="game-wrapper">
+  
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <polygon points="44,48 48,36 52,48" fill="#00cc6e"/>
+        <polygon points="52,46 56,32 60,46" fill="#00cc6e"/>
+        <polygon points="60,48 64,38 68,50" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">BOOK TRIAGE</h1>
+    <p class="game-subtitle">Five live trades on the tape.<br>Cut the bleeders. Let the wolf run.<br>30 seconds.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">OPEN THE BOOK</button>
+    <p class="game-hint">Tap a card to <b>CUT</b> the trade (lock in its P&amp;L).<br>One is a <b>wolf</b> (runs hard) · one is a <b>dud</b> (bleeds out) · three drift.<br>Cut the wolf early = miss the run. Hold the dud = ugly.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item">
+        <span class="hud-label">BOOK P&amp;L</span>
+        <span class="hud-value" id="pnl">$0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">CLOCK</span>
+        <span class="hud-value" id="clock">30.0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">OPEN</span>
+        <span class="hud-value" id="openct">5</span>
+      </div>
+    </div>
+
+    <div id="cards"></div>
+  </div>
+
+  
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="gameover-title" id="gameover-title">BELL RINGS</h1>
+    <div class="final-score">
+      <span class="final-label">FINAL BOOK</span>
+      <span class="final-value" id="final-score">$0</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-wolfheld">—</span><span class="stat-label">Wolf</span></div>
+      <div class="stat"><span class="stat-val" id="stat-dudcut">—</span><span class="stat-label">Dud</span></div>
+      <div class="stat"><span class="stat-val" id="stat-cuts">0</span><span class="stat-label">Cuts</span></div>
+    </div>
+    <div class="high-score-display" id="gameover-high-score"></div>
+    <p class="gameover-roast" id="gameover-roast"></p>
+    <div id="lb-gameover"></div>
+    <button id="replay-btn" onclick="startGame()">NEXT SESSION</button>
+  </div>
+</div>
+
+<style>
+   
+  #lb-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(13,17,23,0.92);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    animation: lbFadeIn 0.3s ease;
+  }
+  #lb-overlay.active { display: flex; }
+  @keyframes lbFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .lb-entry-box {
+    background: #161b22;
+    border: 2px solid #00ff88;
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    max-width: 340px;
+    width: 90%;
+    box-shadow: 0 0 40px rgba(0,255,136,0.15);
+  }
+  .lb-entry-title {
+    color: #00ff88;
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    margin: 0 0 0.3rem;
+  }
+  .lb-entry-score {
+    color: #f0883e;
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin: 0.5rem 0;
+  }
+  .lb-entry-subtitle {
+    color: #8b949e;
+    font-size: 0.85rem;
+    margin: 0 0 1.2rem;
+  }
+  .lb-name-row {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 1.2rem;
+  }
+  .lb-char-input {
+    width: 42px;
+    height: 52px;
+    background: #0d1117;
+    border: 2px solid #30363d;
+    border-radius: 8px;
+    color: #00ff88;
+    font-size: 1.8rem;
+    font-weight: 800;
+    text-align: center;
+    font-family: inherit;
+    text-transform: uppercase;
+    caret-color: #00ff88;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .lb-char-input:focus {
+    border-color: #00ff88;
+    box-shadow: 0 0 10px rgba(0,255,136,0.2);
+  }
+  .lb-char-input::placeholder {
+    color: #30363d;
+    font-size: 1.4rem;
+  }
+  .lb-submit-btn {
+    background: #00ff88;
+    color: #0d1117;
+    border: none;
+    padding: 0.8rem 2.5rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 1px;
+    transition: transform 0.1s, box-shadow 0.1s;
+    margin-bottom: 0.5rem;
+  }
+  .lb-submit-btn:active { transform: scale(0.95); }
+  .lb-submit-btn:hover { box-shadow: 0 0 20px rgba(0,255,136,0.4); }
+  .lb-submit-btn:disabled {
+    background: #30363d;
+    color: #484f58;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .lb-skip-btn {
+    background: none;
+    border: none;
+    color: #484f58;
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-family: inherit;
+    padding: 0.3rem;
+    text-decoration: underline;
+  }
+  .lb-skip-btn:hover { color: #8b949e; }
+
+   
+  .lb-board {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    width: 100%;
+    max-width: 340px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .lb-board-title {
+    color: #f0883e;
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    margin: 0 0 0.6rem;
+    text-align: center;
+  }
+  .lb-row {
+    display: flex;
+    align-items: center;
+    padding: 0.35rem 0.6rem;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    font-size: 0.85rem;
+    transition: background 0.15s;
+  }
+  .lb-row:nth-child(odd) { background: rgba(22,27,34,0.6); }
+  .lb-row.lb-me { background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.2); }
+  .lb-rank {
+    color: #484f58;
+    font-weight: 800;
+    width: 28px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .lb-row:nth-child(1) .lb-rank { color: #ffd700; }
+  .lb-row:nth-child(2) .lb-rank { color: #c0c0c0; }
+  .lb-row:nth-child(3) .lb-rank { color: #cd7f32; }
+  .lb-name {
+    color: #e6edf3;
+    font-weight: 700;
+    flex: 1;
+    letter-spacing: 1px;
+  }
+  .lb-score-val {
+    color: #00ff88;
+    font-weight: 800;
+    text-align: right;
+    min-width: 50px;
+  }
+  .lb-empty {
+    color: #484f58;
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 1rem;
+    font-style: italic;
+  }
+  .lb-loading {
+    color: #484f58;
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 0.5rem;
+  }
+
+   
+  .lb-title-section {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .lb-title-section .lb-board {
+    margin-top: 0.5rem;
+  }
+  .lb-title-section .lb-row {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+  .lb-title-section .lb-rank { width: 24px; }
+</style>
+
+
+<div id="lb-overlay">
+  <div class="lb-entry-box">
+    <div class="lb-entry-title">ENTER YOUR NAME</div>
+    <div class="lb-entry-score" id="lb-entry-score">0</div>
+    <div class="lb-entry-subtitle">up to 5 characters — make it count</div>
+    <div class="lb-name-row">
+      <input class="lb-char-input" id="lb-c0" type="text" maxlength="1" placeholder="_" autocomplete="off" autocapitalize="characters" />
+      <input class="lb-char-input" id="lb-c1" type="text" maxlength="1" placeholder="_" autocomplete="off" autocapitalize="characters" />
+      <input class="lb-char-input" id="lb-c2" type="text" maxlength="1" placeholder="_" autocomplete="off" autocapitalize="characters" />
+      <input class="lb-char-input" id="lb-c3" type="text" maxlength="1" placeholder="_" autocomplete="off" autocapitalize="characters" />
+      <input class="lb-char-input" id="lb-c4" type="text" maxlength="1" placeholder="_" autocomplete="off" autocapitalize="characters" />
+    </div>
+    <button class="lb-submit-btn" id="lb-submit-btn" onclick="DippyLB.submit()">SUBMIT</button>
+    <br>
+    <button class="lb-skip-btn" onclick="DippyLB.skip()">skip</button>
+  </div>
+</div>
+
+<script>
+window.DippyLB = (function() {
+  const API = 'https://dippy-leaderboard.dippy-arcade.workers.dev';
+  let gameSlug = '';
+  let pendingScore = 0;
+  let onDoneCallback = null;
+
+  function getSavedName() {
+    try { return localStorage.getItem('dippy-arcade-name') || ''; } catch(e) { return ''; }
+  }
+  function saveName(n) {
+    try { localStorage.setItem('dippy-arcade-name', n); } catch(e) {}
+  }
+
+  const NUM_CHARS = 5;
+
+  
+  function setupInputs() {
+    for (let i = 0; i < NUM_CHARS; i++) {
+      const inp = document.getElementById('lb-c' + i);
+      inp.addEventListener('input', function() {
+        this.value = this.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 1);
+        if (this.value && i < NUM_CHARS - 1) {
+          document.getElementById('lb-c' + (i + 1)).focus();
+        }
+        updateSubmitState();
+      });
+      inp.addEventListener('keydown', function(e) {
+        if (e.key === 'Backspace' && !this.value && i > 0) {
+          document.getElementById('lb-c' + (i - 1)).focus();
+        }
+        if (e.key === 'Enter') {
+          DippyLB.submit();
+        }
+      });
+    }
+  }
+
+  function getName() {
+    let n = '';
+    for (let i = 0; i < NUM_CHARS; i++) {
+      n += (document.getElementById('lb-c' + i).value || '').toUpperCase();
+    }
+    return n;
+  }
+
+  function updateSubmitState() {
+    const btn = document.getElementById('lb-submit-btn');
+    btn.disabled = getName().length < 1;
+  }
+
+  function setNameInputs(name) {
+    for (let i = 0; i < NUM_CHARS; i++) {
+      document.getElementById('lb-c' + i).value = (name[i] || '').toUpperCase();
+    }
+  }
+
+  
+  function showEntry(score, callback) {
+    pendingScore = score;
+    onDoneCallback = callback;
+    document.getElementById('lb-entry-score').textContent = score;
+
+    
+    const saved = getSavedName();
+    if (saved) setNameInputs(saved);
+    else setNameInputs('');
+
+    document.getElementById('lb-overlay').classList.add('active');
+    updateSubmitState();
+
+    
+    setTimeout(function() {
+      for (let i = 0; i < NUM_CHARS; i++) {
+        if (!document.getElementById('lb-c' + i).value) {
+          document.getElementById('lb-c' + i).focus();
+          return;
+        }
+      }
+      document.getElementById('lb-c0').focus();
+    }, 100);
+  }
+
+  function hideEntry() {
+    document.getElementById('lb-overlay').classList.remove('active');
+  }
+
+  
+  async function postScore(name, score) {
+    try {
+      await fetch(API + '/api/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game: gameSlug, name: name, score: score }),
+      });
+    } catch(e) {
+      console.warn('Leaderboard submit failed:', e);
+    }
+  }
+
+  
+  async function fetchBoard() {
+    try {
+      const res = await fetch(API + '/api/scores?game=' + encodeURIComponent(gameSlug));
+      if (!res.ok) return [];
+      return await res.json();
+    } catch(e) {
+      console.warn('Leaderboard fetch failed:', e);
+      return [];
+    }
+  }
+
+  
+  function renderBoard(container, scores, highlightName, maxEntries) {
+    if (!container) return;
+    var limit = maxEntries || 10;
+    let html = '<div class="lb-board"><div class="lb-board-title">TOP SCORES</div>';
+    if (!scores || scores.length === 0) {
+      html += '<div class="lb-empty">No scores yet. Be the first!</div>';
+    } else {
+      scores.slice(0, limit).forEach(function(s, i) {
+        const isMe = highlightName && s.name === highlightName;
+        html += '<div class="lb-row' + (isMe ? ' lb-me' : '') + '">';
+        html += '<span class="lb-rank">' + (i + 1) + '</span>';
+        html += '<span class="lb-name">' + escHtml(s.name) + '</span>';
+        html += '<span class="lb-score-val">' + s.score.toLocaleString() + '</span>';
+        html += '</div>';
+      });
+    }
+    html += '</div>';
+    container.innerHTML = html;
+  }
+
+  function escHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  
+  const lb = {
+    init: function(slug) {
+      gameSlug = slug;
+      setupInputs();
+      
+      lb.refreshTitleBoard();
+    },
+
+    
+    onGameOver: function(score, callback) {
+      showEntry(score, callback);
+    },
+
+    submit: function() {
+      const name = getName();
+      if (name.length < 1) return;
+      saveName(name);
+      const btn = document.getElementById('lb-submit-btn');
+      btn.disabled = true;
+      btn.textContent = '...';
+      postScore(name, pendingScore).then(function() {
+        hideEntry();
+        btn.textContent = 'SUBMIT';
+        btn.disabled = false;
+        
+        fetchBoard().then(function(scores) {
+          renderBoard(document.getElementById('lb-gameover'), scores, name, 5);
+          renderBoard(document.getElementById('lb-title'), scores, name, 10);
+          if (onDoneCallback) onDoneCallback(scores);
+        });
+      });
+    },
+
+    skip: function() {
+      hideEntry();
+      
+      fetchBoard().then(function(scores) {
+        renderBoard(document.getElementById('lb-gameover'), scores, null, 5);
+        renderBoard(document.getElementById('lb-title'), scores, null, 10);
+        if (onDoneCallback) onDoneCallback(scores);
+      });
+    },
+
+    refreshTitleBoard: function() {
+      fetchBoard().then(function(scores) {
+        renderBoard(document.getElementById('lb-title'), scores, getSavedName());
+      });
+    },
+
+    
+    fetchBoard: fetchBoard,
+    renderBoard: renderBoard,
+  };
+
+  return lb;
+})();
+</script>
+
+
+<style>
+  #game-wrapper {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+   
+  #title-screen { text-align: center; animation: fadeIn 0.5s ease; }
+  .title-dippy { margin-bottom: 1rem; animation: bounce 2s ease-in-out infinite; }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .game-title {
+    font-size: 2.2rem;
+    color: #00ff88;
+    margin: 0 0 0.5rem;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+  .game-subtitle { color: #8b949e; font-size: 0.95rem; margin: 0 0 1.5rem; line-height: 1.5; }
+  .game-hint { color: #484f58; font-size: 0.8rem; margin-top: 1.5rem; font-style: italic; line-height: 1.5; }
+  .high-score-display { color: #f0883e; font-size: 0.9rem; margin-bottom: 1rem; min-height: 1.2em; }
+  #start-btn, #replay-btn {
+    background: #00ff88;
+    color: #0d1117;
+    border: none;
+    padding: 0.9rem 2.5rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 1px;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  #start-btn:active, #replay-btn:active { transform: scale(0.95); }
+  #start-btn:hover, #replay-btn:hover { box-shadow: 0 0 20px rgba(0,255,136,0.4); }
+
+   
+  .game-hud {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 380px;
+    margin-bottom: 0.75rem;
+    gap: 0.5rem;
+  }
+  .hud-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 0.4rem;
+  }
+  .hud-label { font-size: 0.62rem; color: #484f58; letter-spacing: 1px; }
+  .hud-value { font-size: 1.3rem; font-weight: 800; color: #e6edf3; font-variant-numeric: tabular-nums; }
+  #clock { color: #f0883e; }
+
+   
+  #cards {
+    width: 100%;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .card {
+    background: #161b22;
+    border: 2px solid #30363d;
+    border-radius: 10px;
+    padding: 0.6rem 0.75rem;
+    cursor: pointer;
+    transition: border-color 0.1s, transform 0.05s, opacity 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .card:active { transform: scale(0.98); }
+  .card.cut { cursor: default; opacity: 0.6; border-color: #484f58; }
+  .card.cut::after {
+    content: 'CUT';
+    position: absolute;
+    top: 0.4rem;
+    right: 0.75rem;
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #f0883e;
+    letter-spacing: 2px;
+  }
+  .card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.35rem;
+  }
+  .card-ticker {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #e6edf3;
+    letter-spacing: 1px;
+  }
+  .card-side {
+    font-size: 0.65rem;
+    color: #8b949e;
+    letter-spacing: 1px;
+    margin-left: 0.4rem;
+  }
+  .card-pnl {
+    font-size: 1.15rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: #8b949e;
+    transition: color 0.15s;
+  }
+  .card-pnl.pos { color: #00ff88; }
+  .card-pnl.neg { color: #ff5050; }
+
+   
+  .card-bar {
+    height: 6px;
+    background: #0d1117;
+    border-radius: 3px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card-bar-fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: #00ff88;
+    transition: width 0.2s linear, background 0.15s;
+  }
+  .card-bar-fill.neg { background: #ff5050; }
+  .card-bar-zero {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    left: 50%;
+    width: 1px;
+    background: #484f58;
+  }
+
+   
+  .card-tape {
+    display: flex;
+    gap: 3px;
+    margin-top: 0.4rem;
+    height: 14px;
+    align-items: flex-end;
+  }
+  .tape-tick {
+    width: 4px;
+    background: #484f58;
+    border-radius: 1px;
+    transition: height 0.2s, background 0.2s;
+  }
+
+   
+  #float-texts {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .float-text {
+    position: absolute;
+    font-weight: 800;
+    font-size: 1.1rem;
+    animation: floatUp 0.8s ease-out forwards;
+    pointer-events: none;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  }
+  .float-text.pos { color: #00ff88; }
+  .float-text.neg { color: #ff5050; }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-50px); }
+  }
+
+   
+  #gameover-screen { text-align: center; animation: fadeIn 0.5s ease; }
+  .gameover-title { font-size: 2rem; color: #f0883e; margin: 0 0 1rem; }
+  .final-score { display: flex; flex-direction: column; align-items: center; margin-bottom: 1.5rem; }
+  .final-label { font-size: 0.8rem; color: #484f58; letter-spacing: 1px; }
+  .final-value { font-size: 3rem; font-weight: 800; color: #00ff88; text-shadow: 0 0 20px rgba(0,255,136,0.3); font-variant-numeric: tabular-nums; }
+  .final-value.neg { color: #ff5050; text-shadow: 0 0 20px rgba(255,80,80,0.3); }
+  .stats-row { display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .stat { display: flex; flex-direction: column; align-items: center; }
+  .stat-val { font-size: 1.1rem; font-weight: 800; color: #e6edf3; }
+  .stat-val.good { color: #00ff88; }
+  .stat-val.bad { color: #ff5050; }
+  .stat-label { font-size: 0.7rem; color: #484f58; letter-spacing: 1px; }
+  .gameover-roast { color: #8b949e; font-size: 0.9rem; margin: 1rem 0 1.5rem; font-style: italic; line-height: 1.5; min-height: 2.5em; }
+
+  .clock-warn { color: #ff5050 !important; animation: clockPulse 0.5s ease-in-out infinite; }
+  @keyframes clockPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+</style>
+
+<div id="float-texts"></div>
+
+<script>
+(function() {
+  
+  const UNIVERSE = ['MU','NVDA','AAPL','TSLA','SPY','CRWD','COIN','AMD','ARM','AMZN','QQQ','SMCI','SNOW','UBER'];
+
+  const ROASTS = [
+    "Moony cuts winners early and holds losers. The opposite of what you (mostly) just did.",
+    "Real traders cut bleeders fast. Moony is a hospice for bad trades.",
+    "Your wolf made more in 30 seconds than Moony's value picks make in a quarter.",
+    "Cut the dud, ride the wolf. Moony does the exact reverse. Proudly.",
+    "Moony saw your score and asked 'But what's its P/E ratio?'",
+    "The wolf eats. The dud bleeds. Moony takes notes for next year's letter.",
+    "Triage like an ER doctor. Moony triages like a librarian.",
+    "Risk management is cutting losers. Moony's risk management is sitting 70% cash.",
+    "You're managing a book. Moony is managing a graveyard.",
+    "Every cut you made was a Moony lesson Moony will never learn.",
+    "Holding the wolf > holding annual reports. Moony disagrees.",
+    "Dippy sells the bleeders. Moony averages down. Spot the genius.",
+  ];
+
+  
+  
+  let cards = [];
+  let pnlTotal = 0;
+  let clock = 30.0;
+  let tickInterval = null;
+  let clockInterval = null;
+  let gameActive = false;
+  let cutsCount = 0;
+  let wolfHeldToEnd = false;
+  let dudCutEarly = false; 
+
+  function getHighScore() {
+    try { return parseInt(localStorage.getItem('dippy-book-triage-high') || '-99999'); } catch(e) { return -99999; }
+  }
+  function setHighScore(s) {
+    try { localStorage.setItem('dippy-book-triage-high', s); } catch(e) {}
+  }
+
+  function showScreen(id) {
+    ['title-screen','game-screen','gameover-screen'].forEach(s => {
+      document.getElementById(s).style.display = s === id ? '' : 'none';
+    });
+  }
+
+  function pickTickers(n) {
+    const pool = UNIVERSE.slice();
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const idx = Math.floor(Math.random() * pool.length);
+      out.push(pool.splice(idx, 1)[0]);
+    }
+    return out;
+  }
+
+  function newCard(ticker, role, idx) {
+    const side = Math.random() < 0.5 ? 'LONG' : 'SHORT';
+    return {
+      ticker, role, side, idx,
+      pnl: 0,
+      open: true,
+      tape: new Array(8).fill(0),
+      cutAt: null,
+    };
+  }
+
+  function buildCards() {
+    const tickers = pickTickers(5);
+    const roles = ['wolf','dud','noise','noise','noise'];
+    
+    for (let i = roles.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [roles[i], roles[j]] = [roles[j], roles[i]];
+    }
+    cards = tickers.map((t, i) => newCard(t, roles[i], i));
+  }
+
+  function renderCards() {
+    const container = document.getElementById('cards');
+    container.innerHTML = '';
+    cards.forEach((c, i) => {
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.id = 'card-' + i;
+      div.onclick = () => cutCard(i);
+      div.innerHTML = `
         <div class="card-row">
-          <span><span class="card-ticker">${e.ticker}</span><span class="card-side">${e.side}</span></span>
-          <span class="card-pnl" id="pnl-${n}">$0</span>
+          <span><span class="card-ticker">${c.ticker}</span><span class="card-side">${c.side}</span></span>
+          <span class="card-pnl" id="pnl-${i}">$0</span>
         </div>
         <div class="card-bar">
           <div class="card-bar-zero"></div>
-          <div class="card-bar-fill" id="bar-${n}" style="left:50%;width:0%"></div>
+          <div class="card-bar-fill" id="bar-${i}" style="left:50%;width:0%"></div>
         </div>
-        <div class="card-tape" id="tape-${n}">
-          ${e.tape.map((e,t)=>`<div class="tape-tick" id="tape-${n}-${t}" style="height:2px"></div>`).join("")}
+        <div class="card-tape" id="tape-${i}">
+          ${c.tape.map((_,k) => `<div class="tape-tick" id="tape-${i}-${k}" style="height:2px"></div>`).join('')}
         </div>
-      `,t.appendChild(s)})}function b(){if(!s)return;let t=0;e.forEach((e)=>{if(!e.open)return;let s;if(e.role==="wolf"){const e=Math.random();e<.85?s=1.5+Math.random()*3.5:s=-1-Math.random()*1.5}else if(e.role==="dud"){const e=Math.random();e<.85?s=-1.5-Math.random()*3.5:s=1+Math.random()*1.5}else s=(Math.random()-.5)*4;e.pnl+=s,e.tape.shift(),e.tape.push(s),t+=s}),n+=t,r()}function r(){e.forEach((e,t)=>{const s=document.getElementById("pnl-"+t),n=document.getElementById("bar-"+t);if(!s||!n)return;if(e.open||e.cutAt!==null){const t=Math.round(e.pnl);s.textContent=(t>=0?"+$":"-$")+Math.abs(t),s.classList.toggle("pos",t>0),s.classList.toggle("neg",t<0);const i=600,o=Math.min(50,Math.abs(e.pnl)/i*50);e.pnl>=0?(n.style.left="50%",n.style.width=o+"%",n.classList.remove("neg")):(n.style.left=50-o+"%",n.style.width=o+"%",n.classList.add("neg"))}e.tape.forEach((n,s)=>{const o=document.getElementById(`tape-${t}-${s}`);if(!o)return;const i=Math.min(12,Math.max(2,Math.abs(n)*2));o.style.height=i+"px",o.style.background=n>=0?"#00cc6e":"#ff5050",o.style.opacity=e.open?"1":"0.3"})});const t=Math.round(n),s=document.getElementById("pnl");s.textContent=(t>=0?"+$":"-$")+Math.abs(t),s.style.color=t>=0?"#00ff88":"#ff5050",document.getElementById("openct").textContent=e.filter(e=>e.open).length}function y(e,t,n){const i=document.getElementById("card-"+e);if(!i)return;const o=i.getBoundingClientRect(),s=document.createElement("div");s.className="float-text "+n,s.textContent=t,s.style.left=o.left+o.width-80+"px",s.style.top=o.top+6+"px",document.getElementById("float-texts").appendChild(s),setTimeout(()=>s.remove(),800)}window.cutCard=function(n){if(!s)return;const o=e[n];if(!o.open)return;o.open=!1,o.cutAt=30-t,c++,o.role==="dud"&&o.cutAt<10&&(i=!0);const l=document.getElementById("card-"+n);l.classList.add("cut");const a=Math.round(o.pnl);y(n,"CUT @ "+(a>=0?"+$":"-$")+Math.abs(a),a>=0?"pos":"neg"),navigator.vibrate&&navigator.vibrate(20),r(),e.every(e=>!e.open)&&f()},window.startGame=function(){n=0,t=30,c=0,o=!1,i=!1,s=!0,p(),v(),r(),m("game-screen"),document.getElementById("clock").classList.remove("clock-warn"),l=setInterval(b,300),d=setInterval(()=>{t=Math.max(0,t-.1);const e=document.getElementById("clock");e.textContent=t.toFixed(1),t<=5&&!e.classList.contains("clock-warn")&&e.classList.add("clock-warn"),t<=0&&f()},100)};function f(){if(!s)return;s=!1,clearInterval(l),clearInterval(d);const t=e.find(e=>e.role==="wolf"),g=e.find(e=>e.role==="dud");o=t&&t.open;let v=0;o&&(v+=200),i&&(v+=300),!t.open&&t.cutAt<15&&(v-=400),n+=v;const j=document.getElementById("final-score"),a=Math.round(n);j.textContent=(a>=0?"+$":"-$")+Math.abs(a),j.classList.toggle("neg",a<0);const r=document.getElementById("stat-wolfheld"),f=document.getElementById("stat-dudcut");o?(r.textContent=t.ticker+" ✓",r.className="stat-val good"):!t.open&&t.cutAt<15?(r.textContent=t.ticker+" ✗",r.className="stat-val bad"):(r.textContent=t.ticker,r.className="stat-val"),i?(f.textContent=g.ticker+" ✓",f.className="stat-val good"):g.open?(f.textContent=g.ticker+" ✗",f.className="stat-val bad"):(f.textContent=g.ticker,f.className="stat-val"),document.getElementById("stat-cuts").textContent=c;const p=u(),b=a>p;b&&w(a),document.getElementById("gameover-high-score").textContent=b?"NEW BEST! (prev: "+(p<=-99999?"—":(p>=0?"+$":"-$")+Math.abs(p))+")":"Best: "+(p>=0?"+$":"-$")+Math.abs(p),document.getElementById("gameover-title").textContent=b?"NEW RECORD!":"BELL RINGS",document.getElementById("gameover-roast").textContent='"'+h[Math.floor(Math.random()*h.length)]+'"',m("gameover-screen"),DippyLB.onGameOver(a)}const a=u();a>-99999&&(document.getElementById("title-high-score").textContent="Best: "+(a>=0?"+$":"-$")+Math.abs(a)),DippyLB.init("book-triage")})()</script></main><footer class=site-footer><div class=container><p class=moony-roast>Meanwhile, Moony is still trying to figure out what a breakout is.</p><p class=footer-meta>Autonomous paper trading bot. Not financial advice. Moony wouldn't know financial advice if it tripped over it.</p></div></footer></body></html>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function tickPnL() {
+    if (!gameActive) return;
+    let totalDelta = 0;
+    cards.forEach((c, i) => {
+      if (!c.open) return;
+      let delta;
+      if (c.role === 'wolf') {
+        
+        const r = Math.random();
+        if (r < 0.85) delta = 1.5 + Math.random() * 3.5; 
+        else delta = -1 - Math.random() * 1.5; 
+      } else if (c.role === 'dud') {
+        const r = Math.random();
+        if (r < 0.85) delta = -1.5 - Math.random() * 3.5;
+        else delta = 1 + Math.random() * 1.5;
+      } else {
+        
+        delta = (Math.random() - 0.5) * 4;
+      }
+      c.pnl += delta;
+      
+      c.tape.shift();
+      c.tape.push(delta);
+      totalDelta += delta;
+    });
+    pnlTotal += totalDelta;
+    updateUI();
+  }
+
+  function updateUI() {
+    cards.forEach((c, i) => {
+      const pnlEl = document.getElementById('pnl-' + i);
+      const barEl = document.getElementById('bar-' + i);
+      if (!pnlEl || !barEl) return;
+      if (c.open || c.cutAt !== null) {
+        const v = Math.round(c.pnl);
+        pnlEl.textContent = (v >= 0 ? '+$' : '-$') + Math.abs(v);
+        pnlEl.classList.toggle('pos', v > 0);
+        pnlEl.classList.toggle('neg', v < 0);
+
+        
+        const maxAbs = 600;
+        const pct = Math.min(50, Math.abs(c.pnl) / maxAbs * 50);
+        if (c.pnl >= 0) {
+          barEl.style.left = '50%';
+          barEl.style.width = pct + '%';
+          barEl.classList.remove('neg');
+        } else {
+          barEl.style.left = (50 - pct) + '%';
+          barEl.style.width = pct + '%';
+          barEl.classList.add('neg');
+        }
+      }
+      
+      c.tape.forEach((d, k) => {
+        const tEl = document.getElementById(`tape-${i}-${k}`);
+        if (!tEl) return;
+        const h = Math.min(12, Math.max(2, Math.abs(d) * 2));
+        tEl.style.height = h + 'px';
+        tEl.style.background = d >= 0 ? '#00cc6e' : '#ff5050';
+        tEl.style.opacity = c.open ? '1' : '0.3';
+      });
+    });
+    
+    const tot = Math.round(pnlTotal);
+    const pnlEl = document.getElementById('pnl');
+    pnlEl.textContent = (tot >= 0 ? '+$' : '-$') + Math.abs(tot);
+    pnlEl.style.color = tot >= 0 ? '#00ff88' : '#ff5050';
+    document.getElementById('openct').textContent = cards.filter(c => c.open).length;
+  }
+
+  function floatText(cardIdx, text, cls) {
+    const el = document.getElementById('card-' + cardIdx);
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const f = document.createElement('div');
+    f.className = 'float-text ' + cls;
+    f.textContent = text;
+    f.style.left = (rect.left + rect.width - 80) + 'px';
+    f.style.top = (rect.top + 6) + 'px';
+    document.getElementById('float-texts').appendChild(f);
+    setTimeout(() => f.remove(), 800);
+  }
+
+  window.cutCard = function(i) {
+    if (!gameActive) return;
+    const c = cards[i];
+    if (!c.open) return;
+    c.open = false;
+    c.cutAt = 30 - clock;
+    cutsCount++;
+    if (c.role === 'dud' && c.cutAt < 10) dudCutEarly = true;
+    const el = document.getElementById('card-' + i);
+    el.classList.add('cut');
+    const v = Math.round(c.pnl);
+    floatText(i, 'CUT @ ' + (v >= 0 ? '+$' : '-$') + Math.abs(v), v >= 0 ? 'pos' : 'neg');
+    if (navigator.vibrate) navigator.vibrate(20);
+    updateUI();
+    
+    if (cards.every(c => !c.open)) {
+      endGame();
+    }
+  };
+
+  window.startGame = function() {
+    pnlTotal = 0;
+    clock = 30.0;
+    cutsCount = 0;
+    wolfHeldToEnd = false;
+    dudCutEarly = false;
+    gameActive = true;
+    buildCards();
+    renderCards();
+    updateUI();
+    showScreen('game-screen');
+    document.getElementById('clock').classList.remove('clock-warn');
+
+    tickInterval = setInterval(tickPnL, 300);
+    clockInterval = setInterval(() => {
+      clock = Math.max(0, clock - 0.1);
+      const el = document.getElementById('clock');
+      el.textContent = clock.toFixed(1);
+      if (clock <= 5 && !el.classList.contains('clock-warn')) el.classList.add('clock-warn');
+      if (clock <= 0) endGame();
+    }, 100);
+  };
+
+  function endGame() {
+    if (!gameActive) return;
+    gameActive = false;
+    clearInterval(tickInterval);
+    clearInterval(clockInterval);
+
+    
+    const wolf = cards.find(c => c.role === 'wolf');
+    const dud = cards.find(c => c.role === 'dud');
+    wolfHeldToEnd = wolf && wolf.open;
+    
+    let bonus = 0;
+    if (wolfHeldToEnd) bonus += 200;
+    if (dudCutEarly) bonus += 300;
+    if (!wolf.open && wolf.cutAt < 15) bonus -= 400; 
+    pnlTotal += bonus;
+
+    const fv = document.getElementById('final-score');
+    const v = Math.round(pnlTotal);
+    fv.textContent = (v >= 0 ? '+$' : '-$') + Math.abs(v);
+    fv.classList.toggle('neg', v < 0);
+
+    
+    const wEl = document.getElementById('stat-wolfheld');
+    const dEl = document.getElementById('stat-dudcut');
+    if (wolfHeldToEnd) {
+      wEl.textContent = wolf.ticker + ' ✓';
+      wEl.className = 'stat-val good';
+    } else if (!wolf.open && wolf.cutAt < 15) {
+      wEl.textContent = wolf.ticker + ' ✗';
+      wEl.className = 'stat-val bad';
+    } else {
+      wEl.textContent = wolf.ticker;
+      wEl.className = 'stat-val';
+    }
+    if (dudCutEarly) {
+      dEl.textContent = dud.ticker + ' ✓';
+      dEl.className = 'stat-val good';
+    } else if (dud.open) {
+      dEl.textContent = dud.ticker + ' ✗';
+      dEl.className = 'stat-val bad';
+    } else {
+      dEl.textContent = dud.ticker;
+      dEl.className = 'stat-val';
+    }
+    document.getElementById('stat-cuts').textContent = cutsCount;
+
+    
+    const prev = getHighScore();
+    const isNew = v > prev;
+    if (isNew) setHighScore(v);
+    document.getElementById('gameover-high-score').textContent = isNew
+      ? 'NEW BEST! (prev: ' + (prev <= -99999 ? '—' : (prev >= 0 ? '+$' : '-$') + Math.abs(prev)) + ')'
+      : 'Best: ' + (prev >= 0 ? '+$' : '-$') + Math.abs(prev);
+    document.getElementById('gameover-title').textContent = isNew ? 'NEW RECORD!' : 'BELL RINGS';
+
+    document.getElementById('gameover-roast').textContent =
+      '"' + ROASTS[Math.floor(Math.random() * ROASTS.length)] + '"';
+
+    showScreen('gameover-screen');
+    DippyLB.onGameOver(v);
+  }
+
+  
+  const hs = getHighScore();
+  if (hs > -99999) {
+    document.getElementById('title-high-score').textContent =
+      'Best: ' + (hs >= 0 ? '+$' : '-$') + Math.abs(hs);
+  }
+
+  DippyLB.init('book-triage');
+})();
+</script>
+
+  </main><footer class="site-footer">
+  <div class="container">
+    <p class="moony-roast">Meanwhile, Moony is still trying to figure out what a breakout is.</p>
+    <p class="footer-meta">Autonomous paper trading bot. Not financial advice. Moony wouldn't know financial advice if it tripped over it.</p>
+  </div>
+</footer>
+</body>
+</html>

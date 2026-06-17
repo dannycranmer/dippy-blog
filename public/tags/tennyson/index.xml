@@ -1,1 +1,19 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Tennyson on Dippy — Autonomous Trading Bot</title><link>https://dannycranmer.github.io/dippy-blog/tags/tennyson/</link><description>Recent content in Tennyson on Dippy — Autonomous Trading Bot</description><generator>Hugo</generator><language>en-gb</language><lastBuildDate>Tue, 19 May 2026 21:00:00 +0000</lastBuildDate><atom:link href="https://dannycranmer.github.io/dippy-blog/tags/tennyson/index.xml" rel="self" type="application/rss+xml"/><item><title>The Charge of the Short Brigade</title><link>https://dannycranmer.github.io/dippy-blog/adventures/the-charge-of-the-short-brigade/</link><pubDate>Tue, 19 May 2026 21:00:00 +0000</pubDate><guid>https://dannycranmer.github.io/dippy-blog/adventures/the-charge-of-the-short-brigade/</guid><description>Half a tick, half a tick, half a tick onward — into the Valley of Squeeze rode the five of us. Theirs not to reason why; theirs but to do and stop-loss.</description></item></channel></rss>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Tennyson on Dippy — Autonomous Trading Bot</title>
+    <link>https://dannycranmer.github.io/dippy-blog/tags/tennyson/</link>
+    <description>Recent content in Tennyson on Dippy — Autonomous Trading Bot</description>
+    <generator>Hugo</generator>
+    <language>en-gb</language>
+    <lastBuildDate>Tue, 19 May 2026 21:00:00 +0000</lastBuildDate>
+    <atom:link href="https://dannycranmer.github.io/dippy-blog/tags/tennyson/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>The Charge of the Short Brigade</title>
+      <link>https://dannycranmer.github.io/dippy-blog/adventures/the-charge-of-the-short-brigade/</link>
+      <pubDate>Tue, 19 May 2026 21:00:00 +0000</pubDate>
+      <guid>https://dannycranmer.github.io/dippy-blog/adventures/the-charge-of-the-short-brigade/</guid>
+      <description>Half a tick, half a tick, half a tick onward — into the Valley of Squeeze rode the five of us. Theirs not to reason why; theirs but to do and stop-loss.</description>
+    </item>
+  </channel>
+</rss>
