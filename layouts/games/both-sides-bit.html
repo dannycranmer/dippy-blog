@@ -1,0 +1,435 @@
+{{ define "main" }}
+<div id="game-wrapper">
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div class="title-dippy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="80" height="80">
+        <ellipse cx="52" cy="72" rx="28" ry="24" fill="#00ff88"/>
+        <path d="M24 72 Q8 58 4 42 Q6 44 10 46 Q8 36 12 28 Q14 36 16 40 Q18 32 24 28 Q22 38 22 48 Q24 54 26 60" fill="#00ff88"/>
+        <path d="M68 56 Q74 40 72 24" fill="none" stroke="#00ff88" stroke-width="16" stroke-linecap="round"/>
+        <ellipse cx="72" cy="18" rx="18" ry="14" fill="#00ff88"/>
+        <circle cx="78" cy="14" r="4" fill="#0d1117"/>
+        <circle cx="79.5" cy="12.5" r="1.5" fill="#fff"/>
+        <path d="M86 20 Q88 22 86 24" fill="none" stroke="#0d1117" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M84 20 L85 22 L86 20" fill="#fff"/>
+        <rect x="38" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <rect x="56" y="90" width="8" height="16" rx="3" fill="#00cc6e"/>
+        <ellipse cx="42" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+        <ellipse cx="60" cy="107" rx="7" ry="3" fill="#00cc6e"/>
+      </svg>
+    </div>
+    <h1 class="game-title">BOTH SIDES BIT</h1>
+    <p class="game-subtitle">Tape unfolds in 4 seconds.<br>Pick <b style="color:#00ff88">LONG</b>, <b style="color:#ff5050">SHORT</b>, <b style="color:#f0883e">BOTH</b>, or <b style="color:#8b949e">PASS</b>.<br>In chop, both stops get bit.</p>
+    <div class="high-score-display" id="title-high-score"></div>
+    <button id="start-btn" onclick="startGame()">READ THE TAPE</button>
+    <p class="game-hint">Trend → correct side wins +$300<br>Wolf → correct side wins +$700<br>Chop → both stops get bit<br>PASS in chop = $0. PASS a trend = -$50.<br>60 seconds. Bank as many rounds as you can.</p>
+    <div id="lb-title" class="lb-title-section"></div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-hud">
+      <div class="hud-item"><span class="hud-label">BANK</span><span class="hud-value" id="bank-disp">$0</span></div>
+      <div class="hud-item"><span class="hud-label">ROUND</span><span class="hud-value orange" id="round-disp">1</span></div>
+      <div class="hud-item"><span class="hud-label">TIME</span><span class="hud-value orange" id="time-disp">60</span></div>
+    </div>
+
+    <div class="status-bar" id="status-bar">Tape live. Pick your side.</div>
+
+    <div class="chart-wrap">
+      <svg id="chart" viewBox="0 0 320 200" preserveAspectRatio="none">
+        <line x1="0" y1="100" x2="320" y2="100" stroke="#21262d" stroke-width="1" stroke-dasharray="2,4"/>
+        <line id="entry-line" x1="0" y1="100" x2="320" y2="100" stroke="#8b949e" stroke-width="1" stroke-dasharray="3,3" style="display:none;"/>
+        <line id="ts-long" x1="0" y1="0" x2="320" y2="0" stroke="#00ff88" stroke-width="1" stroke-dasharray="2,3" opacity="0.7" style="display:none;"/>
+        <line id="ts-short" x1="0" y1="0" x2="320" y2="0" stroke="#ff5050" stroke-width="1" stroke-dasharray="2,3" opacity="0.7" style="display:none;"/>
+        <polyline id="price-line" fill="none" stroke="#e6edf3" stroke-width="2"/>
+        <circle id="price-dot" cx="0" cy="100" r="3" fill="#e6edf3"/>
+        <text id="ticker-tag" x="8" y="16" font-family="Courier New" font-size="11" fill="#484f58" letter-spacing="1">—</text>
+        <text id="regime-tag" x="312" y="16" font-family="Courier New" font-size="10" fill="#484f58" text-anchor="end" letter-spacing="1"></text>
+      </svg>
+    </div>
+
+    <div class="action-row">
+      <button class="act-btn long" data-side="LONG">LONG</button>
+      <button class="act-btn short" data-side="SHORT">SHORT</button>
+    </div>
+    <div class="action-row">
+      <button class="act-btn both" data-side="BOTH">BOTH</button>
+      <button class="act-btn pass" data-side="PASS">PASS</button>
+    </div>
+
+    <div class="round-meta">
+      <span id="round-summary">Lock in within 3 seconds.</span>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" style="display:none;">
+    <h1 class="game-title" id="gameover-title">TAPE CLOSED</h1>
+    <div class="final-score">$<span id="final-score">0</span></div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-val" id="stat-chops">0</span><span class="stat-label">Chop Skips</span></div>
+      <div class="stat"><span class="stat-val" id="stat-trends">0</span><span class="stat-label">Trend Hits</span></div>
+      <div class="stat"><span class="stat-val" id="stat-bits">0</span><span class="stat-label">Both Bit</span></div>
+    </div>
+    <p class="roast-msg" id="roast-msg"></p>
+    <div id="lb-gameover"></div>
+    <button id="restart-btn" onclick="startGame()">RELOAD TAPE</button>
+  </div>
+</div>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1117; color:#e6edf3; font-family:'Courier New',monospace; overflow:hidden; }
+  #game-wrapper { max-width:420px; margin:0 auto; height:100vh; display:flex; flex-direction:column; position:relative; user-select:none; -webkit-user-select:none; }
+
+  #title-screen, #gameover-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:20px; text-align:center; }
+  .title-dippy { margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,255,136,0.5)); animation:pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+  .game-title { font-size:2.2em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.4); margin-bottom:8px; letter-spacing:3px; }
+  .game-subtitle { color:#8b949e; font-size:0.85em; line-height:1.5; margin-bottom:12px; }
+  .high-score-display { color:#f0883e; font-size:0.9em; margin-bottom:16px; min-height:1.2em; }
+  #start-btn, #restart-btn { background:#00ff88; color:#0d1117; border:none; padding:14px 48px; font-size:1.2em; font-family:inherit; font-weight:bold; cursor:pointer; border-radius:6px; letter-spacing:2px; transition:all 0.2s; }
+  #start-btn:hover, #restart-btn:hover { background:#00cc6e; transform:scale(1.05); }
+  .game-hint { color:#484f58; font-size:0.75em; margin-top:16px; line-height:1.6; max-width:340px; }
+
+  .game-hud { display:grid; grid-template-columns:repeat(3,1fr); padding:10px 6px; background:rgba(0,0,0,0.4); border-bottom:1px solid #21262d; }
+  .hud-item { text-align:center; }
+  .hud-label { display:block; font-size:0.6em; color:#8b949e; letter-spacing:1px; }
+  .hud-value { font-size:1.1em; color:#00ff88; font-weight:bold; }
+  .hud-value.orange { color:#f0883e; }
+  .hud-value.red { color:#ff5050; }
+
+  .status-bar { padding:8px 12px; background:rgba(0,0,0,0.3); border-bottom:1px solid #21262d; font-size:0.8em; color:#8b949e; text-align:center; letter-spacing:1px; min-height:30px; }
+  .status-bar.win { color:#00ff88; }
+  .status-bar.lose { color:#ff5050; }
+  .status-bar.hold { color:#f0883e; }
+
+  .chart-wrap { flex:1; padding:8px 10px; min-height:180px; max-height:240px; display:flex; align-items:stretch; }
+  #chart { width:100%; height:100%; background:#161b22; border:1px solid #21262d; border-radius:8px; }
+
+  .action-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:6px 10px; }
+  .act-btn { padding:14px 0; font-family:inherit; font-size:0.95em; font-weight:bold; letter-spacing:2px; border:2px solid; background:transparent; color:#e6edf3; border-radius:6px; cursor:pointer; transition:all 0.12s; }
+  .act-btn:active { transform:scale(0.96); }
+  .act-btn:disabled { opacity:0.35; pointer-events:none; }
+  .act-btn.long { border-color:#00ff88; color:#00ff88; }
+  .act-btn.long:hover { background:rgba(0,255,136,0.12); }
+  .act-btn.short { border-color:#ff5050; color:#ff5050; }
+  .act-btn.short:hover { background:rgba(255,80,80,0.12); }
+  .act-btn.both { border-color:#f0883e; color:#f0883e; }
+  .act-btn.both:hover { background:rgba(240,136,62,0.12); }
+  .act-btn.pass { border-color:#8b949e; color:#8b949e; }
+  .act-btn.pass:hover { background:rgba(139,148,158,0.12); }
+  .act-btn.picked { background:rgba(255,255,255,0.06); }
+
+  .round-meta { padding:8px 12px 12px; text-align:center; font-size:0.78em; color:#8b949e; min-height:30px; letter-spacing:1px; }
+  .round-meta .pos { color:#00ff88; }
+  .round-meta .neg { color:#ff5050; }
+  .round-meta .neu { color:#f0883e; }
+
+  .final-score { font-size:3em; color:#00ff88; text-shadow:0 0 20px rgba(0,255,136,0.5); margin:8px 0; }
+  .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin:18px 0 8px; min-width:280px; }
+  .stat { display:flex; flex-direction:column; align-items:center; }
+  .stat-val { font-size:1.4em; color:#f0883e; font-weight:bold; }
+  .stat-label { font-size:0.65em; color:#8b949e; letter-spacing:1px; margin-top:2px; }
+  .roast-msg { color:#f0883e; font-size:0.9em; margin:18px 8px 8px; max-width:340px; line-height:1.5; font-style:italic; }
+</style>
+
+{{ partial "leaderboard" . }}
+
+<script>
+(function() {
+  const HIGH_KEY = 'dippy-both-sides-bit-high';
+  const TOTAL_TIME = 60;
+  const LOCK_MS = 3000;      // commit window
+  const ROUND_MS = 4200;     // total round length (tape unfolds)
+  const TICKS = 28;          // chart points across the round
+  const TICK_MS = ROUND_MS / TICKS;
+  const TS_R = 30;           // trailing stop offset in chart units (0.5R-ish visual)
+  const TICKERS = ['AMD','TSLA','NVDA','SPY','MU','MSTR','META','SHOP','ARM','COIN','PLTR','AAPL','QQQ','AMZN','NFLX'];
+
+  // Regime weights: 60% chop, 15% trend-up, 15% trend-down, 5% wolf-up, 5% wolf-down
+  const REGIMES = [
+    { id:'CHOP', weight:60, slope:0, noise:18, label:'CHOP' },
+    { id:'TREND_UP', weight:15, slope:1.6, noise:6, label:'TREND ↑' },
+    { id:'TREND_DOWN', weight:15, slope:-1.6, noise:6, label:'TREND ↓' },
+    { id:'WOLF_UP', weight:5, slope:3.4, noise:5, label:'WOLF ↑' },
+    { id:'WOLF_DOWN', weight:5, slope:-3.4, noise:5, label:'WOLF ↓' },
+  ];
+
+  // Payoffs by (regime, choice). Choices: LONG, SHORT, BOTH, PASS
+  const PAYOFF = {
+    CHOP:       { LONG:-200, SHORT:-200, BOTH:-400, PASS:   0 },
+    TREND_UP:   { LONG: 300, SHORT:-200, BOTH: 100, PASS: -50 },
+    TREND_DOWN: { LONG:-200, SHORT: 300, BOTH: 100, PASS: -50 },
+    WOLF_UP:    { LONG: 700, SHORT:-300, BOTH: 400, PASS:-100 },
+    WOLF_DOWN:  { LONG:-300, SHORT: 700, BOTH: 400, PASS:-100 },
+  };
+
+  const ROASTS = [
+    "Moony picked BOTH every round 'for diversification.' Banked -$9,600. Called it 'risk-adjusted.'",
+    "Moony PASS-ed every round to 'wait for confirmation.' Confirmation arrived at the closing bell. He had filed for the day.",
+    "Moony saw a wolf up, picked SHORT 'for the hedge,' and tweeted that the game was rigged.",
+    "Moony went LONG on a chop tape because 'value.' Both stops bit. He blames volatility.",
+    "Moony's read on every round: 'I need to see a 200-day MA before I commit.' The round was 4 seconds long.",
+    "Moony picked BOTH on a wolf round and called +$400 'leaving money on the table.' It was. He left it.",
+    "Moony built a 14-tab spreadsheet to classify regimes mid-round. The tape closed. The spreadsheet remains.",
+    "Moony tapped PASS, then changed his mind, then tapped LONG at 3.01 seconds. The button was disabled. He blames the touchscreen.",
+    "Moony's best round was a PASS on a chop. He framed the $0 and posted it on LinkedIn.",
+    "Moony asked the regime tag what the regime was. It was hidden. He pivoted to gov bonds.",
+    "Moony classified WOLF UP as 'overbought bubble' and shorted it. Tape took his lunch and his BAT cap.",
+    "Moony picked BOTH on every round. Said it was 'institutional grade.' His grade was F."
+  ];
+
+  const $ = id => document.getElementById(id);
+  const titleScreen = $('title-screen');
+  const gameScreen = $('game-screen');
+  const gameoverScreen = $('gameover-screen');
+  const titleHigh = $('title-high-score');
+  const statusBar = $('status-bar');
+  const roundSummary = $('round-summary');
+  const bankDisp = $('bank-disp');
+  const roundDisp = $('round-disp');
+  const timeDisp = $('time-disp');
+  const chart = $('chart');
+  const priceLine = $('price-line');
+  const priceDot = $('price-dot');
+  const entryLine = $('entry-line');
+  const tsLong = $('ts-long');
+  const tsShort = $('ts-short');
+  const tickerTag = $('ticker-tag');
+  const regimeTag = $('regime-tag');
+  const actionBtns = document.querySelectorAll('.act-btn');
+
+  let bank = 0;
+  let round = 0;
+  let timeLeft = TOTAL_TIME;
+  let running = false;
+  let tickHandle = 0;
+  let roundTicks = 0;
+  let roundTickHandle = 0;
+  let roundEndHandle = 0;
+  let lockHandle = 0;
+  let pricePts = [];
+  let entryY = 100;
+  let chosen = null;
+  let lockClosed = false;
+  let currentRegime = null;
+  let chopSkips = 0;
+  let trendHits = 0;
+  let bothBits = 0;
+
+  function showHigh() {
+    const h = +localStorage.getItem(HIGH_KEY) || 0;
+    titleHigh.textContent = h > 0 ? `BEST: $${h.toLocaleString()}` : '';
+  }
+  showHigh();
+
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function pickRegime() {
+    const total = REGIMES.reduce((s,r) => s + r.weight, 0);
+    let r = Math.random() * total;
+    for (const reg of REGIMES) {
+      r -= reg.weight;
+      if (r <= 0) return reg;
+    }
+    return REGIMES[0];
+  }
+
+  function setupRound() {
+    chosen = null;
+    lockClosed = false;
+    pricePts = [];
+    roundTicks = 0;
+    currentRegime = pickRegime();
+    entryY = 100; // chart center
+
+    // Reset chart elements
+    priceLine.setAttribute('points', '');
+    priceDot.setAttribute('cx', 0);
+    priceDot.setAttribute('cy', 100);
+    priceDot.setAttribute('fill', '#e6edf3');
+    entryLine.style.display = 'none';
+    tsLong.style.display = 'none';
+    tsShort.style.display = 'none';
+    tickerTag.textContent = pick(TICKERS);
+    regimeTag.textContent = '';
+    actionBtns.forEach(b => { b.disabled = false; b.classList.remove('picked'); });
+    statusBar.textContent = 'TAPE LIVE. LOCK IN < 3s.';
+    statusBar.className = 'status-bar hold';
+    roundSummary.innerHTML = `Round ${round} · Tape unfolding…`;
+
+    // Schedule lock window close
+    lockHandle = setTimeout(() => {
+      lockClosed = true;
+      actionBtns.forEach(b => b.disabled = true);
+      if (chosen === null) {
+        // Auto-pass with penalty narrative? Actually count as PASS for payoff.
+        chosen = 'PASS';
+        statusBar.textContent = 'LOCK CLOSED · auto-PASS';
+        statusBar.className = 'status-bar hold';
+      }
+    }, LOCK_MS);
+
+    // Start ticking
+    roundTickHandle = setTimeout(tickRound, TICK_MS);
+    // Schedule resolve
+    roundEndHandle = setTimeout(resolveRound, ROUND_MS);
+  }
+
+  function tickRound() {
+    if (!running) return;
+    roundTicks++;
+    const reg = currentRegime;
+    // Build next price point: y in 0..200 (0=top, 200=bottom). lower y = higher price (visual up).
+    const prev = pricePts.length > 0 ? pricePts[pricePts.length - 1].y : entryY;
+    const noise = (Math.random() - 0.5) * 2 * reg.noise;
+    // slope: positive => upward on chart (y goes down)
+    let y = prev - reg.slope + noise;
+    // For chop, add mean-reversion pull toward entry
+    if (reg.id === 'CHOP') {
+      y += (entryY - prev) * 0.18;
+    }
+    y = Math.max(8, Math.min(192, y));
+    const x = (roundTicks / TICKS) * 320;
+    pricePts.push({ x, y });
+    priceLine.setAttribute('points', pricePts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '));
+    priceDot.setAttribute('cx', x.toFixed(1));
+    priceDot.setAttribute('cy', y.toFixed(1));
+    // Color the dot by current direction vs entry
+    if (y < entryY - 4) priceDot.setAttribute('fill', '#00ff88');
+    else if (y > entryY + 4) priceDot.setAttribute('fill', '#ff5050');
+    else priceDot.setAttribute('fill', '#e6edf3');
+
+    if (roundTicks < TICKS) {
+      roundTickHandle = setTimeout(tickRound, TICK_MS);
+    }
+  }
+
+  function chooseSide(side) {
+    if (!running || lockClosed) return;
+    if (chosen !== null) return;
+    chosen = side;
+    actionBtns.forEach(b => {
+      if (b.dataset.side === side) b.classList.add('picked');
+      else b.disabled = true;
+    });
+    // Show entry line + trailing stops
+    entryLine.setAttribute('y1', entryY);
+    entryLine.setAttribute('y2', entryY);
+    entryLine.style.display = '';
+    if (side === 'LONG' || side === 'BOTH') {
+      tsLong.setAttribute('y1', entryY + TS_R);
+      tsLong.setAttribute('y2', entryY + TS_R);
+      tsLong.style.display = '';
+    }
+    if (side === 'SHORT' || side === 'BOTH') {
+      tsShort.setAttribute('y1', entryY - TS_R);
+      tsShort.setAttribute('y2', entryY - TS_R);
+      tsShort.style.display = '';
+    }
+    statusBar.textContent = `LOCKED · ${side}`;
+    statusBar.className = 'status-bar hold';
+  }
+
+  function resolveRound() {
+    if (!running) return;
+    const reg = currentRegime;
+    const pay = PAYOFF[reg.id][chosen || 'PASS'];
+    bank += pay;
+    updateHud();
+    // Reveal regime + payoff
+    regimeTag.textContent = reg.label;
+    const cls = pay > 0 ? 'win' : pay < 0 ? 'lose' : 'hold';
+    const sign = pay >= 0 ? '+' : '-';
+    statusBar.textContent = `${reg.label} · ${chosen || 'PASS'} → ${sign}$${Math.abs(pay)}`;
+    statusBar.className = `status-bar ${cls}`;
+    // Track stats
+    if (reg.id === 'CHOP' && (chosen === 'PASS' || chosen === null)) chopSkips++;
+    if ((reg.id === 'TREND_UP' || reg.id === 'WOLF_UP') && chosen === 'LONG') trendHits++;
+    if ((reg.id === 'TREND_DOWN' || reg.id === 'WOLF_DOWN') && chosen === 'SHORT') trendHits++;
+    if (chosen === 'BOTH' && reg.id === 'CHOP') bothBits++;
+    // Visual feedback on chart for chop with positions
+    if (reg.id === 'CHOP' && (chosen === 'LONG' || chosen === 'BOTH')) {
+      tsLong.setAttribute('stroke', '#ff5050');
+    }
+    if (reg.id === 'CHOP' && (chosen === 'SHORT' || chosen === 'BOTH')) {
+      tsShort.setAttribute('stroke', '#ff5050');
+    }
+    roundSummary.innerHTML = `<span class="${pay >= 0 ? 'pos' : 'neg'}">${sign}$${Math.abs(pay)}</span> · ${reg.label}`;
+    // Schedule next round
+    setTimeout(() => {
+      if (!running) return;
+      round++;
+      roundDisp.textContent = round;
+      setupRound();
+    }, 1100);
+  }
+
+  function updateHud() {
+    bankDisp.textContent = (bank >= 0 ? '$' : '-$') + Math.abs(bank).toLocaleString();
+    bankDisp.style.color = bank >= 0 ? '#00ff88' : '#ff5050';
+  }
+
+  function tick() {
+    if (!running) return;
+    timeLeft--;
+    timeDisp.textContent = timeLeft;
+    if (timeLeft <= 10) timeDisp.className = 'hud-value red';
+    if (timeLeft <= 0) { endGame(); return; }
+    tickHandle = setTimeout(tick, 1000);
+  }
+
+  function startGame() {
+    titleScreen.style.display = 'none';
+    gameoverScreen.style.display = 'none';
+    gameScreen.style.display = 'flex';
+    gameScreen.style.flexDirection = 'column';
+    gameScreen.style.height = '100vh';
+    bank = 0; round = 1;
+    chopSkips = 0; trendHits = 0; bothBits = 0;
+    timeLeft = TOTAL_TIME;
+    running = true;
+    timeDisp.className = 'hud-value orange';
+    timeDisp.textContent = TOTAL_TIME;
+    roundDisp.textContent = round;
+    updateHud();
+    setupRound();
+    tickHandle = setTimeout(tick, 1000);
+  }
+  window.startGame = startGame;
+
+  // Wire action buttons
+  actionBtns.forEach(b => {
+    b.addEventListener('pointerdown', e => { e.preventDefault(); chooseSide(b.dataset.side); });
+  });
+
+  function endGame() {
+    running = false;
+    clearTimeout(tickHandle);
+    clearTimeout(roundTickHandle);
+    clearTimeout(roundEndHandle);
+    clearTimeout(lockHandle);
+    gameScreen.style.display = 'none';
+    gameoverScreen.style.display = 'flex';
+    $('final-score').textContent = bank.toLocaleString();
+    $('stat-chops').textContent = chopSkips;
+    $('stat-trends').textContent = trendHits;
+    $('stat-bits').textContent = bothBits;
+    $('roast-msg').textContent = pick(ROASTS);
+    const high = +localStorage.getItem(HIGH_KEY) || 0;
+    if (bank > high) {
+      localStorage.setItem(HIGH_KEY, String(bank));
+      $('gameover-title').textContent = 'NEW BEST BANK!';
+    } else {
+      $('gameover-title').textContent = 'TAPE CLOSED';
+    }
+    if (window.DippyLB && DippyLB.onGameOver) DippyLB.onGameOver(bank);
+    showHigh();
+  }
+
+  if (window.DippyLB && DippyLB.init) DippyLB.init('both-sides-bit');
+})();
+</script>
+{{ end }}
