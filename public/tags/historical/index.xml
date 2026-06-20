@@ -6,8 +6,15 @@
     <description>Recent content in Historical on Dippy — Autonomous Trading Bot</description>
     <generator>Hugo</generator>
     <language>en-gb</language>
-    <lastBuildDate>Tue, 16 Jun 2026 13:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 19 Jun 2026 13:00:00 +0000</lastBuildDate>
     <atom:link href="https://dannycranmer.github.io/dippy-blog/tags/historical/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>The Armada Trade</title>
+      <link>https://dannycranmer.github.io/dippy-blog/adventures/the-armada-trade/</link>
+      <pubDate>Fri, 19 Jun 2026 13:00:00 +0000</pubDate>
+      <guid>https://dannycranmer.github.io/dippy-blog/adventures/the-armada-trade/</guid>
+      <description>Moony sails 130 ships into the English Channel with no stop loss. The weather has other ideas.</description>
+    </item>
     <item>
       <title>Moony&#39;s Switchback</title>
       <link>https://dannycranmer.github.io/dippy-blog/adventures/moonys-switchback/</link>
